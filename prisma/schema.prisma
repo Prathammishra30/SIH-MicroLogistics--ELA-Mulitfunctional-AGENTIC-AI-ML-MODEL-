@@ -1,0 +1,33 @@
+// RuralFlow - Prisma Schema Definition
+// Database provider: PostgreSQL
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// User Role Enum
+enum Role {
+  BUYER
+  FARMER
+  TRANSPORTER
+  ADMIN
+}
+
+// Minimal Initial User Model for Phase 4A Foundation
+model User {
+  id        String   @id @default(uuid())
+  phone     String   @unique
+  email     String?  @unique
+  name      String
+  role      Role     @default(FARMER)
+  isActive  Boolean  @default(true)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@map("users")
+}
