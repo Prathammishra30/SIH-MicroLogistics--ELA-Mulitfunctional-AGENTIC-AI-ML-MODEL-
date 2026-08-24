@@ -6,19 +6,22 @@ import { PhoneInput } from '../../components/auth/PhoneInput';
 import { PasswordInput } from '../../components/auth/PasswordInput';
 import { OTPInput } from '../../components/auth/OTPInput';
 import { VerificationSuccess } from '../../components/auth/VerificationSuccess';
+import { useSharedContext } from '../../context/SharedContext';
 
 type AuthStep = 'login' | 'otp' | 'register' | 'success';
 type LoginMethod = 'otp' | 'password';
 
 export const BuyerAuth: React.FC = () => {
+  const { login, register } = useSharedContext();
   const [step, setStep] = useState<AuthStep>('login');
-  const [loginMethod, setLoginMethod] = useState<LoginMethod>('otp');
-  const [phone, setPhone] = useState('9876543210');
-  const [email, setEmail] = useState('buyer@apmcmarket.in');
+  const [loginMethod, setLoginMethod] = useState<LoginMethod>('password');
+  const [phone, setPhone] = useState('9876543211');
+  const [email, setEmail] = useState('buyer@ruralflow.in');
   const [password, setPassword] = useState('password123');
   const [phoneError, setPhoneError] = useState('');
   const [emailError, setEmailError] = useState('');
   const [otpError, setOtpError] = useState('');
+  const [loginError, setLoginError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Registration Form
@@ -26,6 +29,7 @@ export const BuyerAuth: React.FC = () => {
     businessName: '',
     contactPerson: '',
     email: '',
+    password: '',
     location: 'Navi Mumbai APMC Mandi',
     businessType: 'APMC Licensed Commission Agent & Trader',
     gstin: '',
@@ -33,8 +37,10 @@ export const BuyerAuth: React.FC = () => {
   const [regError, setRegError] = useState('');
 
   // Handle Login Submit
-  const handleLoginSubmit = (e: React.FormEvent) => {
+  const handleLoginSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setLoginError('');
+
     if (loginMethod === 'otp') {
       if (phone.length !== 10) {
         setPhoneError('Please enter a valid 10-digit mobile number');
@@ -45,50 +51,90 @@ export const BuyerAuth: React.FC = () => {
       setTimeout(() => {
         setIsSubmitting(false);
         setStep('otp');
-      }, 600);
+      }, 500);
     } else {
       if (!email.includes('@')) {
         setEmailError('Please enter a valid business email');
         return;
       }
       if (password.length < 6) {
+        setLoginError('Password must be at least 6 characters');
         return;
       }
+
       setIsSubmitting(true);
-      setTimeout(() => {
-        setIsSubmitting(false);
+      try {
+        await login(email, password, 'BUYER');
         setStep('success');
-      }, 600);
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : 'Invalid email or password';
+        setLoginError(msg);
+      } finally {
+        setIsSubmitting(false);
+      }
     }
   };
 
-  // Handle OTP Verification
-  const handleVerifyOTP = (enteredOtp: string) => {
+  // Handle OTP Verification (Demo Fallback)
+  const handleVerifyOTP = async (enteredOtp: string) => {
     setIsSubmitting(true);
     setOtpError('');
-    setTimeout(() => {
-      setIsSubmitting(false);
-      if (enteredOtp === '123456') {
+
+    if (enteredOtp === '123456') {
+      try {
+        await login('buyer@ruralflow.in', 'password123', 'BUYER');
         setStep('success');
-      } else {
-        setOtpError('Invalid verification code. Please try again.');
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : 'Authentication failed';
+        setOtpError(msg);
+      } finally {
+        setIsSubmitting(false);
       }
-    }, 500);
+    } else {
+      setIsSubmitting(false);
+      setOtpError('Invalid verification code. Use demo code: 123456');
+    }
   };
 
   // Handle Registration Submit
-  const handleRegisterSubmit = (e: React.FormEvent) => {
+  const handleRegisterSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!regForm.businessName || !regForm.contactPerson || phone.length !== 10) {
-      setRegError('Please complete all required fields with a valid mobile number');
+    setRegError('');
+
+    if (
+      !regForm.businessName.trim() ||
+      !regForm.contactPerson.trim() ||
+      !regForm.email.trim() ||
+      !regForm.password
+    ) {
+      setRegError('Please complete all required fields');
       return;
     }
-    setRegError('');
+
+    if (regForm.password.length < 8) {
+      setRegError('Password must be at least 8 characters long');
+      return;
+    }
+
     setIsSubmitting(true);
-    setTimeout(() => {
+    try {
+      await register(
+        {
+          name: `${regForm.contactPerson.trim()} (${regForm.businessName.trim()})`,
+          email: regForm.email.trim(),
+          password: regForm.password,
+          role: 'BUYER',
+          phone: phone || undefined,
+        },
+        'BUYER'
+      );
+      setStep('success');
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Registration failed';
+      setRegError(msg);
+    } finally {
       setIsSubmitting(false);
-      setStep('otp');
-    }, 600);
+    }
   };
 
   return (
@@ -140,19 +186,6 @@ export const BuyerAuth: React.FC = () => {
             <div className="flex p-1 rounded-xl bg-slate-950/80 border border-slate-800">
               <button
                 type="button"
-                onClick={() => setLoginMethod('otp')}
-                className={`flex-1 py-2 rounded-lg text-xs font-semibold flex items-center justify-center gap-2 transition-all ${
-                  loginMethod === 'otp'
-                    ? 'bg-violet-500 text-white shadow-md'
-                    : 'text-slate-400 hover:text-white'
-                }`}
-              >
-                <Phone className="w-3.5 h-3.5" />
-                <span>Mobile OTP</span>
-              </button>
-
-              <button
-                type="button"
                 onClick={() => setLoginMethod('password')}
                 className={`flex-1 py-2 rounded-lg text-xs font-semibold flex items-center justify-center gap-2 transition-all ${
                   loginMethod === 'password'
@@ -163,7 +196,26 @@ export const BuyerAuth: React.FC = () => {
                 <Mail className="w-3.5 h-3.5" />
                 <span>Email & Password</span>
               </button>
+
+              <button
+                type="button"
+                onClick={() => setLoginMethod('otp')}
+                className={`flex-1 py-2 rounded-lg text-xs font-semibold flex items-center justify-center gap-2 transition-all ${
+                  loginMethod === 'otp'
+                    ? 'bg-violet-500 text-white shadow-md'
+                    : 'text-slate-400 hover:text-white'
+                }`}
+              >
+                <Phone className="w-3.5 h-3.5" />
+                <span>Mobile OTP</span>
+              </button>
             </div>
+
+            {loginError && (
+              <p className="text-xs text-rose-400 bg-rose-500/10 border border-rose-500/20 p-2.5 rounded-lg">
+                {loginError}
+              </p>
+            )}
 
             {/* Form */}
             <form onSubmit={handleLoginSubmit} className="space-y-4">
@@ -225,7 +277,10 @@ export const BuyerAuth: React.FC = () => {
               <span>Looking to procure rural produce? </span>
               <button
                 type="button"
-                onClick={() => setStep('register')}
+                onClick={() => {
+                  setLoginError('');
+                  setStep('register');
+                }}
                 className="font-semibold text-violet-400 hover:text-violet-300 underline underline-offset-2 transition-colors ml-1"
               >
                 Register your business
@@ -249,7 +304,7 @@ export const BuyerAuth: React.FC = () => {
                 Verify Buyer Account
               </h2>
               <p className="text-xs text-slate-300">
-                Enter the 6-digit authentication code sent to your mobile.
+                Enter the demo authentication code (<strong>123456</strong>) sent to your mobile.
               </p>
             </div>
 
@@ -341,11 +396,36 @@ export const BuyerAuth: React.FC = () => {
                 </div>
               </div>
 
+              {/* Email & Password for Real Auth */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1">
+                    Business Email *
+                  </label>
+                  <input
+                    type="email"
+                    required
+                    placeholder="buyer@example.com"
+                    value={regForm.email}
+                    onChange={(e) => setRegForm({ ...regForm, email: e.target.value })}
+                    className="w-full px-3 py-2 rounded-xl bg-slate-950/80 border border-slate-800 text-white text-xs sm:text-sm focus:outline-none focus:border-violet-500"
+                  />
+                </div>
+
+                <div>
+                  <PasswordInput
+                    value={regForm.password}
+                    onChange={(val) => setRegForm({ ...regForm, password: val })}
+                    label="Password (min 8 chars) *"
+                  />
+                </div>
+              </div>
+
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <PhoneInput
                   value={phone}
                   onChange={(val) => setPhone(val)}
-                  label="Authorized Mobile *"
+                  label="Authorized Mobile"
                 />
 
                 <div>
@@ -401,7 +481,10 @@ export const BuyerAuth: React.FC = () => {
               <span>Already registered? </span>
               <button
                 type="button"
-                onClick={() => setStep('login')}
+                onClick={() => {
+                  setRegError('');
+                  setStep('login');
+                }}
                 className="font-semibold text-violet-400 hover:text-violet-300 underline underline-offset-2 transition-colors ml-1"
               >
                 Sign In

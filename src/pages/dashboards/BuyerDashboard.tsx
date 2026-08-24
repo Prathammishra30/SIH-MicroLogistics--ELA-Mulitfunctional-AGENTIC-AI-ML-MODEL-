@@ -18,7 +18,7 @@ import { useSharedContext } from '../../context/SharedContext';
 
 export const BuyerDashboard: React.FC = () => {
   const navigate = useNavigate();
-  const { state } = useSharedContext();
+  const { state, logout } = useSharedContext();
 
   // Derive KPIs from shared state
   const openProcurements = state.procurementRequests.filter(pr => pr.status === 'Open');
@@ -77,7 +77,7 @@ export const BuyerDashboard: React.FC = () => {
 
           <button
             type="button"
-            onClick={() => navigate('/auth/buyer')}
+            onClick={() => { logout(); navigate('/'); }}
             className="px-3.5 py-2 rounded-xl bg-slate-900 border border-rose-500/30 hover:bg-rose-500/10 text-rose-400 text-xs font-semibold flex items-center gap-1.5 transition-colors"
           >
             <LogOut className="w-3.5 h-3.5" />

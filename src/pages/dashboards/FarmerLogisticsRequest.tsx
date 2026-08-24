@@ -5,6 +5,8 @@ import { Truck, ArrowLeft, Loader2, Search, CheckCircle } from 'lucide-react';
 import { useSharedContext } from '../../context/SharedContext';
 import type { LogisticsRequest, MarketOpportunity } from '../../data/mockData';
 
+import { farmerApi } from '../../services/api';
+
 export const FarmerLogisticsRequest: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
@@ -13,7 +15,7 @@ export const FarmerLogisticsRequest: React.FC = () => {
   const marketState = location.state?.market as MarketOpportunity | undefined;
   const procurementState = location.state?.procurement as { id: string; product: string; quantity: string; destination: string } | undefined;
   const matchingProcurement = state.procurementRequests.find(
-    pr => pr.id === procurementState?.id || (marketState && pr.id === marketState.id)
+    pr => pr.id === procurementState?.id || (marketState && (pr.id === marketState.id || pr.id === marketState.procurementId))
   );
 
   const [formData, setFormData] = useState(() => ({
@@ -27,6 +29,7 @@ export const FarmerLogisticsRequest: React.FC = () => {
 
   const [isSearching, setIsSearching] = useState(false);
   const [matchFound, setMatchFound] = useState(false);
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const handleSearch = (e: React.FormEvent) => {
     e.preventDefault();
@@ -37,53 +40,94 @@ export const FarmerLogisticsRequest: React.FC = () => {
     setTimeout(() => {
       setIsSearching(false);
       setMatchFound(true);
-    }, 1500);
+    }, 1200);
   };
 
-  const handleConfirm = () => {
-    const newDeliveryId = `RF-00${Math.floor(100 + Math.random() * 900)}`;
-    const newDelivery: LogisticsRequest = {
-      id: newDeliveryId,
-      productName: `${formData.product}`,
-      quantity: formData.quantity,
-      pickupLocation: formData.pickupLocation,
-      estimatedEarnings: '₹1,850', // Mock value for Phase 3B
-      status: 'Searching',
-      driver: null,
-      vehicle: null,
-      destination: formData.destination,
-      eta: null,
-      timeline: [
-        { status: 'Request Created', time: 'Just now', completed: true },
-        { status: 'Vehicle Assigned', time: 'Pending', completed: false },
-        { status: 'At Pickup', time: 'Pending', completed: false },
-        { status: 'Picked Up', time: 'Pending', completed: false },
-        { status: 'In Transit', time: 'Pending', completed: false },
-        { status: 'Delivered', time: 'Pending', completed: false }
-      ],
-      procurementRequestId: matchingProcurement?.id
-    };
+  const handleConfirm = async () => {
+    setIsSubmitting(true);
+    try {
+      const selectedProduct = state.products.find(p => p.name.toLowerCase() === formData.product.toLowerCase());
+      
+      let createdDelivery: LogisticsRequest;
+      try {
+        const remote = await farmerApi.createLogistics({
+          productName: formData.product,
+          productId: selectedProduct?.id,
+          quantity: formData.quantity,
+          pickupLocation: formData.pickupLocation,
+          destination: formData.destination,
+          estimatedEarnings: '₹1,850',
+          procurementRequestId: matchingProcurement?.id,
+        });
 
-    dispatch({ type: 'CREATE_DELIVERY', payload: newDelivery });
+        createdDelivery = {
+          id: remote.id,
+          productName: remote.productName,
+          quantity: remote.quantity || formData.quantity,
+          pickupLocation: remote.pickupLocation || formData.pickupLocation,
+          estimatedEarnings: remote.estimatedEarnings || '₹1,850',
+          status: (remote.status as LogisticsRequest['status']) || 'Searching',
+          driver: remote.driver || null,
+          vehicle: remote.vehicle || null,
+          destination: remote.destination,
+          eta: remote.eta || null,
+          timeline: [
+            { status: 'Request Created', time: 'Just now', completed: true },
+            { status: 'Transport Match', time: 'In progress', completed: false },
+            { status: 'Pickup Scheduled', time: 'Pending', completed: false },
+            { status: 'In Transit', time: 'Pending', completed: false },
+            { status: 'Delivered', time: 'Pending', completed: false }
+          ],
+          procurementRequestId: remote.procurementRequestId || matchingProcurement?.id,
+        };
+      } catch {
+        // Fallback for offline simulation
+        const fallbackId = `RF-00${Math.floor(100 + Math.random() * 900)}`;
+        createdDelivery = {
+          id: fallbackId,
+          productName: formData.product,
+          quantity: formData.quantity,
+          pickupLocation: formData.pickupLocation,
+          estimatedEarnings: '₹1,850',
+          status: 'Searching',
+          driver: null,
+          vehicle: null,
+          destination: formData.destination,
+          eta: null,
+          timeline: [
+            { status: 'Request Created', time: 'Just now', completed: true },
+            { status: 'Transport Match', time: 'In progress', completed: false },
+            { status: 'Pickup Scheduled', time: 'Pending', completed: false },
+            { status: 'In Transit', time: 'Pending', completed: false },
+            { status: 'Delivered', time: 'Pending', completed: false }
+          ],
+          procurementRequestId: matchingProcurement?.id,
+        };
+      }
 
-    if (matchingProcurement) {
-      dispatch({
-        type: 'UPDATE_PROCUREMENT',
-        payload: {
-          id: matchingProcurement.id,
-          status: 'Logistics Requested',
-          logisticsRequestId: newDeliveryId,
-          farmerName: 'Ramesh Patel'
-        }
+      dispatch({ type: 'CREATE_DELIVERY', payload: createdDelivery });
+
+      if (matchingProcurement) {
+        dispatch({
+          type: 'UPDATE_PROCUREMENT',
+          payload: {
+            id: matchingProcurement.id,
+            status: 'Logistics Requested',
+            logisticsRequestId: createdDelivery.id,
+            farmerName: 'Ramesh Patel'
+          }
+        });
+      }
+
+      dispatch({ 
+        type: 'ADD_NOTIFICATION', 
+        payload: { message: `Logistics request created and assigned successfully to shipment ${createdDelivery.id}.`, type: 'success' } 
       });
+      
+      navigate('/farmer/deliveries');
+    } finally {
+      setIsSubmitting(false);
     }
-
-    dispatch({ 
-      type: 'ADD_NOTIFICATION', 
-      payload: { message: `Logistics request created and assigned successfully to shipment ${newDelivery.id}.`, type: 'success' } 
-    });
-    
-    navigate('/farmer/deliveries');
   };
 
   return (
@@ -252,9 +296,17 @@ export const FarmerLogisticsRequest: React.FC = () => {
 
                 <button 
                   onClick={handleConfirm}
-                  className="w-full py-3 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white font-bold text-sm transition-colors mt-2"
+                  disabled={isSubmitting}
+                  className="w-full py-3 rounded-xl bg-emerald-500 hover:bg-emerald-600 disabled:opacity-50 text-white font-bold text-sm transition-colors mt-2 flex items-center justify-center gap-2"
                 >
-                  Confirm Transport
+                  {isSubmitting ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      <span>Confirming Transport...</span>
+                    </>
+                  ) : (
+                    'Confirm Transport'
+                  )}
                 </button>
               </motion.div>
             )}

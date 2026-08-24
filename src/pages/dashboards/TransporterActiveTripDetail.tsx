@@ -4,10 +4,13 @@ import { ArrowLeft, CheckCircle2, ChevronRight } from 'lucide-react';
 import { useSharedContext } from '../../context/SharedContext';
 import type { LogisticsRequest } from '../../data/mockData';
 
+import { transporterApi } from '../../services/api';
+
 export const TransporterActiveTripDetail: React.FC = () => {
   const { id } = useParams();
   const navigate = useNavigate();
   const { state, dispatch } = useSharedContext();
+  const [isUpdating, setIsUpdating] = React.useState(false);
   
   const trip = state.logisticsRequests.find((r) => r.id === id);
 
@@ -34,29 +37,40 @@ export const TransporterActiveTripDetail: React.FC = () => {
 
   const nextStatus = nextStatusMap[trip.status];
 
-  const handleUpdateStatus = () => {
-    if (!nextStatus) return;
-    
-    dispatch({
-      type: 'UPDATE_DELIVERY_STATUS',
-      payload: {
-        id: trip.id,
-        status: nextStatus,
-        newTimelineEvent: {
-          status: statusMessages[nextStatus] || nextStatus,
-          time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
-          completed: true
-        }
-      }
-    });
+  const handleUpdateStatus = async () => {
+    if (!nextStatus || !trip) return;
+    setIsUpdating(true);
 
-    dispatch({
-      type: 'ADD_NOTIFICATION',
-      payload: {
-        message: `Trip ${trip.id} updated to ${nextStatus}`,
-        type: nextStatus === 'Delivered' ? 'success' : 'info'
+    try {
+      try {
+        await transporterApi.updateTripStatus(trip.id, nextStatus);
+      } catch (err) {
+        console.warn('Backend trip status update error, applying local state fallback:', err);
       }
-    });
+
+      dispatch({
+        type: 'UPDATE_DELIVERY_STATUS',
+        payload: {
+          id: trip.id,
+          status: nextStatus,
+          newTimelineEvent: {
+            status: statusMessages[nextStatus] || nextStatus,
+            time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+            completed: true
+          }
+        }
+      });
+
+      dispatch({
+        type: 'ADD_NOTIFICATION',
+        payload: {
+          message: `Trip ${trip.id} updated to ${nextStatus}`,
+          type: nextStatus === 'Delivered' ? 'success' : 'info'
+        }
+      });
+    } finally {
+      setIsUpdating(false);
+    }
   };
 
   return (
@@ -107,9 +121,10 @@ export const TransporterActiveTripDetail: React.FC = () => {
         <div className="flex justify-end mt-4">
           <button
             onClick={handleUpdateStatus}
-            className="flex items-center gap-2 px-6 py-3 bg-emerald-600 hover:bg-emerald-500 text-white rounded-xl font-semibold transition-colors"
+            disabled={isUpdating}
+            className="flex items-center gap-2 px-6 py-3 bg-emerald-600 hover:bg-emerald-500 disabled:opacity-50 text-white rounded-xl font-semibold transition-colors"
           >
-            Mark as {nextStatus}
+            {isUpdating ? 'Updating Status...' : `Mark as ${nextStatus}`}
             <ChevronRight className="w-4 h-4" />
           </button>
         </div>

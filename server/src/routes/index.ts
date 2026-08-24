@@ -1,16 +1,21 @@
 import { Router } from 'express';
 import { healthRoutes } from '../modules/health/health.routes.js';
+import { authRoutes } from '../modules/auth/auth.routes.js';
+import { farmerRoutes } from '../modules/farmer/farmer.routes.js';
+import { marketRoutes } from '../modules/market/market.routes.js';
+import { buyerRoutes } from '../modules/buyer/buyer.routes.js';
+import { transporterRoutes } from '../modules/transporter/transporter.routes.js';
 
 const router = Router();
 
-// Mount modules
+// Mount system and authentication modules
 router.use('/health', healthRoutes);
+router.use('/auth', authRoutes);
 
-// Future Phase 4B modules will be mounted here:
-// router.use('/auth', authRoutes);
-// router.use('/users', userRoutes);
-// router.use('/products', productRoutes);
-// router.use('/procurements', procurementRoutes);
-// router.use('/logistics', logisticsRoutes);
+// Mount role-specific and platform-wide business modules
+router.use('/farmer', farmerRoutes);
+router.use('/market', marketRoutes);
+router.use('/buyer', buyerRoutes);
+router.use('/transporter', transporterRoutes);
 
 export const apiRouter = router;

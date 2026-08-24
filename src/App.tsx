@@ -32,6 +32,7 @@ import { BuyerOrderDetail } from './pages/dashboards/BuyerOrderDetail';
 import { BuyerProduceMarket } from './pages/dashboards/BuyerProduceMarket';
 import { SharedProvider } from './context/SharedContext';
 import { Notifications } from './components/dashboards/Notifications';
+import { ProtectedRoute } from './components/auth/ProtectedRoute';
 import type { ModalType, SupportedLanguage } from './types';
 
 export function App() {
@@ -77,8 +78,15 @@ export function App() {
           <Route path="/auth/transporter" element={<TransporterAuth />} />
           <Route path="/auth/buyer" element={<BuyerAuth />} />
 
-          {/* Phase 3A: Farmer Dashboard Flow */}
-          <Route path="/farmer" element={<FarmerLayout />}>
+          {/* Phase 3A: Farmer Dashboard Flow (Protected for FARMER) */}
+          <Route
+            path="/farmer"
+            element={
+              <ProtectedRoute allowedRoles={['FARMER', 'ADMIN']}>
+                <FarmerLayout />
+              </ProtectedRoute>
+            }
+          >
             <Route path="dashboard" element={<FarmerDashboard />} />
             <Route path="products" element={<FarmerProducts />} />
             <Route path="products/new" element={<FarmerAddProduct />} />
@@ -88,8 +96,15 @@ export function App() {
             <Route path="deliveries/:id" element={<FarmerDeliveryDetail />} />
           </Route>
           
-          {/* Phase 3B: Transporter Dashboard Flow */}
-          <Route path="/transporter" element={<TransporterLayout />}>
+          {/* Phase 3B: Transporter Dashboard Flow (Protected for TRANSPORTER) */}
+          <Route
+            path="/transporter"
+            element={
+              <ProtectedRoute allowedRoles={['TRANSPORTER', 'ADMIN']}>
+                <TransporterLayout />
+              </ProtectedRoute>
+            }
+          >
             <Route path="dashboard" element={<TransporterDashboard />} />
             <Route path="trips" element={<TransporterTrips />} />
             <Route path="trips/:id" element={<TransporterTripDetail />} />
@@ -100,8 +115,15 @@ export function App() {
             <Route path="performance" element={<TransporterPerformance />} />
           </Route>
 
-          {/* Phase 3C: Buyer Dashboard Flow */}
-          <Route path="/buyer" element={<BuyerLayout />}>
+          {/* Phase 3C: Buyer Dashboard Flow (Protected for BUYER) */}
+          <Route
+            path="/buyer"
+            element={
+              <ProtectedRoute allowedRoles={['BUYER', 'ADMIN']}>
+                <BuyerLayout />
+              </ProtectedRoute>
+            }
+          >
             <Route path="dashboard" element={<BuyerDashboard />} />
             <Route path="procurement" element={<BuyerProcurementForm />} />
             <Route path="orders" element={<BuyerOrders />} />

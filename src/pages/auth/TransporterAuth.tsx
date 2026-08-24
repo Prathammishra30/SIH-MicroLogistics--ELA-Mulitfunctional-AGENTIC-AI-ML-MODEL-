@@ -6,25 +6,29 @@ import { PhoneInput } from '../../components/auth/PhoneInput';
 import { PasswordInput } from '../../components/auth/PasswordInput';
 import { OTPInput } from '../../components/auth/OTPInput';
 import { VerificationSuccess } from '../../components/auth/VerificationSuccess';
+import { useSharedContext } from '../../context/SharedContext';
 
 type AuthStep = 'login' | 'otp' | 'register' | 'success';
 type LoginMethod = 'otp' | 'password';
 
 export const TransporterAuth: React.FC = () => {
+  const { login, register } = useSharedContext();
   const [step, setStep] = useState<AuthStep>('login');
-  const [loginMethod, setLoginMethod] = useState<LoginMethod>('otp');
-  const [phone, setPhone] = useState('9876543210');
-  const [email, setEmail] = useState('driver@transrural.in');
+  const [loginMethod, setLoginMethod] = useState<LoginMethod>('password');
+  const [phone, setPhone] = useState('9876543212');
+  const [email, setEmail] = useState('transporter@ruralflow.in');
   const [password, setPassword] = useState('password123');
   const [phoneError, setPhoneError] = useState('');
   const [emailError, setEmailError] = useState('');
   const [otpError, setOtpError] = useState('');
+  const [loginError, setLoginError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Registration form
   const [regForm, setRegForm] = useState({
     fullName: '',
     email: '',
+    password: '',
     vehicleType: 'Pickup (1.5 - 2.5 MT)',
     vehicleRegNo: '',
     capacity: '2.0 MT',
@@ -34,8 +38,10 @@ export const TransporterAuth: React.FC = () => {
   const [regError, setRegError] = useState('');
 
   // Handle Login Submit
-  const handleLoginSubmit = (e: React.FormEvent) => {
+  const handleLoginSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setLoginError('');
+
     if (loginMethod === 'otp') {
       if (phone.length !== 10) {
         setPhoneError('Please enter a valid 10-digit mobile number');
@@ -46,50 +52,90 @@ export const TransporterAuth: React.FC = () => {
       setTimeout(() => {
         setIsSubmitting(false);
         setStep('otp');
-      }, 600);
+      }, 500);
     } else {
       if (!email.includes('@')) {
         setEmailError('Please enter a valid email address');
         return;
       }
       if (password.length < 6) {
+        setLoginError('Password must be at least 6 characters');
         return;
       }
+
       setIsSubmitting(true);
-      setTimeout(() => {
-        setIsSubmitting(false);
+      try {
+        await login(email, password, 'TRANSPORTER');
         setStep('success');
-      }, 600);
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : 'Invalid email or password';
+        setLoginError(msg);
+      } finally {
+        setIsSubmitting(false);
+      }
     }
   };
 
-  // Handle OTP Verification
-  const handleVerifyOTP = (enteredOtp: string) => {
+  // Handle OTP Verification (Demo Fallback)
+  const handleVerifyOTP = async (enteredOtp: string) => {
     setIsSubmitting(true);
     setOtpError('');
-    setTimeout(() => {
-      setIsSubmitting(false);
-      if (enteredOtp === '123456') {
+
+    if (enteredOtp === '123456') {
+      try {
+        await login('transporter@ruralflow.in', 'password123', 'TRANSPORTER');
         setStep('success');
-      } else {
-        setOtpError('Invalid verification code. Please try again.');
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : 'Authentication failed';
+        setOtpError(msg);
+      } finally {
+        setIsSubmitting(false);
       }
-    }, 500);
+    } else {
+      setIsSubmitting(false);
+      setOtpError('Invalid verification code. Use demo code: 123456');
+    }
   };
 
   // Handle Register Submit
-  const handleRegisterSubmit = (e: React.FormEvent) => {
+  const handleRegisterSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!regForm.fullName || !regForm.vehicleRegNo || phone.length !== 10) {
+    setRegError('');
+
+    if (
+      !regForm.fullName.trim() ||
+      !regForm.vehicleRegNo.trim() ||
+      !regForm.email.trim() ||
+      !regForm.password
+    ) {
       setRegError('Please fill all required details with vehicle registration');
       return;
     }
-    setRegError('');
+
+    if (regForm.password.length < 8) {
+      setRegError('Password must be at least 8 characters long');
+      return;
+    }
+
     setIsSubmitting(true);
-    setTimeout(() => {
+    try {
+      await register(
+        {
+          name: `${regForm.fullName.trim()} (${regForm.vehicleRegNo.trim()})`,
+          email: regForm.email.trim(),
+          password: regForm.password,
+          role: 'TRANSPORTER',
+          phone: phone || undefined,
+        },
+        'TRANSPORTER'
+      );
+      setStep('success');
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Registration failed';
+      setRegError(msg);
+    } finally {
       setIsSubmitting(false);
-      setStep('otp');
-    }, 600);
+    }
   };
 
   return (
@@ -141,19 +187,6 @@ export const TransporterAuth: React.FC = () => {
             <div className="flex p-1 rounded-xl bg-slate-950/80 border border-slate-800">
               <button
                 type="button"
-                onClick={() => setLoginMethod('otp')}
-                className={`flex-1 py-2 rounded-lg text-xs font-semibold flex items-center justify-center gap-2 transition-all ${
-                  loginMethod === 'otp'
-                    ? 'bg-sky-500 text-slate-950 shadow-md'
-                    : 'text-slate-400 hover:text-white'
-                }`}
-              >
-                <Phone className="w-3.5 h-3.5" />
-                <span>Mobile OTP</span>
-              </button>
-
-              <button
-                type="button"
                 onClick={() => setLoginMethod('password')}
                 className={`flex-1 py-2 rounded-lg text-xs font-semibold flex items-center justify-center gap-2 transition-all ${
                   loginMethod === 'password'
@@ -164,7 +197,26 @@ export const TransporterAuth: React.FC = () => {
                 <Mail className="w-3.5 h-3.5" />
                 <span>Email & Password</span>
               </button>
+
+              <button
+                type="button"
+                onClick={() => setLoginMethod('otp')}
+                className={`flex-1 py-2 rounded-lg text-xs font-semibold flex items-center justify-center gap-2 transition-all ${
+                  loginMethod === 'otp'
+                    ? 'bg-sky-500 text-slate-950 shadow-md'
+                    : 'text-slate-400 hover:text-white'
+                }`}
+              >
+                <Phone className="w-3.5 h-3.5" />
+                <span>Mobile OTP</span>
+              </button>
             </div>
+
+            {loginError && (
+              <p className="text-xs text-rose-400 bg-rose-500/10 border border-rose-500/20 p-2.5 rounded-lg">
+                {loginError}
+              </p>
+            )}
 
             {/* Form based on selected login method */}
             <form onSubmit={handleLoginSubmit} className="space-y-4">
@@ -226,7 +278,10 @@ export const TransporterAuth: React.FC = () => {
               <span>Have a commercial vehicle? </span>
               <button
                 type="button"
-                onClick={() => setStep('register')}
+                onClick={() => {
+                  setLoginError('');
+                  setStep('register');
+                }}
                 className="font-semibold text-sky-400 hover:text-sky-300 underline underline-offset-2 transition-colors ml-1"
               >
                 Register your vehicle
@@ -250,7 +305,7 @@ export const TransporterAuth: React.FC = () => {
                 Verify Transporter Mobile
               </h2>
               <p className="text-xs text-slate-300">
-                Enter the 6-digit code sent to your registered mobile number.
+                Enter the demo 6-digit code (<strong>123456</strong>) sent to your mobile.
               </p>
             </div>
 
@@ -327,6 +382,31 @@ export const TransporterAuth: React.FC = () => {
                 </div>
               </div>
 
+              {/* Email & Password for Real Auth */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1">
+                    Transporter Email *
+                  </label>
+                  <input
+                    type="email"
+                    required
+                    placeholder="driver@example.com"
+                    value={regForm.email}
+                    onChange={(e) => setRegForm({ ...regForm, email: e.target.value })}
+                    className="w-full px-3 py-2 rounded-xl bg-slate-950/80 border border-slate-800 text-white text-xs sm:text-sm focus:outline-none focus:border-sky-500"
+                  />
+                </div>
+
+                <div>
+                  <PasswordInput
+                    value={regForm.password}
+                    onChange={(val) => setRegForm({ ...regForm, password: val })}
+                    label="Password (min 8 chars) *"
+                  />
+                </div>
+              </div>
+
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1">
@@ -358,7 +438,7 @@ export const TransporterAuth: React.FC = () => {
               <PhoneInput
                 value={phone}
                 onChange={(val) => setPhone(val)}
-                label="Driver Mobile (for Trip Alerts) *"
+                label="Driver Mobile (Optional)"
               />
 
               {/* Visual Demo Vehicle Verification Section */}
@@ -409,7 +489,10 @@ export const TransporterAuth: React.FC = () => {
               <span>Already registered? </span>
               <button
                 type="button"
-                onClick={() => setStep('login')}
+                onClick={() => {
+                  setRegError('');
+                  setStep('login');
+                }}
                 className="font-semibold text-sky-400 hover:text-sky-300 underline underline-offset-2 transition-colors ml-1"
               >
                 Sign In

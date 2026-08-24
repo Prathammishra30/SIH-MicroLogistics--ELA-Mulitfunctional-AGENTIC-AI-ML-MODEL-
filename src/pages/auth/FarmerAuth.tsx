@@ -1,23 +1,34 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Sprout, ArrowRight, UserCheck } from 'lucide-react';
+import { Sprout, ArrowRight, UserCheck, Phone, Mail } from 'lucide-react';
 import { AuthLayout } from '../../components/auth/AuthLayout';
 import { PhoneInput } from '../../components/auth/PhoneInput';
+import { PasswordInput } from '../../components/auth/PasswordInput';
 import { OTPInput } from '../../components/auth/OTPInput';
 import { VerificationSuccess } from '../../components/auth/VerificationSuccess';
+import { useSharedContext } from '../../context/SharedContext';
 
 type AuthStep = 'login' | 'otp' | 'register' | 'success';
+type LoginMethod = 'otp' | 'password';
 
 export const FarmerAuth: React.FC = () => {
+  const { login, register } = useSharedContext();
   const [step, setStep] = useState<AuthStep>('login');
+  const [loginMethod, setLoginMethod] = useState<LoginMethod>('password');
   const [phone, setPhone] = useState('9876543210');
+  const [email, setEmail] = useState('farmer@ruralflow.in');
+  const [password, setPassword] = useState('password123');
   const [phoneError, setPhoneError] = useState('');
+  const [emailError, setEmailError] = useState('');
   const [otpError, setOtpError] = useState('');
+  const [loginError, setLoginError] = useState('');
   const [isSubmitting, setIsSubmitting] = useState(false);
 
   // Registration form fields
   const [formData, setFormData] = useState({
     fullName: '',
+    email: '',
+    password: '',
     village: '',
     district: '',
     state: 'Maharashtra',
@@ -27,50 +38,107 @@ export const FarmerAuth: React.FC = () => {
   });
   const [regError, setRegError] = useState('');
 
-  // Handle Send OTP
-  const handleSendOTP = (e: React.FormEvent) => {
+  // Handle Login Submit
+  const handleLoginSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (phone.length !== 10) {
-      setPhoneError('Please enter a valid 10-digit Indian mobile number');
-      return;
+    setLoginError('');
+
+    if (loginMethod === 'otp') {
+      if (phone.length !== 10) {
+        setPhoneError('Please enter a valid 10-digit Indian mobile number');
+        return;
+      }
+      setPhoneError('');
+      setIsSubmitting(true);
+      setTimeout(() => {
+        setIsSubmitting(false);
+        setStep('otp');
+      }, 500);
+    } else {
+      if (!email.includes('@')) {
+        setEmailError('Please enter a valid email address');
+        return;
+      }
+      if (password.length < 6) {
+        setLoginError('Password must be at least 6 characters');
+        return;
+      }
+
+      setIsSubmitting(true);
+      try {
+        await login(email, password, 'FARMER');
+        setStep('success');
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : 'Invalid email or password';
+        setLoginError(msg);
+      } finally {
+        setIsSubmitting(false);
+      }
     }
-    setPhoneError('');
-    setIsSubmitting(true);
-    setTimeout(() => {
-      setIsSubmitting(false);
-      setStep('otp');
-    }, 600);
   };
 
-  // Handle OTP Verification
-  const handleVerifyOTP = (enteredOtp: string) => {
+  // Handle OTP Verification (Demo Fallback)
+  const handleVerifyOTP = async (enteredOtp: string) => {
     setIsSubmitting(true);
     setOtpError('');
 
-    setTimeout(() => {
-      setIsSubmitting(false);
-      // Demo OTP is 123456
-      if (enteredOtp === '123456') {
+    if (enteredOtp === '123456') {
+      try {
+        // Authenticate with seeded farmer account for demo OTP flow
+        await login('farmer@ruralflow.in', 'password123', 'FARMER');
         setStep('success');
-      } else {
-        setOtpError('Invalid verification code. Please try again.');
+      } catch (err) {
+        const msg = err instanceof Error ? err.message : 'Authentication failed';
+        setOtpError(msg);
+      } finally {
+        setIsSubmitting(false);
       }
-    }, 500);
+    } else {
+      setIsSubmitting(false);
+      setOtpError('Invalid verification code. Use demo code: 123456');
+    }
   };
 
   // Handle Registration Submit
-  const handleRegisterSubmit = (e: React.FormEvent) => {
+  const handleRegisterSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!formData.fullName.trim() || !formData.village.trim() || !formData.district.trim() || phone.length !== 10) {
-      setRegError('Please complete all mandatory fields with a valid 10-digit number');
+    setRegError('');
+
+    if (
+      !formData.fullName.trim() ||
+      !formData.email.trim() ||
+      !formData.password ||
+      !formData.village.trim() ||
+      !formData.district.trim()
+    ) {
+      setRegError('Please complete all mandatory fields');
       return;
     }
-    setRegError('');
+
+    if (formData.password.length < 8) {
+      setRegError('Password must be at least 8 characters long');
+      return;
+    }
+
     setIsSubmitting(true);
-    setTimeout(() => {
+    try {
+      await register(
+        {
+          name: formData.fullName.trim(),
+          email: formData.email.trim(),
+          password: formData.password,
+          role: 'FARMER',
+          phone: phone || undefined,
+        },
+        'FARMER'
+      );
+      setStep('success');
+    } catch (err) {
+      const msg = err instanceof Error ? err.message : 'Registration failed';
+      setRegError(msg);
+    } finally {
       setIsSubmitting(false);
-      setStep('otp');
-    }, 600);
+    }
   };
 
   return (
@@ -99,8 +167,7 @@ export const FarmerAuth: React.FC = () => {
       accentTextClass="text-emerald-400"
     >
       <AnimatePresence mode="wait">
-        
-        {/* 1. LOGIN STEP (Mobile Number Entry) */}
+        {/* 1. LOGIN STEP */}
         {step === 'login' && (
           <motion.div
             key="login"
@@ -120,33 +187,92 @@ export const FarmerAuth: React.FC = () => {
               </p>
             </div>
 
+            {/* Login Method Switcher */}
+            <div className="flex p-1 rounded-xl bg-slate-950/80 border border-slate-800">
+              <button
+                type="button"
+                onClick={() => setLoginMethod('password')}
+                className={`flex-1 py-2 rounded-lg text-xs font-semibold flex items-center justify-center gap-2 transition-all ${
+                  loginMethod === 'password'
+                    ? 'bg-emerald-500 text-slate-950 shadow-md'
+                    : 'text-slate-400 hover:text-white'
+                }`}
+              >
+                <Mail className="w-3.5 h-3.5" />
+                <span>Email & Password</span>
+              </button>
+
+              <button
+                type="button"
+                onClick={() => setLoginMethod('otp')}
+                className={`flex-1 py-2 rounded-lg text-xs font-semibold flex items-center justify-center gap-2 transition-all ${
+                  loginMethod === 'otp'
+                    ? 'bg-emerald-500 text-slate-950 shadow-md'
+                    : 'text-slate-400 hover:text-white'
+                }`}
+              >
+                <Phone className="w-3.5 h-3.5" />
+                <span>Mobile OTP</span>
+              </button>
+            </div>
+
+            {loginError && (
+              <p className="text-xs text-rose-400 bg-rose-500/10 border border-rose-500/20 p-2.5 rounded-lg">
+                {loginError}
+              </p>
+            )}
+
             {/* Login Form */}
-            <form onSubmit={handleSendOTP} className="space-y-5">
-              <PhoneInput
-                value={phone}
-                onChange={(val) => {
-                  setPhone(val);
-                  if (phoneError) setPhoneError('');
-                }}
-                error={phoneError}
-                disabled={isSubmitting}
-              />
+            <form onSubmit={handleLoginSubmit} className="space-y-4">
+              {loginMethod === 'otp' ? (
+                <PhoneInput
+                  value={phone}
+                  onChange={(val) => {
+                    setPhone(val);
+                    if (phoneError) setPhoneError('');
+                  }}
+                  error={phoneError}
+                  disabled={isSubmitting}
+                />
+              ) : (
+                <div className="space-y-3.5">
+                  <div>
+                    <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1">
+                      Farmer Email ID
+                    </label>
+                    <input
+                      type="email"
+                      required
+                      value={email}
+                      onChange={(e) => {
+                        setEmail(e.target.value);
+                        if (emailError) setEmailError('');
+                      }}
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950/80 border border-slate-800 text-white text-xs sm:text-sm focus:outline-none focus:border-emerald-500"
+                    />
+                    {emailError && <p className="text-xs text-rose-400 mt-1">{emailError}</p>}
+                  </div>
+
+                  <PasswordInput
+                    value={password}
+                    onChange={(val) => setPassword(val)}
+                  />
+                </div>
+              )}
 
               <button
                 type="submit"
-                disabled={isSubmitting || phone.length !== 10}
-                className={`w-full py-3.5 px-4 rounded-xl font-bold text-xs sm:text-sm text-slate-950 bg-emerald-500 hover:bg-emerald-400 active:scale-[0.99] transition-all duration-200 shadow-lg shadow-emerald-500/20 flex items-center justify-center gap-2 ${
-                  phone.length !== 10 || isSubmitting ? 'opacity-60 cursor-not-allowed' : ''
-                }`}
+                disabled={isSubmitting}
+                className="w-full py-3.5 px-4 rounded-xl font-bold text-xs sm:text-sm text-slate-950 bg-emerald-500 hover:bg-emerald-400 active:scale-[0.99] transition-all duration-200 shadow-lg shadow-emerald-500/20 flex items-center justify-center gap-2"
               >
                 {isSubmitting ? (
                   <>
                     <div className="w-4 h-4 border-2 border-slate-950 border-t-transparent rounded-full animate-spin" />
-                    <span>Sending Code...</span>
+                    <span>Signing in...</span>
                   </>
                 ) : (
                   <>
-                    <span>Send OTP</span>
+                    <span>{loginMethod === 'otp' ? 'Send OTP →' : 'Sign In as Farmer →'}</span>
                     <ArrowRight className="w-4 h-4" />
                   </>
                 )}
@@ -159,7 +285,7 @@ export const FarmerAuth: React.FC = () => {
               <button
                 type="button"
                 onClick={() => {
-                  setPhoneError('');
+                  setLoginError('');
                   setStep('register');
                 }}
                 className="font-semibold text-emerald-400 hover:text-emerald-300 underline underline-offset-2 transition-colors ml-1"
@@ -185,7 +311,7 @@ export const FarmerAuth: React.FC = () => {
                 Verify your mobile number
               </h2>
               <p className="text-xs text-slate-300">
-                Enter the verification code to authenticate your session.
+                Enter the demo verification code (<strong>123456</strong>) to authenticate.
               </p>
             </div>
 
@@ -245,11 +371,36 @@ export const FarmerAuth: React.FC = () => {
                 />
               </div>
 
+              {/* Email & Password for Real Auth */}
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1">
+                    Email Address *
+                  </label>
+                  <input
+                    type="email"
+                    required
+                    placeholder="farmer@example.com"
+                    value={formData.email}
+                    onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                    className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950/80 border border-slate-800 text-white text-xs sm:text-sm focus:outline-none focus:border-emerald-500"
+                  />
+                </div>
+
+                <div>
+                  <PasswordInput
+                    value={formData.password}
+                    onChange={(val) => setFormData({ ...formData, password: val })}
+                    label="Password (min 8 chars) *"
+                  />
+                </div>
+              </div>
+
               {/* Mobile Number */}
               <PhoneInput
                 value={phone}
                 onChange={(val) => setPhone(val)}
-                label="Mobile Number (for OTP Login) *"
+                label="Mobile Number (Optional)"
               />
 
               {/* Producer Type & Category */}
@@ -356,10 +507,13 @@ export const FarmerAuth: React.FC = () => {
               <span>Already have an account? </span>
               <button
                 type="button"
-                onClick={() => setStep('login')}
+                onClick={() => {
+                  setRegError('');
+                  setStep('login');
+                }}
                 className="font-semibold text-emerald-400 hover:text-emerald-300 underline underline-offset-2 transition-colors ml-1"
               >
-                Sign In with Mobile
+                Sign In
               </button>
             </div>
           </motion.div>

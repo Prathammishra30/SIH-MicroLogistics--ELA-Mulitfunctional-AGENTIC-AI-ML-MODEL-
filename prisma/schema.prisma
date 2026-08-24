@@ -18,16 +18,209 @@ enum Role {
   ADMIN
 }
 
-// Minimal Initial User Model for Phase 4A Foundation
+// User Model for Authentication & Identity Anchor (UUID PK)
 model User {
-  id        String   @id @default(uuid())
-  phone     String   @unique
-  email     String?  @unique
-  name      String
-  role      Role     @default(FARMER)
-  isActive  Boolean  @default(true)
-  createdAt DateTime @default(now())
-  updatedAt DateTime @updatedAt
+  id           String   @id @default(uuid())
+  phone        String?  @unique
+  email        String   @unique
+  name         String
+  passwordHash String
+  role         Role     @default(FARMER)
+  isActive     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  // 1:1 Role-Specific Profiles
+  farmerProfile      FarmerProfile?
+  buyerProfile       BuyerProfile?
+  transporterProfile TransporterProfile?
+
+  // 1:N Authenticated Sessions
+  sessions           Session[]
 
   @@map("users")
+}
+
+// Authenticated Session Model for Server-Side Revocation & Lifecycle Management
+model Session {
+  id         String    @id @default(uuid())
+  userId     String
+  user       User      @relation(fields: [userId], references: [id], onDelete: Cascade)
+  expiresAt  DateTime
+  createdAt  DateTime  @default(now())
+  revokedAt  DateTime?
+  lastUsedAt DateTime  @default(now())
+
+  @@index([userId])
+  @@index([expiresAt])
+  @@index([revokedAt])
+  @@map("sessions")
+}
+
+// 1:1 Role Profile for Farmers / Artisans
+model FarmerProfile {
+  id              String   @id @default(uuid())
+  userId          String   @unique
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  phone           String?
+  village         String?
+  district        String?
+  state           String?  @default("Maharashtra")
+  producerType    String?  @default("Farmer")
+  category        String?  @default("Fresh Vegetables & Fruits")
+  farmName        String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  // Private business data owned by this farmer
+  products          Product[]
+  logisticsRequests LogisticsRequest[]
+
+  @@map("farmer_profiles")
+}
+
+// 1:1 Role Profile for Commercial Buyers / APMC Mandi Traders
+model BuyerProfile {
+  id              String   @id @default(uuid())
+  userId          String   @unique
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  businessName    String?
+  contactPerson   String?
+  businessType    String?  @default("APMC Licensed Commission Agent & Trader")
+  location        String?  @default("Navi Mumbai APMC Mandi")
+  gstin           String?
+  phone           String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  // Private business data owned by this buyer
+  procurements    ProcurementRequest[]
+
+  @@map("buyer_profiles")
+}
+
+// 1:1 Role Profile for Transporters / Fleet Drivers
+model TransporterProfile {
+  id              String   @id @default(uuid())
+  userId          String   @unique
+  user            User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  fullName        String?
+  vehicleType     String?  @default("Pickup (1.5 - 2.5 MT)")
+  vehicleRegNo    String?
+  capacity        String?  @default("2.0 MT")
+  operatingRegion String?  @default("Western Maharashtra (Pune - Satara - Kolhapur)")
+  ownership       String?  @default("Driver & Owner")
+  phone           String?
+  createdAt       DateTime @default(now())
+  updatedAt       DateTime @updatedAt
+
+  // Private business data owned by this transporter
+  vehicles        TransporterVehicle[]
+  assignedTrips   LogisticsRequest[]
+
+  @@map("transporter_profiles")
+}
+
+// User-Owned Private Product / Harvest Batches
+model Product {
+  id          String        @id @default(uuid())
+  farmerId    String
+  farmer      FarmerProfile @relation(fields: [farmerId], references: [id], onDelete: Cascade)
+  name        String
+  category    String
+  quantity    String
+  grade       String
+  harvestDate String
+  status      String        @default("Available")
+  createdAt   DateTime      @default(now())
+  updatedAt   DateTime      @updatedAt
+
+  logisticsRequests LogisticsRequest[]
+
+  @@map("products")
+}
+
+// User-Owned Private Logistics / Delivery Requests
+model LogisticsRequest {
+  id                   String              @id @default(uuid())
+  farmerId             String
+  farmer               FarmerProfile       @relation(fields: [farmerId], references: [id], onDelete: Cascade)
+  productId            String?
+  product              Product?            @relation(fields: [productId], references: [id], onDelete: SetNull)
+  transporterId        String?
+  transporter          TransporterProfile? @relation(fields: [transporterId], references: [id], onDelete: SetNull)
+  vehicleId            String?
+  vehicleRef           TransporterVehicle? @relation(fields: [vehicleId], references: [id], onDelete: SetNull)
+  productName          String
+  quantity             String?
+  pickupLocation       String?
+  estimatedEarnings    String?
+  status               String              @default("Searching")
+  driver               String?
+  vehicle              String?
+  destination          String
+  eta                  String?
+  procurementRequestId String?
+  procurementRequest   ProcurementRequest? @relation(fields: [procurementRequestId], references: [id], onDelete: SetNull)
+  createdAt            DateTime            @default(now())
+  updatedAt            DateTime            @updatedAt
+
+  @@map("logistics_requests")
+}
+
+// User-Owned Private Commercial Procurement Requests
+model ProcurementRequest {
+  id                 String             @id @default(uuid())
+  buyerId            String
+  buyer              BuyerProfile       @relation(fields: [buyerId], references: [id], onDelete: Cascade)
+  product            String
+  quantity           String
+  targetPrice        String
+  destination        String
+  requiredBy         String
+  buyerName          String
+  farmerName         String?
+  status             String             @default("Open")
+  logisticsRequestId String?
+  createdAt          DateTime           @default(now())
+  updatedAt          DateTime           @updatedAt
+
+  logisticsRequests  LogisticsRequest[]
+
+  @@map("procurement_requests")
+}
+
+// User-Owned Private Transporter Vehicles
+model TransporterVehicle {
+  id                String             @id @default(uuid())
+  transporterId     String
+  transporter       TransporterProfile @relation(fields: [transporterId], references: [id], onDelete: Cascade)
+  type              String
+  registration      String             @unique
+  capacity          String
+  capacityKg        Int                @default(0)
+  status            String             @default("Available")
+  utilization       Int                @default(0)
+  createdAt         DateTime           @default(now())
+  updatedAt         DateTime           @updatedAt
+
+  logisticsRequests LogisticsRequest[]
+
+  @@map("transporter_vehicles")
+}
+
+// Platform-Wide / Shared Market Intelligence (NO farmerId! Global Platform Data)
+model MarketOpportunity {
+  id                 String   @id @default(uuid())
+  demandItem         String
+  buyer              String
+  price              String
+  quantityRequired   String
+  distance           String
+  logisticsAvailable Boolean  @default(true)
+  matchScore         Int      @default(90)
+  createdAt          DateTime @default(now())
+  updatedAt          DateTime @updatedAt
+
+  @@map("market_opportunities")
 }

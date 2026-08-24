@@ -5,11 +5,14 @@ import { ArrowLeft, ShoppingCart, Search, Sparkles, CheckCircle } from 'lucide-r
 import { useSharedContext } from '../../context/SharedContext';
 import type { ProcurementRequest } from '../../data/mockData';
 
+import { buyerApi } from '../../services/api';
+
 export const BuyerProcurementForm: React.FC = () => {
   const navigate = useNavigate();
   const location = useLocation();
   const prefill = location.state as { product?: string; quantity?: string; destination?: string } | undefined;
   const { state, dispatch } = useSharedContext();
+  const [isSubmitting, setIsSubmitting] = useState(false);
 
   const [formData, setFormData] = useState(() => ({
     product: prefill?.product || '',
@@ -34,27 +37,58 @@ export const BuyerProcurementForm: React.FC = () => {
     setStep('matching');
   };
 
-  const handleConfirm = () => {
-    const newProcurement: ProcurementRequest = {
-      id: `PR-${Math.floor(1000 + Math.random() * 9000)}`,
-      product: formData.product,
-      quantity: formData.quantity,
-      targetPrice: formData.targetPrice || 'Market Price',
-      destination: formData.destination,
-      requiredBy: formData.requiredBy || 'Flexible',
-      buyerName: 'Rajesh Singhania',
-      status: 'Open',
-      logisticsRequestId: null,
-      createdAt: new Date().toISOString(),
-    };
+  const handleConfirm = async () => {
+    setIsSubmitting(true);
+    try {
+      let createdProc: ProcurementRequest;
+      try {
+        const remote = await buyerApi.createProcurement({
+          product: formData.product,
+          quantity: formData.quantity,
+          targetPrice: formData.targetPrice || 'Market Price',
+          destination: formData.destination,
+          requiredBy: formData.requiredBy || 'Flexible',
+        });
 
-    dispatch({ type: 'CREATE_PROCUREMENT', payload: newProcurement });
-    dispatch({
-      type: 'ADD_NOTIFICATION',
-      payload: { message: `Procurement request ${newProcurement.id} created for ${newProcurement.product}.`, type: 'success' }
-    });
+        createdProc = {
+          id: remote.id,
+          product: remote.product,
+          quantity: remote.quantity,
+          targetPrice: remote.targetPrice,
+          destination: remote.destination,
+          requiredBy: remote.requiredBy,
+          buyerName: remote.buyerName || state.auth.user?.name || 'Commercial Buyer',
+          farmerName: remote.farmerName || undefined,
+          status: (remote.status as ProcurementRequest['status']) || 'Open',
+          logisticsRequestId: remote.logisticsRequestId || null,
+          createdAt: remote.createdAt || new Date().toISOString(),
+        };
+      } catch {
+        const fallbackId = `PR-${Math.floor(1000 + Math.random() * 9000)}`;
+        createdProc = {
+          id: fallbackId,
+          product: formData.product,
+          quantity: formData.quantity,
+          targetPrice: formData.targetPrice || 'Market Price',
+          destination: formData.destination,
+          requiredBy: formData.requiredBy || 'Flexible',
+          buyerName: state.auth.user?.name || 'Commercial Buyer',
+          status: 'Open',
+          logisticsRequestId: null,
+          createdAt: new Date().toISOString(),
+        };
+      }
 
-    navigate('/buyer/orders');
+      dispatch({ type: 'CREATE_PROCUREMENT', payload: createdProc });
+      dispatch({
+        type: 'ADD_NOTIFICATION',
+        payload: { message: `Procurement request ${createdProc.id} created for ${createdProc.product}.`, type: 'success' }
+      });
+
+      navigate('/buyer/orders');
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   return (
@@ -216,9 +250,10 @@ export const BuyerProcurementForm: React.FC = () => {
             </button>
             <button
               onClick={handleConfirm}
-              className="flex-1 py-3 rounded-xl bg-violet-600 hover:bg-violet-500 text-white font-bold text-sm transition-colors shadow-lg shadow-violet-500/20"
+              disabled={isSubmitting}
+              className="flex-1 py-3 rounded-xl bg-violet-600 hover:bg-violet-500 disabled:opacity-50 text-white font-bold text-sm transition-colors shadow-lg shadow-violet-500/20 flex items-center justify-center gap-2"
             >
-              Submit Procurement Request
+              {isSubmitting ? 'Submitting Procurement...' : 'Submit Procurement Request'}
             </button>
           </div>
         </motion.div>

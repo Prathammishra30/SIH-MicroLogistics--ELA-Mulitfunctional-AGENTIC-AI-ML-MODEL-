@@ -17,7 +17,7 @@ import { useSharedContext } from '../../context/SharedContext';
 
 export const TransporterDashboard: React.FC = () => {
   const navigate = useNavigate();
-  const { state } = useSharedContext();
+  const { state, logout } = useSharedContext();
   
   const availableTrips = state.logisticsRequests.filter(req => req.status === 'Searching');
   const activeTrips = state.logisticsRequests.filter(req => req.status !== 'Searching' && req.status !== 'Delivered');
@@ -47,14 +47,20 @@ export const TransporterDashboard: React.FC = () => {
 
   const dynamicUtilization = calculateActiveUtilization();
 
-  // Dynamic MTD Earnings
-  const baseEarnings = 32450;
+  // Dynamic MTD Earnings (from delivered trips only — no hardcoded base)
   const deliveredTrips = state.logisticsRequests.filter(req => req.status === 'Delivered');
   const deliveredEarnings = deliveredTrips.reduce((sum, req) => {
     const numeric = parseInt(req.estimatedEarnings?.replace(/[^0-9]/g, '') || '1850', 10);
     return sum + (isNaN(numeric) ? 1850 : numeric);
   }, 0);
-  const totalEarnings = baseEarnings + deliveredEarnings;
+  const totalEarnings = deliveredEarnings;
+
+  // Dynamic user info
+  const userName = state.auth.user?.name || 'Transporter';
+  const primaryVehicle = state.vehicles.length > 0 ? state.vehicles[0] : null;
+  const vehicleInfo = primaryVehicle
+    ? `${primaryVehicle.type} (${primaryVehicle.registration} • ${primaryVehicle.capacity})`
+    : 'No vehicle registered — Add one from Vehicle & Health Status';
 
   return (
     <div className="relative min-h-screen flex flex-col justify-between z-10 px-4 sm:px-6 lg:px-8 py-6 max-w-7xl mx-auto w-full text-slate-100">
@@ -68,14 +74,14 @@ export const TransporterDashboard: React.FC = () => {
           <div>
             <div className="flex items-center gap-2">
               <h1 className="text-xl sm:text-2xl font-bold text-white tracking-tight">
-                Good morning, Transporter 👋
+                Good morning, {userName} 👋
               </h1>
               <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-sky-500/10 text-sky-400 border border-sky-500/20">
                 Active Fleet Partner
               </span>
             </div>
             <p className="text-xs text-slate-400">
-              Sunil Deshmukh • Bolero Pickup (MH 12 AB 1234 • 2.0 MT Capacity)
+              {vehicleInfo}
             </p>
           </div>
         </div>
@@ -93,7 +99,7 @@ export const TransporterDashboard: React.FC = () => {
 
           <button
             type="button"
-            onClick={() => navigate('/auth/transporter')}
+            onClick={() => { logout(); navigate('/'); }}
             className="px-3.5 py-2 rounded-xl bg-slate-900 border border-rose-500/30 hover:bg-rose-500/10 text-rose-400 text-xs font-semibold flex items-center gap-1.5 transition-colors"
           >
             <LogOut className="w-3.5 h-3.5" />
