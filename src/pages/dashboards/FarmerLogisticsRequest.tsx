@@ -1,10 +1,8 @@
 import React, { useState } from 'react';
 import { useNavigate, useLocation } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
-import { Truck, ArrowLeft, Loader2, Search, CheckCircle } from 'lucide-react';
+import { Truck, ArrowLeft, Loader2, Search, CheckCircle, MapPin, Calendar, Package } from 'lucide-react';
 import { useSharedContext } from '../../context/SharedContext';
 import type { LogisticsRequest, MarketOpportunity } from '../../data/mockData';
-
 import { farmerApi } from '../../services/api';
 
 export const FarmerLogisticsRequest: React.FC = () => {
@@ -15,16 +13,16 @@ export const FarmerLogisticsRequest: React.FC = () => {
   const marketState = location.state?.market as MarketOpportunity | undefined;
   const procurementState = location.state?.procurement as { id: string; product: string; quantity: string; destination: string } | undefined;
   const matchingProcurement = state.procurementRequests.find(
-    pr => pr.id === procurementState?.id || (marketState && (pr.id === marketState.id || pr.id === marketState.procurementId))
+    (pr) => pr.id === procurementState?.id || (marketState && (pr.id === marketState.id || pr.id === marketState.procurementId))
   );
 
   const [formData, setFormData] = useState(() => ({
     product: procurementState?.product || marketState?.demandItem || '',
     quantity: procurementState?.quantity || marketState?.quantityRequired || '',
-    pickupLocation: 'Village A',
-    destination: procurementState?.destination || marketState?.buyer || '',
-    pickupDate: '',
-    vehicleRequirement: 'Any'
+    pickupLocation: 'Baramati Farm Gate',
+    destination: procurementState?.destination || marketState?.buyer || 'Pune APMC Mandi',
+    pickupDate: new Date().toISOString().split('T')[0],
+    vehicleRequirement: 'Mini Truck / Bolero Pickup'
   }));
 
   const [isSearching, setIsSearching] = useState(false);
@@ -36,17 +34,18 @@ export const FarmerLogisticsRequest: React.FC = () => {
     setIsSearching(true);
     setMatchFound(false);
     
-    // Simulate finding a transport match
     setTimeout(() => {
       setIsSearching(false);
       setMatchFound(true);
-    }, 1200);
+    }, 800);
   };
 
   const handleConfirm = async () => {
     setIsSubmitting(true);
     try {
-      const selectedProduct = state.products.find(p => p.name.toLowerCase() === formData.product.toLowerCase());
+      const selectedProduct = state.products.find(
+        (p) => p.name.toLowerCase() === formData.product.toLowerCase()
+      );
       
       let createdDelivery: LogisticsRequest;
       try {
@@ -81,7 +80,6 @@ export const FarmerLogisticsRequest: React.FC = () => {
           procurementRequestId: remote.procurementRequestId || matchingProcurement?.id,
         };
       } catch {
-        // Fallback for offline simulation
         const fallbackId = `RF-00${Math.floor(100 + Math.random() * 900)}`;
         createdDelivery = {
           id: fallbackId,
@@ -106,219 +104,214 @@ export const FarmerLogisticsRequest: React.FC = () => {
       }
 
       dispatch({ type: 'CREATE_DELIVERY', payload: createdDelivery });
-
+      
       if (matchingProcurement) {
         dispatch({
           type: 'UPDATE_PROCUREMENT',
-          payload: {
-            id: matchingProcurement.id,
-            status: 'Logistics Requested',
-            logisticsRequestId: createdDelivery.id,
-            farmerName: 'Ramesh Patel'
-          }
+          payload: { id: matchingProcurement.id, status: 'Logistics Requested' }
         });
       }
 
-      dispatch({ 
-        type: 'ADD_NOTIFICATION', 
-        payload: { message: `Logistics request created and assigned successfully to shipment ${createdDelivery.id}.`, type: 'success' } 
+      dispatch({
+        type: 'ADD_NOTIFICATION',
+        payload: {
+          message: `Logistics request for ${formData.product} has been broadcast to regional transporters.`,
+          type: 'success'
+        }
       });
-      
-      navigate('/farmer/deliveries');
-    } finally {
+
+      navigate(`/farmer/deliveries/${createdDelivery.id}`);
+    } catch {
       setIsSubmitting(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 p-4 sm:p-6 lg:p-8 max-w-4xl mx-auto w-full relative z-10">
-      <header className="flex items-center gap-4 mb-8">
-        <button 
+    <div className="max-w-2xl mx-auto space-y-6">
+      <header className="flex items-center gap-3 bg-white p-5 rounded-2xl border border-gray-200 shadow-2xs">
+        <button
           onClick={() => navigate('/farmer/dashboard')}
-          className="p-2 rounded-xl bg-slate-900 border border-slate-800 hover:bg-slate-800 text-slate-400 hover:text-white transition-colors"
+          className="p-2 rounded-xl bg-gray-50 border border-gray-200 hover:bg-gray-100 text-gray-600 hover:text-gray-900 transition-colors cursor-pointer"
         >
-          <ArrowLeft className="w-5 h-5" />
+          <ArrowLeft className="w-4 h-4" />
         </button>
         <div>
-          <h1 className="text-xl sm:text-2xl font-bold text-white flex items-center gap-2">
-            <Truck className="w-6 h-6 text-sky-400" />
-            Create Logistics Request
+          <h1 className="text-xl font-bold text-gray-900 flex items-center gap-2">
+            <Truck className="w-5 h-5 text-amber-700" />
+            Book Rural Logistics
           </h1>
-          <p className="text-sm text-slate-400">Book transport for your products to market.</p>
+          <p className="text-xs text-gray-500">Request shared vehicle capacity for your harvested farm produce.</p>
         </div>
       </header>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        <form onSubmit={handleSearch} className="p-6 rounded-2xl bg-slate-900/80 border border-slate-800 space-y-6">
-          <div className="space-y-4">
+      {/* Main Form */}
+      <form onSubmit={handleSearch} className="p-6 rounded-2xl bg-white border border-gray-200 shadow-2xs space-y-5">
+        <div className="space-y-4">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-semibold text-slate-400 mb-1.5 uppercase tracking-wide">Select Product</label>
-              <select 
-                value={formData.product}
-                onChange={(e) => setFormData({...formData, product: e.target.value})}
-                required
-                className="w-full bg-slate-950 border border-slate-800 focus:border-sky-500 rounded-xl px-4 py-2.5 text-sm text-white outline-none transition-colors appearance-none"
-              >
-                <option value="">-- Choose Product --</option>
-                {state.products.map(p => (
-                  <option key={p.id} value={p.name}>{p.name}</option>
-                ))}
-                {marketState && !state.products.find(p => p.name === marketState.demandItem) && (
-                   <option value={marketState.demandItem}>{marketState.demandItem}</option>
-                )}
-              </select>
+              <label className="block text-xs font-semibold text-gray-700 mb-1">
+                Produce / Cargo Item *
+              </label>
+              <div className="relative">
+                <Package className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                <input
+                  type="text"
+                  required
+                  value={formData.product}
+                  onChange={(e) => setFormData({ ...formData, product: e.target.value })}
+                  placeholder="e.g. Tomatoes, Onions, Mangoes"
+                  className="w-full pl-9 pr-3 py-2.5 rounded-xl bg-white border border-gray-300 text-gray-900 text-xs focus:border-green-600 focus:ring-2 focus:ring-green-100 outline-none"
+                />
+              </div>
             </div>
-            
+
             <div>
-              <label className="block text-xs font-semibold text-slate-400 mb-1.5 uppercase tracking-wide">Quantity</label>
-              <input 
-                type="text" 
+              <label className="block text-xs font-semibold text-gray-700 mb-1">
+                Quantity to Move *
+              </label>
+              <input
+                type="text"
                 required
                 value={formData.quantity}
-                onChange={(e) => setFormData({...formData, quantity: e.target.value})}
-                placeholder="e.g., 500 kg" 
-                className="w-full bg-slate-950 border border-slate-800 focus:border-sky-500 rounded-xl px-4 py-2.5 text-sm text-white outline-none transition-colors"
+                onChange={(e) => setFormData({ ...formData, quantity: e.target.value })}
+                placeholder="e.g. 500 kg, 1.2 MT"
+                className="w-full px-3 py-2.5 rounded-xl bg-white border border-gray-300 text-gray-900 text-xs focus:border-green-600 focus:ring-2 focus:ring-green-100 outline-none"
               />
             </div>
+          </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-xs font-semibold text-slate-400 mb-1.5 uppercase tracking-wide">Pickup Location</label>
-                <input 
-                  type="text" 
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs font-semibold text-gray-700 mb-1">
+                Farm Pickup Location *
+              </label>
+              <div className="relative">
+                <MapPin className="w-4 h-4 text-green-700 absolute left-3 top-1/2 -translate-y-1/2" />
+                <input
+                  type="text"
                   required
                   value={formData.pickupLocation}
-                  onChange={(e) => setFormData({...formData, pickupLocation: e.target.value})}
-                  className="w-full bg-slate-950 border border-slate-800 focus:border-sky-500 rounded-xl px-4 py-2.5 text-sm text-white outline-none transition-colors"
-                />
-              </div>
-              <div>
-                <label className="block text-xs font-semibold text-slate-400 mb-1.5 uppercase tracking-wide">Destination</label>
-                <input 
-                  type="text" 
-                  required
-                  value={formData.destination}
-                  onChange={(e) => setFormData({...formData, destination: e.target.value})}
-                  className="w-full bg-slate-950 border border-slate-800 focus:border-sky-500 rounded-xl px-4 py-2.5 text-sm text-white outline-none transition-colors"
+                  onChange={(e) => setFormData({ ...formData, pickupLocation: e.target.value })}
+                  placeholder="e.g. Village Baramati Farm Gate"
+                  className="w-full pl-9 pr-3 py-2.5 rounded-xl bg-white border border-gray-300 text-gray-900 text-xs focus:border-green-600 focus:ring-2 focus:ring-green-100 outline-none"
                 />
               </div>
             </div>
 
-            <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-              <div>
-                <label className="block text-xs font-semibold text-slate-400 mb-1.5 uppercase tracking-wide">Pickup Date</label>
-                <input 
-                  type="date" 
+            <div>
+              <label className="block text-xs font-semibold text-gray-700 mb-1">
+                Drop / Mandi Destination *
+              </label>
+              <div className="relative">
+                <MapPin className="w-4 h-4 text-amber-700 absolute left-3 top-1/2 -translate-y-1/2" />
+                <input
+                  type="text"
                   required
-                  value={formData.pickupDate}
-                  onChange={(e) => setFormData({...formData, pickupDate: e.target.value})}
-                  className="w-full bg-slate-950 border border-slate-800 focus:border-sky-500 rounded-xl px-4 py-2.5 text-sm text-white outline-none transition-colors [color-scheme:dark]"
+                  value={formData.destination}
+                  onChange={(e) => setFormData({ ...formData, destination: e.target.value })}
+                  placeholder="e.g. Pune APMC Market Yard"
+                  className="w-full pl-9 pr-3 py-2.5 rounded-xl bg-white border border-gray-300 text-gray-900 text-xs focus:border-green-600 focus:ring-2 focus:ring-green-100 outline-none"
                 />
-              </div>
-              <div>
-                <label className="block text-xs font-semibold text-slate-400 mb-1.5 uppercase tracking-wide">Vehicle Requirement</label>
-                <select 
-                  value={formData.vehicleRequirement}
-                  onChange={(e) => setFormData({...formData, vehicleRequirement: e.target.value})}
-                  className="w-full bg-slate-950 border border-slate-800 focus:border-sky-500 rounded-xl px-4 py-2.5 text-sm text-white outline-none transition-colors appearance-none"
-                >
-                  <option value="Any">Any Suitable Vehicle</option>
-                  <option value="Cold Storage">Cold Storage Truck</option>
-                  <option value="Open Carrier">Open Carrier</option>
-                </select>
               </div>
             </div>
           </div>
 
-          <button 
-            type="submit"
-            disabled={isSearching || matchFound}
-            className="w-full py-3 rounded-xl bg-sky-500 hover:bg-sky-600 disabled:opacity-50 disabled:cursor-not-allowed text-white font-bold text-sm transition-colors flex items-center justify-center gap-2 mt-4"
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+            <div>
+              <label className="block text-xs font-semibold text-gray-700 mb-1">
+                Ready Pickup Date
+              </label>
+              <div className="relative">
+                <Calendar className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
+                <input
+                  type="date"
+                  value={formData.pickupDate}
+                  onChange={(e) => setFormData({ ...formData, pickupDate: e.target.value })}
+                  className="w-full pl-9 pr-3 py-2.5 rounded-xl bg-white border border-gray-300 text-gray-900 text-xs focus:border-green-600 focus:ring-2 focus:ring-green-100 outline-none"
+                />
+              </div>
+            </div>
+
+            <div>
+              <label className="block text-xs font-semibold text-gray-700 mb-1">
+                Recommended Vehicle Category
+              </label>
+              <select
+                value={formData.vehicleRequirement}
+                onChange={(e) => setFormData({ ...formData, vehicleRequirement: e.target.value })}
+                className="w-full px-3 py-2.5 rounded-xl bg-white border border-gray-300 text-gray-900 text-xs focus:border-green-600 focus:ring-2 focus:ring-green-100 outline-none"
+              >
+                <option value="Mini Truck / Bolero Pickup">Mini Truck / Bolero Pickup (1.5 - 2.5 MT)</option>
+                <option value="Tata Ace (750 kg)">Tata Ace (750 kg)</option>
+                <option value="Medium Goods Carrier (3.5 MT)">Medium Goods Carrier (3.5 MT)</option>
+                <option value="Three Wheeler Cargo (500 kg)">Three Wheeler Cargo (500 kg)</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <button
+          type="submit"
+          disabled={isSearching}
+          className="w-full py-2.5 rounded-xl bg-[#2E7D32] hover:bg-[#256628] text-white text-xs font-semibold shadow-2xs transition-colors flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
+        >
+          {isSearching ? (
+            <>
+              <Loader2 className="w-4 h-4 animate-spin" />
+              <span>Scanning Active Transporter Fleet...</span>
+            </>
+          ) : (
+            <>
+              <Search className="w-4 h-4" />
+              <span>Find Nearby Vehicle Matches</span>
+            </>
+          )}
+        </button>
+      </form>
+
+      {/* Match Found Card */}
+      {matchFound && (
+        <div className="p-6 rounded-2xl bg-white border border-green-200 shadow-2xs space-y-4">
+          <div className="flex items-center gap-2 text-[#2E7D32]">
+            <CheckCircle className="w-5 h-5" />
+            <h3 className="text-sm font-bold text-gray-900">Nearby Return Vehicle Capacity Found</h3>
+          </div>
+
+          <div className="p-4 rounded-xl bg-[#E8F5E9]/50 border border-green-200 space-y-2 text-xs">
+            <div className="flex items-center justify-between">
+              <span className="text-gray-600">Available Vehicle:</span>
+              <strong className="text-gray-900">Mahindra Bolero Maxi Truck (MH-12-PQ-8890)</strong>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-gray-600">Route Match:</span>
+              <span className="text-gray-900 font-medium">Baramati → Pune Highway</span>
+            </div>
+            <div className="flex items-center justify-between">
+              <span className="text-gray-600">Estimated Transport Fare:</span>
+              <strong className="text-[#2E7D32] text-sm font-mono">₹1,850 (Shared Rate)</strong>
+            </div>
+          </div>
+
+          <button
+            type="button"
+            onClick={handleConfirm}
+            disabled={isSubmitting}
+            className="w-full py-2.5 rounded-xl bg-[#2E7D32] hover:bg-[#256628] text-white text-xs font-semibold shadow-2xs transition-colors flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
           >
-            {isSearching ? (
-              <Loader2 className="w-5 h-5 animate-spin" />
-            ) : matchFound ? (
+            {isSubmitting ? (
               <>
-                <CheckCircle className="w-5 h-5" />
-                Transport Match Found
+                <Loader2 className="w-4 h-4 animate-spin" />
+                <span>Broadcasting to Fleet...</span>
               </>
             ) : (
               <>
-                <Search className="w-5 h-5" />
-                Find Transport
+                <Truck className="w-4 h-4" />
+                <span>Confirm & Broadcast Logistics Request</span>
               </>
             )}
           </button>
-        </form>
-
-        <div>
-          <AnimatePresence>
-            {matchFound && (
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                className="p-6 rounded-2xl bg-sky-500/10 border border-sky-500/30 flex flex-col gap-6"
-              >
-                <div className="flex items-center gap-3 border-b border-sky-500/20 pb-4">
-                  <div className="p-3 rounded-full bg-sky-500/20 text-sky-400">
-                    <Truck className="w-6 h-6" />
-                  </div>
-                  <div>
-                    <h3 className="text-lg font-bold text-white">Potential Transport Match</h3>
-                    <p className="text-sm text-sky-400">Optimal vehicle found nearby</p>
-                  </div>
-                </div>
-
-                <div className="space-y-4">
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm text-slate-400">Vehicle Type</span>
-                    <span className="text-sm font-semibold text-white">Medium Goods Carrier</span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm text-slate-400">Available Capacity</span>
-                    <span className="text-sm font-semibold text-white">700 kg</span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm text-slate-400">Estimated Distance</span>
-                    <span className="text-sm font-semibold text-white">18 km</span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm text-slate-400">Estimated Cost</span>
-                    <span className="text-lg font-bold text-emerald-400 font-mono">₹1,850</span>
-                  </div>
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm text-slate-400">Availability</span>
-                    <span className="text-sm font-semibold text-sky-400 flex items-center gap-1">
-                      <CheckCircle className="w-4 h-4" /> Available Now
-                    </span>
-                  </div>
-                </div>
-
-                <button 
-                  onClick={handleConfirm}
-                  disabled={isSubmitting}
-                  className="w-full py-3 rounded-xl bg-emerald-500 hover:bg-emerald-600 disabled:opacity-50 text-white font-bold text-sm transition-colors mt-2 flex items-center justify-center gap-2"
-                >
-                  {isSubmitting ? (
-                    <>
-                      <Loader2 className="w-4 h-4 animate-spin" />
-                      <span>Confirming Transport...</span>
-                    </>
-                  ) : (
-                    'Confirm Transport'
-                  )}
-                </button>
-              </motion.div>
-            )}
-          </AnimatePresence>
-
-          {!matchFound && !isSearching && (
-            <div className="h-full border border-dashed border-slate-800 rounded-2xl flex items-center justify-center text-slate-500 p-8 text-center text-sm">
-              Fill out the request form and click "Find Transport" to match with available drivers on the RuralFlow network.
-            </div>
-          )}
         </div>
-      </div>
+      )}
     </div>
   );
 };

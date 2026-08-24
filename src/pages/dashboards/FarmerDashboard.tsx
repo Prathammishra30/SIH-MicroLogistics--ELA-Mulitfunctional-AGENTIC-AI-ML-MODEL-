@@ -1,349 +1,343 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import {
-  Sprout,
   TrendingUp,
   Package,
   Truck,
   ArrowRight,
-  LogOut,
-  Layers,
-  CheckCircle2,
-  Calendar,
-  AlertCircle,
-  Home,
-  Plus
+  Clock,
+  Plus,
+  IndianRupee,
+  Eye,
 } from 'lucide-react';
 import { QuickActions } from '../../components/dashboards/QuickActions';
 import type { QuickAction } from '../../components/dashboards/QuickActions';
 import { useSharedContext } from '../../context/SharedContext';
+import { useLanguage } from '../../context/LanguageContext';
 
 export const FarmerDashboard: React.FC = () => {
   const navigate = useNavigate();
-  const { state, logout } = useSharedContext();
+  const { state } = useSharedContext();
+  const { t } = useLanguage();
 
   const userName = state.auth.user?.name || 'Farmer';
 
-  // Combine open buyer procurements with market opportunities
-  const liveBuyerDemands = state.procurementRequests.filter(pr => pr.status === 'Open');
-  const allDemandsCount = liveBuyerDemands.length + state.marketOpportunities.length;
+  // Metrics calculations
+  const totalProducts = state.products.length;
+  const activeLogistics = state.logisticsRequests.filter(
+    (lr) => lr.status === 'Assigned' || lr.status === 'In Transit'
+  ).length;
+  const pendingRequests = state.logisticsRequests.filter(
+    (lr) => lr.status === 'Searching'
+  ).length;
 
-  const topOpportunities = [
-    ...liveBuyerDemands.map(pr => ({
-      id: pr.id,
-      name: `${pr.product} (${pr.quantity})`,
-      price: pr.targetPrice,
-      source: `${pr.buyerName} • ${pr.destination}`,
-      badge: 'Live Buyer Demand',
-      isLive: true
-    })),
-    ...state.marketOpportunities.map(mo => ({
-      id: mo.id,
-      name: mo.demandItem,
-      price: mo.price,
-      source: `${mo.buyer} • Requires ${mo.quantityRequired}`,
-      badge: 'Regional Mandi',
-      isLive: false
-    }))
-  ];
+  // Earnings estimate based on completed or active transactions
+  const totalEarningsVal = state.products.reduce((acc, p) => {
+    const qty = parseInt(p.quantity, 10) || 0;
+    return acc + (qty * 25);
+  }, 0);
 
-  const activeShipment = state.logisticsRequests.find(lr => lr.status !== 'Delivered') || state.logisticsRequests[0];
+  const formattedEarnings = `₹${totalEarningsVal.toLocaleString('en-IN')}`;
 
-  // Dynamic recent activities based on actual user events
-  const dynamicActivities = [
-    ...state.notifications.map(n => ({
-      id: `notif-${n.id}`,
-      title: n.message,
-      subtitle: 'System Notification • Real-Time Update',
-      type: n.type === 'success' ? 'success' : n.type === 'warning' ? 'warning' : 'info'
-    })),
-    ...state.logisticsRequests.map(lr => ({
-      id: `lr-${lr.id}-${lr.status}`,
-      title: `Shipment #${lr.id} ${lr.status === 'Delivered' ? 'Delivered & Verified' : lr.status === 'In Transit' ? 'In Transit to Market' : lr.status === 'Assigned' ? 'Transporter Assigned' : 'Logistics Requested'}`,
-      subtitle: `${lr.productName} (${lr.quantity || 'Load'}) • ${lr.driver ? `Driver: ${lr.driver}` : 'Awaiting Driver'} • ${lr.destination}`,
-      type: lr.status === 'Delivered' ? 'success' : lr.status === 'In Transit' ? 'info' : 'warning'
-    })),
-    ...state.procurementRequests.filter(pr => pr.status === 'Fulfilling' || pr.status === 'Logistics Requested').map(pr => ({
-      id: `pr-${pr.id}`,
-      title: `Demand Fulfilled: ${pr.product} (${pr.quantity})`,
-      subtitle: `Buyer: ${pr.buyerName} • Target: ${pr.destination}`,
-      type: 'success'
-    })),
-    ...state.products.slice(0, 2).map(p => ({
-      id: `prd-${p.id}`,
-      title: `Product Listed: ${p.name} (${p.quantity})`,
-      subtitle: `${p.category} • ${p.grade} • Harvest: ${p.harvestDate}`,
-      type: 'info'
-    }))
-  ];
+  // Live buyer demands
+  const liveBuyerDemands = state.procurementRequests.filter((pr) => pr.status === 'Open');
 
-  const recentActivities = dynamicActivities.slice(0, 3);
-
+  // Quick actions
   const quickActions: QuickAction[] = [
-    { id: 'qa-1', label: 'Add Product', icon: <Plus className="w-5 h-5" />, colorClass: 'bg-emerald-500/20 text-emerald-400', onClick: () => navigate('/farmer/products/new') },
-    { id: 'qa-2', label: 'My Products', icon: <Package className="w-5 h-5" />, colorClass: 'bg-emerald-500/20 text-emerald-400', onClick: () => navigate('/farmer/products') },
-    { id: 'qa-3', label: 'Market Demand', icon: <TrendingUp className="w-5 h-5" />, colorClass: 'bg-amber-500/20 text-amber-400', onClick: () => navigate('/farmer/markets') },
-    { id: 'qa-4', label: 'Logistics', icon: <Truck className="w-5 h-5" />, colorClass: 'bg-violet-500/20 text-violet-400', onClick: () => navigate('/farmer/logistics') }
+    {
+      id: 'qa-1',
+      label: 'Add Produce',
+      icon: <Plus className="w-5 h-5" />,
+      colorClass: 'bg-[#E8F5E9] text-[#2E7D32]',
+      onClick: () => navigate('/farmer/products/new'),
+    },
+    {
+      id: 'qa-2',
+      label: 'My Products',
+      icon: <Package className="w-5 h-5" />,
+      colorClass: 'bg-[#E8F5E9] text-[#2E7D32]',
+      onClick: () => navigate('/farmer/products'),
+    },
+    {
+      id: 'qa-3',
+      label: 'Request Transport',
+      icon: <Truck className="w-5 h-5" />,
+      colorClass: 'bg-amber-50 text-amber-800',
+      onClick: () => navigate('/farmer/logistics'),
+    },
+    {
+      id: 'qa-4',
+      label: 'Market Demand',
+      icon: <TrendingUp className="w-5 h-5" />,
+      colorClass: 'bg-blue-50 text-blue-700',
+      onClick: () => navigate('/farmer/markets'),
+    },
   ];
-
-  const handleLogout = () => {
-    logout();
-    navigate('/');
-  };
 
   return (
-    <div className="relative min-h-screen flex flex-col justify-between z-10 px-4 sm:px-6 lg:px-8 py-6 max-w-7xl mx-auto w-full text-slate-100">
+    <div className="space-y-6">
       
-      {/* Top Dashboard Header */}
-      <header className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-6 border-b border-slate-800">
-        <div className="flex items-center gap-3">
-          <div className="w-12 h-12 rounded-2xl bg-emerald-500/10 border border-emerald-500/30 flex items-center justify-center text-emerald-400 shadow-md">
-            <Sprout className="w-6 h-6" />
-          </div>
-          <div>
-            <div className="flex items-center gap-2">
-              <h1 className="text-xl sm:text-2xl font-bold text-white tracking-tight">
-                Good morning, {userName} 👋
-              </h1>
-              <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-emerald-500/10 text-emerald-400 border border-emerald-500/20">
-                Verified Producer
-              </span>
+      {/* Full-width Welcome Banner (breaking out of container) */}
+      <div className="relative overflow-hidden flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 bg-gray-900 p-8 sm:p-12 -mx-4 sm:-mx-6 lg:-mx-8 -mt-6 mb-20 shadow-xl min-h-[220px]">
+        {/* Landscape Hero Image Background */}
+        <div className="absolute inset-0 z-0">
+          <img src="/images/farmer-seedling.jpg" className="w-full h-full object-cover object-center opacity-60 mix-blend-overlay" alt="" />
+          <div className="absolute inset-0 bg-gradient-to-r from-green-900/90 via-green-900/60 to-transparent"></div>
+        </div>
+
+        <div className="relative z-10">
+          <h1 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight drop-shadow-md">
+            {t('dashboard.welcome') || 'Welcome back'}, {userName}
+          </h1>
+          <p className="text-sm sm:text-base text-green-50 mt-2 max-w-xl font-medium drop-shadow-sm">
+            {t('dashboard.farmer.subtitle') || 'Agricultural operations overview, logistics status, and regional mandi demand.'}
+          </p>
+        </div>
+
+        <div className="flex items-center gap-3 relative z-10 mt-4 sm:mt-0">
+          <button
+            type="button"
+            onClick={() => navigate('/farmer/products/new')}
+            className="px-5 py-2.5 rounded-xl bg-white text-green-800 hover:bg-green-50 text-sm font-bold shadow-lg flex items-center gap-2 transition-colors cursor-pointer border border-green-100"
+          >
+            <Plus className="w-4 h-4" />
+            <span>{t('action.addProduce') || 'Add Produce'}</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => navigate('/farmer/logistics')}
+            className="px-5 py-2.5 rounded-xl bg-green-800/50 hover:bg-green-800/70 border border-green-500/50 text-white backdrop-blur-sm text-sm font-bold shadow-lg flex items-center gap-2 transition-colors cursor-pointer"
+          >
+            <Truck className="w-4 h-4" />
+            <span>{t('farmer.bookLogistics') || 'Book Logistics'}</span>
+          </button>
+        </div>
+      </div>
+
+      {/* Top 4 Summary KPI Cards (Overlapping the Hero) */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 -mt-32 relative z-20 mx-2 sm:mx-0">
+        {/* Total Products */}
+        <div className="p-5 rounded-2xl bg-white border border-gray-100 shadow-xl shadow-black/5 space-y-2 transform hover:-translate-y-1 transition-transform">
+          <div className="flex items-center justify-between text-gray-500">
+            <span className="text-xs font-bold uppercase tracking-wider">{t('dashboard.totalProducts') || 'Total Products'}</span>
+            <div className="w-8 h-8 rounded-full bg-green-50 flex items-center justify-center text-green-600">
+              <Package className="w-4 h-4" />
             </div>
-            <p className="text-xs text-slate-400">
-              {userName} • RuralFlow Micro-Logistics Network
-            </p>
           </div>
+          <div className="text-3xl font-black text-gray-900">{totalProducts}</div>
+          <span className="text-xs font-medium text-gray-500">{t('dashboard.listedInCatalog') || 'Listed in catalog'}</span>
         </div>
 
-        {/* Action controls */}
-        <div className="flex items-center gap-2 sm:gap-3 w-full sm:w-auto justify-end">
-          <button
-            type="button"
-            onClick={() => navigate('/')}
-            className="px-3.5 py-2 rounded-xl bg-slate-900 border border-slate-800 hover:border-slate-700 text-slate-300 hover:text-white text-xs font-semibold flex items-center gap-1.5 transition-colors"
-          >
-            <Home className="w-3.5 h-3.5" />
-            <span>Gateway</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={handleLogout}
-            className="px-3.5 py-2 rounded-xl bg-slate-900 border border-rose-500/30 hover:bg-rose-500/10 text-rose-400 text-xs font-semibold flex items-center gap-1.5 transition-colors"
-          >
-            <LogOut className="w-3.5 h-3.5" />
-            <span>Logout</span>
-          </button>
+        {/* Active Logistics */}
+        <div className="p-5 rounded-2xl bg-white border border-gray-100 shadow-xl shadow-black/5 space-y-2 transform hover:-translate-y-1 transition-transform">
+          <div className="flex items-center justify-between text-gray-500">
+            <span className="text-xs font-bold uppercase tracking-wider">{t('dashboard.activeLogistics') || 'Active Logistics'}</span>
+            <div className="w-8 h-8 rounded-full bg-amber-50 flex items-center justify-center text-amber-600">
+              <Truck className="w-4 h-4" />
+            </div>
+          </div>
+          <div className="text-3xl font-black text-gray-900">{activeLogistics}</div>
+          <span className="text-xs font-medium text-amber-600">{t('dashboard.inTransit') || 'In transit / assigned'}</span>
         </div>
-      </header>
-
-      {/* Quick Actions Component */}
-      <div className="mt-6">
-        <QuickActions actions={quickActions} />
-      </div>
-
-      {/* 4 Primary KPI Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mt-6">
         
-        {/* KPI 1 */}
-        <div 
-          onClick={() => navigate('/farmer/products')}
-          className="p-5 rounded-2xl bg-slate-900/80 border border-slate-800 hover:border-emerald-500/40 transition-all cursor-pointer"
-        >
-          <div className="flex items-center justify-between text-slate-400">
-            <span className="text-xs font-semibold uppercase tracking-wider">My Products</span>
-            <Package className="w-4 h-4 text-emerald-400" />
+        {/* Pending Requests */}
+        <div className="p-5 rounded-2xl bg-white border border-gray-100 shadow-xl shadow-black/5 space-y-2 transform hover:-translate-y-1 transition-transform">
+          <div className="flex items-center justify-between text-gray-500">
+            <span className="text-xs font-bold uppercase tracking-wider">{t('dashboard.pendingRequests') || 'Pending Requests'}</span>
+            <div className="w-8 h-8 rounded-full bg-blue-50 flex items-center justify-center text-blue-600">
+              <Clock className="w-4 h-4" />
+            </div>
           </div>
-          <div className="mt-3">
-            <span className="text-2xl sm:text-3xl font-extrabold text-white">{state.products.length} Batches</span>
-            <span className="text-xs text-emerald-400 block mt-1">
-              {state.products.length > 0 ? 'Recently updated' : 'No products yet'}
-            </span>
-          </div>
+          <div className="text-3xl font-black text-gray-900">{pendingRequests}</div>
+          <span className="text-xs font-medium text-gray-500">{t('dashboard.searchingVehicles') || 'Searching for vehicles'}</span>
         </div>
 
-        {/* KPI 2 */}
-        <div 
-          onClick={() => navigate('/farmer/markets')}
-          className="p-5 rounded-2xl bg-slate-900/80 border border-slate-800 hover:border-sky-500/40 transition-all cursor-pointer"
-        >
-          <div className="flex items-center justify-between text-slate-400">
-            <span className="text-xs font-semibold uppercase tracking-wider">Active Demands</span>
-            <Layers className="w-4 h-4 text-sky-400" />
+        {/* Est. Potential Value */}
+        <div className="p-5 rounded-2xl bg-white border border-gray-100 shadow-xl shadow-black/5 space-y-2 transform hover:-translate-y-1 transition-transform">
+          <div className="flex items-center justify-between text-gray-500">
+            <span className="text-xs font-bold uppercase tracking-wider">{t('dashboard.potentialValue') || 'Est. Value'}</span>
+            <div className="w-8 h-8 rounded-full bg-emerald-50 flex items-center justify-center text-emerald-600">
+              <IndianRupee className="w-4 h-4" />
+            </div>
           </div>
-          <div className="mt-3">
-            <span className="text-2xl sm:text-3xl font-extrabold text-white">{allDemandsCount} Demands</span>
-            <span className="text-xs text-sky-400 block mt-1">{liveBuyerDemands.length} Live Buyer Demands</span>
-          </div>
-        </div>
-
-        {/* KPI 3 */}
-        <div 
-          onClick={() => navigate('/farmer/markets')}
-          className="p-5 rounded-2xl bg-slate-900/80 border border-slate-800 hover:border-amber-500/40 transition-all cursor-pointer"
-        >
-          <div className="flex items-center justify-between text-slate-400">
-            <span className="text-xs font-semibold uppercase tracking-wider">Market Opportunities</span>
-            <TrendingUp className="w-4 h-4 text-amber-400" />
-          </div>
-          <div className="mt-3">
-            <span className="text-2xl sm:text-3xl font-extrabold text-white">{topOpportunities.length} Signals</span>
-            <span className="text-xs text-amber-400 block mt-1">Platform Market Demand</span>
-          </div>
-        </div>
-
-        {/* KPI 4 */}
-        <div 
-          onClick={() => navigate('/farmer/deliveries')}
-          className="p-5 rounded-2xl bg-slate-900/80 border border-slate-800 hover:border-violet-500/40 transition-all cursor-pointer"
-        >
-          <div className="flex items-center justify-between text-slate-400">
-            <span className="text-xs font-semibold uppercase tracking-wider">Deliveries</span>
-            <Truck className="w-4 h-4 text-violet-400" />
-          </div>
-          <div className="mt-3">
-            <span className="text-2xl sm:text-3xl font-extrabold text-white">{state.logisticsRequests.length} Active</span>
-            <span className="text-xs text-violet-400 block mt-1">
-              {state.logisticsRequests.filter(r => r.status !== 'Delivered').length} In progress
-            </span>
-          </div>
+          <div className="text-3xl font-black text-gray-900">{formattedEarnings}</div>
+          <span className="text-xs font-medium text-emerald-600">{t('dashboard.basedOnCatalog') || 'Based on active catalog'}</span>
         </div>
       </div>
 
-      {/* 3 Main Functional Sections */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-8">
+      {/* Quick Actions */}
+      <QuickActions actions={quickActions} />
+
+      {/* Main Grid: Active Logistics Table & Market Demand */}
+      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         
-        {/* Section 1: Platform-Wide Market Opportunities */}
-        <div className="p-6 rounded-2xl bg-slate-900/80 border border-slate-800 space-y-4">
+        {/* Left 2 Cols: Recent / Active Logistics Table */}
+        <div className="lg:col-span-2 bg-white rounded-2xl border border-gray-200 p-5 shadow-2xs space-y-4">
           <div className="flex items-center justify-between">
-            <h2 className="text-base font-bold text-white tracking-tight flex items-center gap-2">
-              <TrendingUp className="w-4 h-4 text-emerald-400" />
-              <span>Market Opportunities</span>
-            </h2>
-            <span className="text-[11px] text-emerald-400 font-semibold">{topOpportunities.length} Live Signals</span>
+            <div>
+              <h2 className="text-base font-bold text-gray-900">Recent & Active Logistics</h2>
+              <p className="text-xs text-gray-500">Real-time status of your agricultural crop shipments</p>
+            </div>
+            <button
+              onClick={() => navigate('/farmer/deliveries')}
+              className="text-xs font-semibold text-[#2E7D32] hover:underline flex items-center gap-1 cursor-pointer"
+            >
+              <span>View All</span>
+              <ArrowRight className="w-3.5 h-3.5" />
+            </button>
           </div>
 
-          <div className="space-y-3">
-            {topOpportunities.slice(0, 3).map(opp => (
-              <div 
-                key={opp.id} 
-                onClick={() => navigate('/farmer/markets')}
-                className="p-3.5 rounded-xl bg-slate-950 border border-slate-800/80 space-y-1.5 cursor-pointer hover:border-amber-500/30 transition-all"
+          {state.logisticsRequests.length === 0 ? (
+            <div className="p-8 text-center bg-gray-50 rounded-xl border border-dashed border-gray-200 space-y-2">
+              <Truck className="w-8 h-8 text-gray-400 mx-auto" />
+              <p className="text-xs text-gray-600 font-medium">No active logistics requests yet.</p>
+              <button
+                onClick={() => navigate('/farmer/logistics')}
+                className="text-xs font-bold text-[#2E7D32] hover:underline cursor-pointer"
               >
-                <div className="flex items-center justify-between text-xs">
-                  <span className="font-semibold text-white">{opp.name}</span>
-                  <span className="text-emerald-400 font-bold font-mono">{opp.price}</span>
-                </div>
-                <p className="text-[11px] text-slate-400">{opp.source}</p>
-                <div className="flex items-center justify-between text-[10px] text-slate-500 pt-1">
-                  <span className={`px-2 py-0.5 rounded font-semibold text-[10px] ${opp.isLive ? 'bg-violet-500/20 text-violet-300 border border-violet-500/30' : 'bg-emerald-500/10 text-emerald-400'}`}>
-                    {opp.badge}
-                  </span>
-                  <span className="text-sky-400 font-semibold">Click to view</span>
-                </div>
-              </div>
-            ))}
-            {topOpportunities.length === 0 && (
-              <div className="p-4 rounded-xl bg-slate-950 border border-dashed border-slate-800 text-center text-xs text-slate-500">
-                No active market signals at this time.
-              </div>
-            )}
-          </div>
+                Create your first transport request →
+              </button>
+            </div>
+          ) : (
+            <div className="overflow-x-auto">
+              <table className="w-full text-left text-xs">
+                <thead>
+                  <tr className="border-b border-gray-200 text-gray-500 font-semibold uppercase tracking-wider text-[10px] bg-gray-50/50">
+                    <th className="py-2.5 px-3">Product</th>
+                    <th className="py-2.5 px-3">Quantity</th>
+                    <th className="py-2.5 px-3">Pickup → Dest</th>
+                    <th className="py-2.5 px-3">Transporter</th>
+                    <th className="py-2.5 px-3">Status</th>
+                    <th className="py-2.5 px-3 text-right">Action</th>
+                  </tr>
+                </thead>
+                <tbody className="divide-y divide-gray-100">
+                  {state.logisticsRequests.slice(0, 5).map((lr) => (
+                    <tr key={lr.id} className="hover:bg-gray-50/80 transition-colors">
+                      <td className="py-3 px-3 font-semibold text-gray-900">
+                        {lr.productName}
+                      </td>
+                      <td className="py-3 px-3 text-gray-600">
+                        {lr.quantity}
+                      </td>
+                      <td className="py-3 px-3 text-gray-600">
+                        <div className="font-medium text-gray-900 truncate max-w-[120px]">{lr.pickupLocation || 'Farm Gate'}</div>
+                        <div className="text-[10px] text-gray-500 truncate max-w-[120px]">→ {lr.destination}</div>
+                      </td>
+                      <td className="py-3 px-3 text-gray-600">
+                        {lr.driver ? (
+                          <div>
+                            <div className="font-medium text-gray-900">{lr.driver}</div>
+                            <div className="text-[10px] text-gray-500">{lr.vehicle || 'Assigned'}</div>
+                          </div>
+                        ) : (
+                          <span className="text-gray-400 italic">Searching driver...</span>
+                        )}
+                      </td>
+                      <td className="py-3 px-3">
+                        <span
+                          className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold border ${
+                            lr.status === 'Delivered'
+                              ? 'bg-[#E8F5E9] text-[#2E7D32] border-green-200'
+                              : lr.status === 'In Transit'
+                              ? 'bg-blue-50 text-blue-700 border-blue-200'
+                              : lr.status === 'Assigned'
+                              ? 'bg-amber-50 text-amber-800 border-amber-200'
+                              : 'bg-gray-100 text-gray-700 border-gray-200'
+                          }`}
+                        >
+                          {lr.status}
+                        </span>
+                      </td>
+                      <td className="py-3 px-3 text-right">
+                        <button
+                          onClick={() => navigate(`/farmer/deliveries/${lr.id}`)}
+                          className="p-1 text-gray-400 hover:text-gray-900 rounded-md hover:bg-gray-100 transition-colors cursor-pointer"
+                          title="View Shipment Details"
+                        >
+                          <Eye className="w-4 h-4" />
+                        </button>
+                      </td>
+                    </tr>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
         </div>
 
-        {/* Section 2: Recent Activity */}
-        <div className="p-6 rounded-2xl bg-slate-900/80 border border-slate-800 space-y-4">
+        {/* Right 1 Col: Live Market Demand Opportunities */}
+        <div className="bg-white rounded-2xl border border-gray-200 p-5 shadow-2xs space-y-4">
           <div className="flex items-center justify-between">
-            <h2 className="text-base font-bold text-white tracking-tight flex items-center gap-2">
-              <Calendar className="w-4 h-4 text-sky-400" />
-              <span>Recent Activity</span>
-            </h2>
-            <span className="text-[11px] text-slate-400">Live Stream</span>
+            <div>
+              <h2 className="text-base font-bold text-gray-900">Market Opportunities</h2>
+              <p className="text-xs text-gray-500">Live demand from buyers & APMC mandis</p>
+            </div>
+            <button
+              onClick={() => navigate('/farmer/markets')}
+              className="text-xs font-semibold text-[#2E7D32] hover:underline cursor-pointer"
+            >
+              Explore
+            </button>
           </div>
 
           <div className="space-y-3">
-            {recentActivities.length > 0 ? (
-              recentActivities.map((act) => (
-                <div key={act.id} className="flex items-start gap-3 p-3 rounded-xl bg-slate-950 border border-slate-800/80 text-xs">
-                  {act.type === 'success' ? (
-                    <CheckCircle2 className="w-4 h-4 text-emerald-400 shrink-0 mt-0.5" />
-                  ) : act.type === 'warning' ? (
-                    <AlertCircle className="w-4 h-4 text-amber-400 shrink-0 mt-0.5" />
-                  ) : (
-                    <Truck className="w-4 h-4 text-sky-400 shrink-0 mt-0.5" />
-                  )}
-                  <div>
-                    <span className="font-semibold text-white block">{act.title}</span>
-                    <span className="text-slate-400 text-[11px]">{act.subtitle}</span>
+            {liveBuyerDemands.length > 0 ? (
+              liveBuyerDemands.slice(0, 3).map((dem) => (
+                <div
+                  key={dem.id}
+                  className="p-3.5 rounded-xl bg-gray-50 border border-gray-200/80 hover:border-gray-300 transition-colors space-y-2"
+                >
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-gray-900">{dem.product}</span>
+                    <span className="px-2 py-0.2 rounded text-[10px] font-bold bg-blue-50 text-blue-700 border border-blue-200">
+                      Buyer Order
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between text-xs text-gray-600">
+                    <span>Target: <strong className="text-gray-900">{dem.targetPrice}</strong></span>
+                    <span>Quantity: <strong className="text-gray-900">{dem.quantity}</strong></span>
+                  </div>
+                  <div className="text-[11px] text-gray-500 truncate">
+                    Buyer: {dem.buyerName} • Delivery to {dem.destination}
                   </div>
                 </div>
               ))
             ) : (
-              <div className="p-4 rounded-xl bg-slate-950 border border-dashed border-slate-800 text-center text-xs text-slate-500">
-                Welcome to RuralFlow! Add your first product or explore market opportunities to see updates here.
-              </div>
+              state.marketOpportunities.slice(0, 3).map((opp) => (
+                <div
+                  key={opp.id}
+                  className="p-3.5 rounded-xl bg-gray-50 border border-gray-200/80 hover:border-gray-300 transition-colors space-y-2"
+                >
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-bold text-gray-900">{opp.demandItem}</span>
+                    <span className="px-2 py-0.2 rounded text-[10px] font-bold bg-green-50 text-[#2E7D32] border border-green-200">
+                      Mandi Price
+                    </span>
+                  </div>
+                  <div className="flex items-center justify-between text-xs text-gray-600">
+                    <span>Mandi Rate: <strong className="text-gray-900">{opp.price}</strong></span>
+                    <span>Req: <strong className="text-gray-900">{opp.quantityRequired}</strong></span>
+                  </div>
+                  <div className="text-[11px] text-gray-500 truncate">
+                    Destination: {opp.buyer}
+                  </div>
+                </div>
+              ))
             )}
           </div>
-        </div>
 
-        {/* Section 3: Logistics Status */}
-        <div className="p-6 rounded-2xl bg-slate-900/80 border border-slate-800 space-y-4">
-          <div className="flex items-center justify-between">
-            <h2 className="text-base font-bold text-white tracking-tight flex items-center gap-2">
-              <Truck className="w-4 h-4 text-violet-400" />
-              <span>Logistics Status</span>
-            </h2>
-            <span className="text-[11px] text-violet-400 font-semibold">{activeShipment ? activeShipment.status : 'No Active Shipments'}</span>
+          <div className="pt-2">
+            <button
+              onClick={() => navigate('/farmer/markets')}
+              className="w-full py-2 px-3 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-800 text-xs font-semibold transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
+            >
+              <span>View All Market Demands</span>
+              <ArrowRight className="w-3.5 h-3.5" />
+            </button>
           </div>
-
-          {activeShipment ? (
-            <div className="p-4 rounded-xl bg-slate-950 border border-slate-800/80 space-y-3">
-              <div className="flex items-center justify-between text-xs">
-                <span className="text-slate-400">Assigned Transporter:</span>
-                <strong className="text-white">{activeShipment.driver || 'Searching Transporter'}</strong>
-              </div>
-
-              <div className="flex items-center justify-between text-xs">
-                <span className="text-slate-400">Shipment / Load:</span>
-                <span className="text-slate-200">{activeShipment.productName} ({activeShipment.quantity || 'TBD'})</span>
-              </div>
-
-              <div className="w-full bg-slate-800 h-2 rounded-full overflow-hidden">
-                <div className={`h-full rounded-full ${
-                  activeShipment.status === 'Delivered' ? 'w-full bg-emerald-500' :
-                  activeShipment.status === 'In Transit' ? 'w-4/5 bg-emerald-500' :
-                  activeShipment.status === 'Picked Up' ? 'w-3/5 bg-sky-500' :
-                  activeShipment.status === 'At Pickup' ? 'w-2/5 bg-sky-500' :
-                  'w-1/5 bg-sky-500'
-                }`} />
-              </div>
-
-              <div className="flex items-center justify-between text-[11px] text-slate-400">
-                <span>Destination / ETA:</span>
-                <span className="text-emerald-400 font-bold font-mono">{activeShipment.eta || activeShipment.destination}</span>
-              </div>
-            </div>
-          ) : (
-            <div className="p-4 rounded-xl bg-slate-950 border border-dashed border-slate-800 text-center text-sm text-slate-500">
-              No active shipments at the moment.
-            </div>
-          )}
-
-          <button
-            type="button"
-            onClick={() => navigate('/farmer/deliveries')}
-            className="w-full py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold transition-colors flex items-center justify-center gap-2"
-          >
-            <span>View Full Logistics Schedule</span>
-            <ArrowRight className="w-3.5 h-3.5" />
-          </button>
         </div>
       </div>
-
-      {/* Footer */}
-      <footer className="mt-12 pt-6 border-t border-slate-800 text-center text-xs text-slate-400">
-        <span>RuralFlow • Farmer & Producer Micro-Logistics Portal</span>
-      </footer>
     </div>
   );
 };

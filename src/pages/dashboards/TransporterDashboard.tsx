@@ -1,359 +1,279 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
 import {
   Truck,
-  TrendingUp,
-  MapPin,
+  Car,
   Route,
-  LogOut,
-  Sparkles,
-  Gauge,
-  CheckCircle2,
-  Home,
-  Clock
+  IndianRupee,
+  MapPin,
+  ArrowRight,
+  Plus,
+  Eye,
 } from 'lucide-react';
 import { useSharedContext } from '../../context/SharedContext';
+import { useLanguage } from '../../context/LanguageContext';
 
 export const TransporterDashboard: React.FC = () => {
   const navigate = useNavigate();
-  const { state, logout } = useSharedContext();
-  
-  const availableTrips = state.logisticsRequests.filter(req => req.status === 'Searching');
-  const activeTrips = state.logisticsRequests.filter(req => req.status !== 'Searching' && req.status !== 'Delivered');
-  const currentActiveTrip = activeTrips[0] || null;
+  const { state } = useSharedContext();
+  const { t } = useLanguage();
 
-  // Compute real capacity utilization from active loads
-  const calculateActiveUtilization = () => {
-    if (activeTrips.length === 0) return 0;
-    let totalKg = 0;
-    activeTrips.forEach(trip => {
-      if (trip.quantity) {
-        if (trip.quantity.toLowerCase().includes('mt')) {
-          totalKg += (parseFloat(trip.quantity) || 1) * 1000;
-        } else if (trip.quantity.toLowerCase().includes('kg')) {
-          totalKg += parseFloat(trip.quantity) || 500;
-        } else {
-          totalKg += 500;
-        }
-      } else {
-        totalKg += 500;
-      }
-    });
-    // Transporter vehicle capacity = 2.0 MT = 2000 kg (Bolero Pickup)
-    const capacityKg = 2000;
-    return Math.min(100, Math.round((totalKg / capacityKg) * 100));
-  };
+  const userName = state.auth.user?.name || 'Transporter';
 
-  const dynamicUtilization = calculateActiveUtilization();
+  const nearbyRequests = state.logisticsRequests.filter(
+    (req) => req.status === 'Searching'
+  );
+  const activeTrips = state.logisticsRequests.filter(
+    (req) => req.status === 'Assigned' || req.status === 'In Transit'
+  );
+  const availableVehicles = state.vehicles.filter(
+    (v) => v.status === 'Available'
+  ).length;
 
-  // Dynamic MTD Earnings (from delivered trips only — no hardcoded base)
-  const deliveredTrips = state.logisticsRequests.filter(req => req.status === 'Delivered');
+  const deliveredTrips = state.logisticsRequests.filter((req) => req.status === 'Delivered');
   const deliveredEarnings = deliveredTrips.reduce((sum, req) => {
     const numeric = parseInt(req.estimatedEarnings?.replace(/[^0-9]/g, '') || '1850', 10);
     return sum + (isNaN(numeric) ? 1850 : numeric);
   }, 0);
-  const totalEarnings = deliveredEarnings;
+  const formattedEarnings = `₹${(deliveredEarnings).toLocaleString('en-IN')}`;
 
-  // Dynamic user info
-  const userName = state.auth.user?.name || 'Transporter';
-  const primaryVehicle = state.vehicles.length > 0 ? state.vehicles[0] : null;
-  const vehicleInfo = primaryVehicle
-    ? `${primaryVehicle.type} (${primaryVehicle.registration} • ${primaryVehicle.capacity})`
-    : 'No vehicle registered — Add one from Vehicle & Health Status';
+  const primaryVehicle = state.vehicles[0];
 
   return (
-    <div className="relative min-h-screen flex flex-col justify-between z-10 px-4 sm:px-6 lg:px-8 py-6 max-w-7xl mx-auto w-full text-slate-100">
+    <div className="space-y-6">
       
-      {/* Header */}
-      <header className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 pb-6 border-b border-slate-800">
-        <div className="flex items-center gap-3">
-          <div className="w-12 h-12 rounded-2xl bg-sky-500/10 border border-sky-500/30 flex items-center justify-center text-sky-400 shadow-md">
-            <Truck className="w-6 h-6" />
-          </div>
-          <div>
-            <div className="flex items-center gap-2">
-              <h1 className="text-xl sm:text-2xl font-bold text-white tracking-tight">
-                Good morning, {userName} 👋
-              </h1>
-              <span className="px-2 py-0.5 rounded text-[10px] font-semibold bg-sky-500/10 text-sky-400 border border-sky-500/20">
-                Active Fleet Partner
-              </span>
-            </div>
-            <p className="text-xs text-slate-400">
-              {vehicleInfo}
-            </p>
-          </div>
+      {/* Full-width Header Banner (breaking out of container) */}
+      <div className="relative overflow-hidden flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 bg-gray-900 p-8 sm:p-12 -mx-4 sm:-mx-6 lg:-mx-8 -mt-6 mb-20 shadow-xl min-h-[220px]">
+        {/* Landscape Hero Image Background */}
+        <div className="absolute inset-0 z-0">
+          <img src="/images/transporter-truck.jpg" className="w-full h-full object-cover object-center opacity-50 mix-blend-overlay" alt="" />
+          <div className="absolute inset-0 bg-gradient-to-r from-orange-900/90 via-orange-900/60 to-transparent"></div>
         </div>
 
-        {/* Action Controls */}
-        <div className="flex items-center gap-2 sm:gap-3 w-full sm:w-auto justify-end">
-          <button
-            type="button"
-            onClick={() => navigate('/')}
-            className="px-3.5 py-2 rounded-xl bg-slate-900 border border-slate-800 hover:border-slate-700 text-slate-300 hover:text-white text-xs font-semibold flex items-center gap-1.5 transition-colors"
-          >
-            <Home className="w-3.5 h-3.5" />
-            <span>Gateway</span>
-          </button>
-
-          <button
-            type="button"
-            onClick={() => { logout(); navigate('/'); }}
-            className="px-3.5 py-2 rounded-xl bg-slate-900 border border-rose-500/30 hover:bg-rose-500/10 text-rose-400 text-xs font-semibold flex items-center gap-1.5 transition-colors"
-          >
-            <LogOut className="w-3.5 h-3.5" />
-            <span>Logout</span>
-          </button>
-        </div>
-      </header>
-
-      {/* Phase 3 Notice Banner */}
-      <motion.div
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        className="mt-6 p-4 rounded-2xl bg-sky-500/10 border border-sky-500/25 flex items-start sm:items-center justify-between gap-3 text-xs sm:text-sm text-sky-300"
-      >
-        <div className="flex items-center gap-2.5">
-          <Sparkles className="w-5 h-5 text-sky-400 shrink-0" />
-          <span>
-            <strong>Transport Operations Center:</strong> Live multi-hop route clustering and active telematics synchronization enabled.
-          </span>
-        </div>
-        <span className="hidden md:inline-block px-2.5 py-1 rounded-full bg-sky-500/20 text-sky-300 text-xs font-semibold uppercase tracking-wider shrink-0">
-          Live Logistics Operations
-        </span>
-      </motion.div>
-
-      {/* 4 KPI Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mt-6">
-        <div 
-          onClick={() => navigate('/transporter/trips')}
-          className="p-5 rounded-2xl bg-slate-900/80 border border-slate-800 hover:border-sky-500/40 transition-all cursor-pointer"
-        >
-          <div className="flex items-center justify-between text-slate-400">
-            <span className="text-xs font-semibold uppercase tracking-wider">Available Trips</span>
-            <Route className="w-4 h-4 text-sky-400" />
-          </div>
-          <div className="mt-3">
-            <span className="text-2xl sm:text-3xl font-extrabold text-white">{availableTrips.length} Nearby</span>
-            <span className="text-xs text-sky-400 block mt-1">Click to view & accept</span>
-          </div>
+        <div className="relative z-10">
+          <h1 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight drop-shadow-md">
+            {t('dashboard.transporter.title') || 'Transporter Dispatch Control'} • {userName}
+          </h1>
+          <p className="text-sm sm:text-base text-orange-50 mt-2 max-w-xl font-medium drop-shadow-sm">
+            {primaryVehicle
+              ? `Primary Fleet: ${primaryVehicle.type} (${primaryVehicle.registration} • ${primaryVehicle.capacity})`
+              : t('dashboard.transporter.subtitle') || 'Fleet operations overview, nearby farm pickup loads, and vehicle management.'}
+          </p>
         </div>
 
-        <div 
-          onClick={() => navigate('/transporter/active')}
-          className="p-5 rounded-2xl bg-slate-900/80 border border-slate-800 hover:border-emerald-500/40 transition-all cursor-pointer"
-        >
-          <div className="flex items-center justify-between text-slate-400">
-            <span className="text-xs font-semibold uppercase tracking-wider">Active Deliveries</span>
-            <Truck className="w-4 h-4 text-emerald-400" />
-          </div>
-          <div className="mt-3">
-            <span className="text-2xl sm:text-3xl font-extrabold text-white">{activeTrips.length} Assigned</span>
-            <span className="text-xs text-emerald-400 block mt-1">Manage status progression</span>
-          </div>
-        </div>
-
-        <div 
-          onClick={() => navigate('/transporter/performance')}
-          className="p-5 rounded-2xl bg-slate-900/80 border border-slate-800 hover:border-amber-500/40 transition-all cursor-pointer"
-        >
-          <div className="flex items-center justify-between text-slate-400">
-            <span className="text-xs font-semibold uppercase tracking-wider">Vehicle Utilization</span>
-            <Gauge className="w-4 h-4 text-amber-400" />
-          </div>
-          <div className="mt-3">
-            <span className="text-2xl sm:text-3xl font-extrabold text-white">{dynamicUtilization}% Capacity</span>
-            <span className="text-xs text-amber-400 block mt-1">{activeTrips.length > 0 ? `${activeTrips.length} active load(s)` : 'Vehicle idle'}</span>
-          </div>
-        </div>
-
-        <div 
-          onClick={() => navigate('/transporter/earnings')}
-          className="p-5 rounded-2xl bg-slate-900/80 border border-slate-800 hover:border-violet-500/40 transition-all cursor-pointer"
-        >
-          <div className="flex items-center justify-between text-slate-400">
-            <span className="text-xs font-semibold uppercase tracking-wider">Earnings (MTD)</span>
-            <TrendingUp className="w-4 h-4 text-violet-400" />
-          </div>
-          <div className="mt-3">
-            <span className="text-2xl sm:text-3xl font-extrabold text-white">₹{totalEarnings.toLocaleString()}</span>
-            <span className="text-xs text-violet-400 block mt-1">{deliveredTrips.length} completed trips</span>
-          </div>
-        </div>
-      </div>
-
-      {/* 3 Main Functional Sections */}
-      <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mt-8">
-        
-        {/* Section 1: Recommended Trips */}
-        <div className="p-6 rounded-2xl bg-slate-900/80 border border-slate-800 space-y-4">
-          <div className="flex items-center justify-between">
-            <h2 className="text-base font-bold text-white tracking-tight flex items-center gap-2">
-              <Route className="w-4 h-4 text-sky-400" />
-              <span>Recommended Pooled Trips</span>
-            </h2>
-            <span className="text-[11px] text-sky-400 font-semibold">{availableTrips.length > 0 ? `${availableTrips.length} Live Ready` : 'AI Matched'}</span>
-          </div>
-
-          <div className="space-y-3">
-            {availableTrips.length > 0 ? (
-              availableTrips.slice(0, 2).map((trip) => (
-                <div 
-                  key={trip.id}
-                  onClick={() => navigate(`/transporter/trips/${trip.id}`)}
-                  className="p-3.5 rounded-xl bg-slate-950 border border-sky-500/30 hover:border-sky-500/60 transition-all cursor-pointer space-y-2"
-                >
-                  <div className="flex items-center justify-between text-xs">
-                    <span className="font-semibold text-white">{trip.productName}</span>
-                    <span className="text-emerald-400 font-bold font-mono">{trip.estimatedEarnings || '₹1,850'}</span>
-                  </div>
-                  <p className="text-[11px] text-slate-400">Load: {trip.quantity || 'Standard'} • From: {trip.pickupLocation || 'Farm Gate'} ➔ {trip.destination}</p>
-                  <div className="flex items-center justify-between text-[10px] text-slate-500 pt-1">
-                    <span className="px-2 py-0.5 rounded bg-sky-500/10 text-sky-400 font-semibold">Live Farmer Demand • {trip.id}</span>
-                    <span className="text-sky-400 font-semibold">Click to Accept →</span>
-                  </div>
-                </div>
-              ))
-            ) : (
-              <>
-                <div 
-                  onClick={() => navigate('/transporter/trips')}
-                  className="p-3.5 rounded-xl bg-slate-950 border border-slate-800/80 hover:border-sky-500/30 transition-all cursor-pointer space-y-2"
-                >
-                  <div className="flex items-center justify-between text-xs">
-                    <span className="font-semibold text-white">Satara Hub ➔ Pune APMC</span>
-                    <span className="text-emerald-400 font-bold font-mono">₹4,200 Payout</span>
-                  </div>
-                  <p className="text-[11px] text-slate-400">1.4 MT Agri-Load (Tomatoes & Onions) • 2 Pickup Nodes</p>
-                  <div className="flex items-center justify-between text-[10px] text-slate-500 pt-1">
-                    <span>Includes return freight guarantee</span>
-                    <span className="text-sky-400 font-semibold">92% Space Filled</span>
-                  </div>
-                </div>
-
-                <div 
-                  onClick={() => navigate('/transporter/trips')}
-                  className="p-3.5 rounded-xl bg-slate-950 border border-slate-800/80 hover:border-sky-500/30 transition-all cursor-pointer space-y-2"
-                >
-                  <div className="flex items-center justify-between text-xs">
-                    <span className="font-semibold text-white">Wai Cluster ➔ Vashi Terminal</span>
-                    <span className="text-emerald-400 font-bold font-mono">₹6,800 Payout</span>
-                  </div>
-                  <p className="text-[11px] text-slate-400">1.8 MT Handcraft & Spices • Single Dispatch</p>
-                  <div className="flex items-center justify-between text-[10px] text-slate-500 pt-1">
-                    <span>Starts tomorrow 6:00 AM</span>
-                    <span className="text-amber-400 font-semibold">Urgent Pickup</span>
-                  </div>
-                </div>
-              </>
-            )}
-          </div>
-        </div>
-
-        {/* Section 2: Active Route */}
-        <div className="p-6 rounded-2xl bg-slate-900/80 border border-slate-800 space-y-4">
-          <div className="flex items-center justify-between">
-            <h2 className="text-base font-bold text-white tracking-tight flex items-center gap-2">
-              <MapPin className="w-4 h-4 text-emerald-400" />
-              <span>Active Route Progress</span>
-            </h2>
-            <span className="text-[11px] text-emerald-400 font-semibold">Live Run</span>
-          </div>
-
-          {currentActiveTrip ? (
-          <div 
-            onClick={() => navigate(`/transporter/active/${currentActiveTrip.id}`)}
-            className="p-4 rounded-xl bg-slate-950 border border-slate-800/80 hover:border-emerald-500/40 transition-all cursor-pointer space-y-3.5"
-          >
-            <div className="flex items-center justify-between text-xs">
-              <span className="text-slate-400">Current Trip ID:</span>
-              <strong className="text-white font-mono">{currentActiveTrip.id}</strong>
-            </div>
-
-            <div className="space-y-2 text-xs">
-              <div className="flex items-center gap-2 text-emerald-400">
-                <CheckCircle2 className="w-3.5 h-3.5 shrink-0" />
-                <span>Pickup: {currentActiveTrip.pickupLocation || 'Farm Gate'}</span>
-              </div>
-              <div className="flex items-center gap-2 text-sky-400">
-                <Clock className="w-3.5 h-3.5 shrink-0" />
-                <span>Load: {currentActiveTrip.productName} ({currentActiveTrip.quantity || 'TBD'})</span>
-              </div>
-              <div className="flex items-center gap-2 text-slate-400">
-                <MapPin className="w-3.5 h-3.5 shrink-0" />
-                <span>Drop-off: {currentActiveTrip.destination}</span>
-              </div>
-            </div>
-
-            <div className="w-full bg-slate-800 h-2 rounded-full overflow-hidden">
-              <div className={`h-full rounded-full ${
-                currentActiveTrip.status === 'Assigned' ? 'bg-sky-500 w-1/5' :
-                currentActiveTrip.status === 'At Pickup' ? 'bg-sky-500 w-2/5' :
-                currentActiveTrip.status === 'Picked Up' ? 'bg-sky-500 w-3/5' :
-                currentActiveTrip.status === 'In Transit' ? 'bg-emerald-500 w-4/5' :
-                'bg-emerald-500 w-full'
-              }`} />
-            </div>
-
-            <div className="flex items-center justify-between text-[11px] text-slate-400 pt-1">
-              <span>Status: <strong className="text-sky-400">{currentActiveTrip.status}</strong></span>
-              <span className="text-emerald-400 font-semibold">Update Progress →</span>
-            </div>
-          </div>
-          ) : (
-          <div className="p-4 rounded-xl bg-slate-950 border border-dashed border-slate-800 text-center text-sm text-slate-500">
-            No active route. Accept a trip to begin.
-          </div>
-          )}
-        </div>
-
-        {/* Section 3: Vehicle Status */}
-        <div className="p-6 rounded-2xl bg-slate-900/80 border border-slate-800 space-y-4">
-          <div className="flex items-center justify-between">
-            <h2 className="text-base font-bold text-white tracking-tight flex items-center gap-2">
-              <Gauge className="w-4 h-4 text-violet-400" />
-              <span>Vehicle & Health Status</span>
-            </h2>
-            <span className="text-[11px] text-slate-400">Fleet ID: V-881</span>
-          </div>
-
-          <div className="space-y-2.5 text-xs">
-            <div className="flex items-center justify-between p-3 rounded-xl bg-slate-950 border border-slate-800/80">
-              <span className="text-slate-400">RC & Fitness Status</span>
-              <span className="text-emerald-400 font-semibold flex items-center gap-1">
-                <CheckCircle2 className="w-3 h-3" /> Valid till 2028
-              </span>
-            </div>
-
-            <div className="flex items-center justify-between p-3 rounded-xl bg-slate-950 border border-slate-800/80">
-              <span className="text-slate-400">Commercial Goods Insurance</span>
-              <span className="text-emerald-400 font-semibold flex items-center gap-1">
-                <CheckCircle2 className="w-3 h-3" /> Comprehensive Active
-              </span>
-            </div>
-
-            <div className="flex items-center justify-between p-3 rounded-xl bg-slate-950 border border-slate-800/80">
-              <span className="text-slate-400">Backhaul Matching</span>
-              <span className="text-sky-400 font-semibold">Enabled (Auto-reserve)</span>
-            </div>
-          </div>
-
+        <div className="flex items-center gap-3 relative z-10 mt-4 sm:mt-0">
           <button
             type="button"
             onClick={() => navigate('/transporter/vehicles')}
-            className="w-full py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-200 text-xs font-semibold transition-colors mt-2"
+            className="px-5 py-2.5 rounded-xl bg-white text-orange-800 hover:bg-orange-50 text-sm font-bold shadow-lg flex items-center gap-2 transition-colors cursor-pointer border border-orange-100"
           >
-            Manage Vehicle Fleet Details →
+            <Plus className="w-4 h-4" />
+            <span>{t('transporter.manageFleet') || 'Manage Fleet'}</span>
+          </button>
+          <button
+            type="button"
+            onClick={() => navigate('/transporter/trips')}
+            className="px-5 py-2.5 rounded-xl bg-orange-800/50 hover:bg-orange-800/70 border border-orange-500/50 text-white backdrop-blur-sm text-sm font-bold shadow-lg flex items-center gap-2 transition-colors cursor-pointer"
+          >
+            <Route className="w-4 h-4" />
+            <span>{t('dashboard.findLoads') || 'Find Loads'}</span>
           </button>
         </div>
       </div>
 
-      {/* Footer */}
-      <footer className="mt-12 pt-6 border-t border-slate-800 text-center text-xs text-slate-400">
-        <span>RuralFlow • Transporter Fleet & Capacity Management Portal</span>
-      </footer>
+      {/* Top 4 Summary KPI Cards (Overlapping the Hero) */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 -mt-32 relative z-20 mx-2 sm:mx-0">
+        {/* Active Trips */}
+        <div className="p-5 rounded-2xl bg-white border border-gray-100 shadow-xl shadow-black/5 space-y-2 transform hover:-translate-y-1 transition-transform">
+          <div className="flex items-center justify-between text-gray-500">
+            <span className="text-xs font-bold uppercase tracking-wider">{t('dashboard.activeTrips') || 'Active Trips'}</span>
+            <div className="w-8 h-8 rounded-full bg-amber-50 flex items-center justify-center text-amber-600">
+              <Truck className="w-4 h-4" />
+            </div>
+          </div>
+          <div className="text-3xl font-black text-gray-900">{activeTrips.length}</div>
+          <span className="text-xs font-medium text-amber-600">{t('dashboard.currentlyEnRoute') || 'Currently en route'}</span>
+        </div>
+
+        {/* Available Vehicles */}
+        <div className="p-5 rounded-2xl bg-white border border-gray-100 shadow-xl shadow-black/5 space-y-2 transform hover:-translate-y-1 transition-transform">
+          <div className="flex items-center justify-between text-gray-500">
+            <span className="text-xs font-bold uppercase tracking-wider">{t('dashboard.availableFleet') || 'Available Fleet'}</span>
+            <div className="w-8 h-8 rounded-full bg-green-50 flex items-center justify-center text-green-600">
+              <Car className="w-4 h-4" />
+            </div>
+          </div>
+          <div className="text-3xl font-black text-gray-900">{availableVehicles}</div>
+          <span className="text-xs font-medium text-green-600">{t('dashboard.readyForDispatch') || 'Ready for dispatch'}</span>
+        </div>
+
+        {/* Nearby Requests */}
+        <div className="p-5 rounded-2xl bg-white border border-gray-100 shadow-xl shadow-black/5 space-y-2 transform hover:-translate-y-1 transition-transform">
+          <div className="flex items-center justify-between text-gray-500">
+            <span className="text-xs font-bold uppercase tracking-wider">{t('dashboard.nearbyRequests') || 'Nearby Requests'}</span>
+            <div className="w-8 h-8 rounded-full bg-blue-50 flex items-center justify-center text-blue-600">
+              <Route className="w-4 h-4" />
+            </div>
+          </div>
+          <div className="text-3xl font-black text-gray-900">{nearbyRequests.length}</div>
+          <span className="text-xs font-medium text-blue-600">{t('dashboard.eligiblePickupLoads') || 'Eligible pickup loads'}</span>
+        </div>
+
+        {/* Total Earnings */}
+        <div className="p-5 rounded-2xl bg-white border border-gray-100 shadow-xl shadow-black/5 space-y-2 transform hover:-translate-y-1 transition-transform">
+          <div className="flex items-center justify-between text-gray-500">
+            <span className="text-xs font-bold uppercase tracking-wider">{t('dashboard.totalRevenue') || 'Total Revenue'}</span>
+            <div className="w-8 h-8 rounded-full bg-emerald-50 flex items-center justify-center text-emerald-600">
+              <IndianRupee className="w-4 h-4" />
+            </div>
+          </div>
+          <div className="text-3xl font-black text-gray-900">{formattedEarnings}</div>
+          <span className="text-xs font-medium text-emerald-600">{t('dashboard.freightEarnings') || 'Freight payout earnings'}</span>
+        </div>
+      </div>
+
+      {/* Main Grid: Nearby Logistics Requests Table */}
+      <div className="bg-white rounded-2xl border border-gray-200 p-5 shadow-2xs space-y-4">
+        <div className="flex items-center justify-between">
+          <div>
+            <h2 className="text-base font-bold text-gray-900">Nearby Logistics Requests</h2>
+            <p className="text-xs text-gray-500">
+              Unfulfilled farm harvest loads available for pickup and transport assignment
+            </p>
+          </div>
+          <button
+            onClick={() => navigate('/transporter/trips')}
+            className="text-xs font-semibold text-amber-800 hover:underline flex items-center gap-1 cursor-pointer"
+          >
+            <span>View All Trips</span>
+            <ArrowRight className="w-3.5 h-3.5" />
+          </button>
+        </div>
+
+        {state.logisticsRequests.length === 0 ? (
+          <div className="p-8 text-center bg-gray-50 rounded-xl border border-dashed border-gray-200 space-y-2">
+            <Truck className="w-8 h-8 text-gray-400 mx-auto" />
+            <p className="text-xs text-gray-600 font-medium">No nearby logistics requests right now.</p>
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs">
+              <thead>
+                <tr className="border-b border-gray-200 text-gray-500 font-semibold uppercase tracking-wider text-[10px] bg-gray-50/50">
+                  <th className="py-2.5 px-3">Product</th>
+                  <th className="py-2.5 px-3">Quantity</th>
+                  <th className="py-2.5 px-3">Pickup Location</th>
+                  <th className="py-2.5 px-3">Destination</th>
+                  <th className="py-2.5 px-3">Required Capacity</th>
+                  <th className="py-2.5 px-3">Estimated Earnings</th>
+                  <th className="py-2.5 px-3">Status</th>
+                  <th className="py-2.5 px-3 text-right">Action</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100">
+                {state.logisticsRequests.slice(0, 6).map((req) => (
+                  <tr key={req.id} className="hover:bg-gray-50/80 transition-colors">
+                    <td className="py-3 px-3 font-semibold text-gray-900">
+                      {req.productName}
+                    </td>
+                    <td className="py-3 px-3 text-gray-600">
+                      {req.quantity || 'N/A'}
+                    </td>
+                    <td className="py-3 px-3 text-gray-600">
+                      <span className="flex items-center gap-1 text-gray-900">
+                        <MapPin className="w-3 h-3 text-green-700 shrink-0" />
+                        <span className="truncate max-w-[120px]">{req.pickupLocation || 'Farm Gate'}</span>
+                      </span>
+                    </td>
+                    <td className="py-3 px-3 text-gray-600">
+                      <span className="flex items-center gap-1 text-gray-900">
+                        <MapPin className="w-3 h-3 text-amber-700 shrink-0" />
+                        <span className="truncate max-w-[120px]">{req.destination}</span>
+                      </span>
+                    </td>
+                    <td className="py-3 px-3 text-gray-600 font-mono">
+                      {req.quantity?.includes('MT') ? req.quantity : '1.5 - 2.0 MT'}
+                    </td>
+                    <td className="py-3 px-3 font-bold text-[#2E7D32] font-mono">
+                      {req.estimatedEarnings || '₹0'}
+                    </td>
+                    <td className="py-3 px-3">
+                      <span
+                        className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold border ${
+                          req.status === 'Delivered'
+                            ? 'bg-[#E8F5E9] text-[#2E7D32] border-green-200'
+                            : req.status === 'In Transit'
+                            ? 'bg-blue-50 text-blue-700 border-blue-200'
+                            : req.status === 'Assigned'
+                            ? 'bg-amber-50 text-amber-800 border-amber-200'
+                            : 'bg-gray-100 text-gray-700 border-gray-200'
+                        }`}
+                      >
+                        {req.status}
+                      </span>
+                    </td>
+                    <td className="py-3 px-3 text-right">
+                      {req.status === 'Searching' ? (
+                        <button
+                          onClick={() => navigate(`/transporter/trips/${req.id}`)}
+                          className="px-2.5 py-1 rounded-lg bg-amber-700 hover:bg-amber-800 text-white font-semibold text-[11px] transition-colors cursor-pointer shadow-2xs"
+                        >
+                          Accept
+                        </button>
+                      ) : (
+                        <button
+                          onClick={() => navigate(`/transporter/trips/${req.id}`)}
+                          className="p-1 text-gray-400 hover:text-gray-900 rounded-md hover:bg-gray-100 transition-colors cursor-pointer"
+                          title="View Details"
+                        >
+                          <Eye className="w-4 h-4" />
+                        </button>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+
+      {/* Active Trip Progress Card if one is in progress */}
+      {activeTrips.length > 0 && (
+        <div className="p-5 rounded-2xl bg-white border border-amber-200 shadow-2xs space-y-3">
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <span className="w-2 h-2 rounded-full bg-amber-600 animate-pulse" />
+              <h3 className="text-sm font-bold text-gray-900">
+                Live Dispatched Trip in Progress: Shipment #{activeTrips[0].id}
+              </h3>
+            </div>
+            <button
+              onClick={() => navigate(`/transporter/active/${activeTrips[0].id}`)}
+              className="text-xs font-semibold text-amber-800 hover:underline cursor-pointer"
+            >
+              Update Progress →
+            </button>
+          </div>
+
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 p-3 rounded-xl bg-amber-50/60 border border-amber-200 text-xs">
+            <div>
+              <span className="text-gray-500">Cargo:</span>
+              <strong className="text-gray-900 block">{activeTrips[0].productName} ({activeTrips[0].quantity})</strong>
+            </div>
+            <div>
+              <span className="text-gray-500">Route:</span>
+              <span className="text-gray-900 font-medium block truncate">
+                {activeTrips[0].pickupLocation || 'Farm'} → {activeTrips[0].destination}
+              </span>
+            </div>
+            <div>
+              <span className="text-gray-500">Current Status:</span>
+              <span className="text-amber-800 font-bold block">{activeTrips[0].status}</span>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 };

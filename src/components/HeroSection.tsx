@@ -1,104 +1,148 @@
 import React from 'react';
-import { motion } from 'framer-motion';
-import { Sparkles, TrendingUp, Layers, CheckCircle2 } from 'lucide-react';
-import type { SupportedLanguage } from '../types';
+import { ArrowRight, Sprout, Truck, Store, MapPin } from 'lucide-react';
+import { useLanguage } from '../context/LanguageContext';
 
 interface HeroSectionProps {
-  currentLang: SupportedLanguage;
+  onExploreRoles?: () => void;
 }
 
-// Regional language subtitles or localization hints
-const LOCALIZED_HERO: Record<SupportedLanguage, { badge: string; sub: string }> = {
-  en: {
-    badge: 'Built for smarter rural commerce • SIH Edition',
-    sub: 'Connect producers, transporters and markets through intelligent matching, optimized routes and efficient last-mile logistics.',
-  },
-  hi: {
-    badge: 'स्मार्ट ग्रामीण व्यापार और परिवहन हेतु निर्मित • SIH संस्करण',
-    sub: 'उत्पादकों, वाहन चालकों और बाज़ारों को साझा परिवहन, कुशल मार्गों और सीधे बाज़ार से जोड़ें।',
-  },
-  mr: {
-    badge: 'ग्रामीण व्यापार आणि वाहतुकीसाठी स्मार्ट प्लॅटफॉर्म • SIH',
-    sub: 'शेतकरी, वाहतूकदार आणि खरेदीदारांना थेट बाजारपेठ आणि कार्यक्षम वाहतुकीने जोडा.',
-  },
-  ta: {
-    badge: 'ஸ்மார்ட் கிராமப்புற வர்த்தகத்திற்கான தளம் • SIH',
-    sub: 'உற்பத்தியாளர்கள், வாகன ஓட்டுநர்கள் மற்றும் சந்தைகளை புத்திசாலித்தனமாக இணைக்கிறது.',
-  },
-  te: {
-    badge: 'స్మార్ట్ గ్రామీణ లాజిస్టిక్స్ ప్లాట్‌ఫారమ్ • SIH',
-    sub: 'ఉత్పత్తిదారులు, రవాణాదారులు మరియు మార్కెట్లను సమర్థవంతమైన మార్గాలతో కలుపుతుంది.',
-  },
-  bn: {
-    badge: 'স্মার্ট গ্রামীণ লজিস্টিক প্ল্যাটফর্ম • SIH',
-    sub: 'উৎপাদক, পরিবহনকারী এবং বাজারকে দক্ষ রুট এবং সরাসরি বাণিজ্যে সংযুক্ত করে।',
-  },
-  kn: {
-    badge: 'ಸ್ಮಾರ್ಟ್ ಗ್ರಾಮೀಣ ಸಾರಿಗೆ ಮತ್ತು ಮಾರುಕಟ್ಟೆ • SIH',
-    sub: 'ಉತ್ಪಾದಕರು, ಸಾರಿಗೆದಾರರು ಮತ್ತು ಮಾರುಕಟ್ಟೆಗಳನ್ನು ನೇರವಾಗಿ ಮತ್ತು ಸುಲಭವಾಗಿ ಸಂಪರ್ಕಿಸಿ.',
-  },
-};
+export const HeroSection: React.FC<HeroSectionProps> = ({ onExploreRoles }) => {
+  const { t } = useLanguage();
 
-export const HeroSection: React.FC<HeroSectionProps> = ({ currentLang }) => {
-  const content = LOCALIZED_HERO[currentLang] || LOCALIZED_HERO.en;
+  const scrollToRoles = () => {
+    if (onExploreRoles) {
+      onExploreRoles();
+    } else {
+      const el = document.getElementById('role-selection');
+      if (el) el.scrollIntoView({ behavior: 'smooth' });
+    }
+  };
+
+  const scrollToHowItWorks = () => {
+    const el = document.getElementById('how-it-works-section');
+    if (el) el.scrollIntoView({ behavior: 'smooth' });
+  };
 
   return (
-    <section className="relative pt-8 pb-4 sm:pt-14 sm:pb-8 text-center max-w-5xl mx-auto px-4 sm:px-6">
+    <section className="relative w-full overflow-hidden min-h-[600px] sm:min-h-[700px] flex items-center">
       
-      {/* Top Status / Trust Badge */}
-      <motion.div
-        initial={{ opacity: 0, y: -12 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.5 }}
-        className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full bg-slate-900/90 border border-emerald-500/30 text-emerald-400 text-xs font-semibold shadow-sm mb-6 sm:mb-8 backdrop-blur-md"
-      >
-        <Sparkles className="w-3.5 h-3.5 text-emerald-400 animate-pulse" />
-        <span>{content.badge}</span>
-      </motion.div>
+      {/* Full-width Landscape Background Image */}
+      <div className="absolute inset-0 z-0">
+        <img
+          src="/images/hero-landscape.jpg"
+          alt="Lush green agricultural farmland with rural road and logistics truck"
+          className="w-full h-full object-cover"
+        />
+        {/* Gradient Overlay for Text Legibility */}
+        <div className="absolute inset-0 bg-gradient-to-r from-black/80 via-black/50 to-transparent"></div>
+        <div className="absolute inset-0 bg-gradient-to-t from-black/60 via-transparent to-black/20"></div>
+      </div>
 
-      {/* Primary Headline */}
-      <motion.h1
-        initial={{ opacity: 0, y: 15 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6, delay: 0.1 }}
-        className="text-4xl sm:text-6xl lg:text-7xl font-extrabold tracking-tight text-white leading-[1.1] max-w-4xl mx-auto"
-      >
-        One Platform.{' '}
-        <span className="bg-gradient-to-r from-emerald-400 via-teal-300 to-sky-400 bg-clip-text text-transparent">
-          Smarter Rural Logistics.
-        </span>
-      </motion.h1>
+      <div className="relative z-10 max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full flex flex-col lg:flex-row items-center justify-between gap-12 py-16">
+        
+        {/* Left Text Content */}
+        <div className="w-full lg:w-3/5 text-left text-white">
+          
+          {/* Headline */}
+          <h1 className="text-4xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight leading-[1.15] drop-shadow-md">
+            {t('gateway.hero.prefix')}
+            <span className="text-green-400">{t('gateway.hero.farmers')}</span>
+            <br className="hidden sm:inline" />
+            <span className="text-blue-400">{t('gateway.hero.buyers')}</span>
+            {t('gateway.hero.and')}
+            <span className="text-orange-400">{t('gateway.hero.transporters')}</span>
+          </h1>
 
-      {/* Supporting Value Proposition Text */}
-      <motion.p
-        initial={{ opacity: 0, y: 15 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6, delay: 0.2 }}
-        className="mt-6 text-base sm:text-lg lg:text-xl text-slate-300 max-w-3xl mx-auto font-normal leading-relaxed"
-      >
-        {content.sub}
-      </motion.p>
+          {/* Subtitle */}
+          <p className="mt-6 text-base sm:text-lg text-gray-200 leading-relaxed max-w-xl font-medium drop-shadow-sm">
+            {t('gateway.hero.sub')}
+          </p>
 
-      {/* Micro-Trust & Value Badges */}
-      <motion.div
-        initial={{ opacity: 0, y: 10 }}
-        animate={{ opacity: 1, y: 0 }}
-        transition={{ duration: 0.6, delay: 0.3 }}
-        className="mt-8 flex flex-wrap items-center justify-center gap-3 sm:gap-6 text-xs text-slate-400"
-      >
-        <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-900/60 border border-slate-800">
-          <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
-          <span>Direct Farm-to-Market</span>
+          {/* Action Buttons */}
+          <div className="mt-10 flex flex-wrap items-center gap-4">
+            <button
+              onClick={scrollToRoles}
+              className="px-8 py-3.5 rounded-xl bg-green-600 hover:bg-green-500 text-white font-bold text-sm sm:text-base transition-colors shadow-lg flex items-center gap-2 cursor-pointer border border-green-500"
+            >
+              <span>{t('gateway.hero.ctaPrimary')}</span>
+              <ArrowRight className="w-5 h-5" />
+            </button>
+
+            <button
+              onClick={scrollToHowItWorks}
+              className="px-8 py-3.5 rounded-xl bg-white/10 hover:bg-white/20 backdrop-blur-md border border-white/30 text-white font-bold text-sm sm:text-base transition-colors cursor-pointer shadow-lg"
+            >
+              {t('gateway.hero.ctaSecondary')}
+            </button>
+          </div>
         </div>
-        <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-900/60 border border-slate-800">
-          <TrendingUp className="w-3.5 h-3.5 text-sky-400" />
-          <span>Shared Load Pooling</span>
+
+        {/* Right Interactive Visual Panel (Glassmorphism) */}
+        <div className="hidden lg:block w-full lg:w-2/5">
+          <div className="bg-white/10 backdrop-blur-xl border border-white/20 rounded-3xl p-6 shadow-2xl flex flex-col gap-4">
+            
+            <div className="flex items-center justify-between border-b border-white/20 pb-4">
+              <div className="flex items-center gap-2 text-white">
+                <Sprout className="w-6 h-6 text-green-400" />
+                <span className="font-bold text-lg">RuralFlow</span>
+              </div>
+              <div className="text-xs font-semibold uppercase tracking-wider text-green-300 bg-green-900/40 px-3 py-1 rounded-full border border-green-500/30">
+                Match Rate: High
+              </div>
+            </div>
+
+            {/* Simulated Logistics Flow */}
+            <div className="space-y-4 pt-2">
+              <div className="bg-white/80 rounded-2xl p-4 flex items-center justify-between shadow-sm transform hover:scale-[1.02] transition-transform cursor-default">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-green-100 flex items-center justify-center text-green-700">
+                    <Sprout className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <div className="text-sm font-bold text-gray-900">Farmer</div>
+                    <div className="text-xs text-gray-500 flex items-center gap-1"><MapPin className="w-3 h-3"/> Alpha Village</div>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <div className="text-sm font-bold text-gray-900">500 kg</div>
+                  <div className="text-xs text-green-600 font-medium">Ready</div>
+                </div>
+              </div>
+
+              <div className="flex justify-center -my-2 relative z-10">
+                <div className="bg-white rounded-full p-2 shadow-md border border-gray-100">
+                  <Truck className="w-5 h-5 text-orange-500" />
+                </div>
+              </div>
+
+              <div className="bg-white/80 rounded-2xl p-4 flex items-center justify-between shadow-sm transform hover:scale-[1.02] transition-transform cursor-default">
+                <div className="flex items-center gap-3">
+                  <div className="w-10 h-10 rounded-full bg-blue-100 flex items-center justify-center text-blue-700">
+                    <Store className="w-5 h-5" />
+                  </div>
+                  <div>
+                    <div className="text-sm font-bold text-gray-900">Buyer</div>
+                    <div className="text-xs text-gray-500 flex items-center gap-1"><MapPin className="w-3 h-3"/> Central Hub</div>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <div className="text-sm font-bold text-gray-900">₹12,500</div>
+                  <div className="text-xs text-blue-600 font-medium">Verified</div>
+                </div>
+              </div>
+            </div>
+
+            <button className="mt-4 w-full py-3 rounded-xl bg-white/20 hover:bg-white/30 text-white font-semibold text-sm transition-colors border border-white/30 cursor-default">
+              Live Logistics Dashboard
+            </button>
+            <div className="text-center mt-1">
+               <span className="text-[10px] text-gray-300 uppercase tracking-wider">Example Transaction</span>
+            </div>
+
+          </div>
         </div>
-        <div className="flex items-center gap-1.5 px-3 py-1.5 rounded-lg bg-slate-900/60 border border-slate-800">
-          <Layers className="w-3.5 h-3.5 text-violet-400" />
-          <span>Zero Middlemen Markups</span>
-        </div>
-      </motion.div>
+        
+      </div>
     </section>
   );
 };

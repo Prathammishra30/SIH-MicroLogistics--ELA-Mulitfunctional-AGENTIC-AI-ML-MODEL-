@@ -2,79 +2,79 @@
 
 @layer base {
   :root {
-    --font-sans: 'Plus Jakarta Sans', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    --font-sans: 'Plus Jakarta Sans', 'Noto Sans', 'Noto Sans Devanagari', 'Noto Sans Tamil', 'Noto Sans Telugu', 'Noto Sans Bengali', 'Noto Sans Kannada', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     --font-mono: 'JetBrains Mono', monospace;
+    
+    /* RuralFlow Natural Agricultural Palette */
+    --color-primary: #2E7D32;
+    --color-primary-hover: #256628;
+    --color-primary-light: #EAF5E8;
+    --color-primary-dark: #1B5E20;
+
+    --color-buyer: #2474B5;
+    --color-buyer-light: #EAF3FB;
+    
+    --color-transporter: #E67E22;
+    --color-transporter-light: #FFF1E5;
+    
+    --color-bg-main: #FAFBF7;
+    --color-card-bg: #FFFFFF;
+    --color-text-primary: #17211B;
+    --color-text-secondary: #66706A;
+    --color-border: #E5E8E2;
+    --color-border-subtle: #F0F2EC;
+    --color-earth-neutral: #F4F1EA;
   }
 
   html {
     font-family: var(--font-sans);
     scroll-behavior: smooth;
+    background-color: #FAFBF7;
+    color: #17211B;
+  }
+
+  body {
+    background-color: #FAFBF7;
+    color: #17211B;
+    min-height: 100vh;
   }
 
   /* Custom Clean Scrollbar */
   ::-webkit-scrollbar {
-    width: 8px;
-    height: 8px;
+    width: 6px;
+    height: 6px;
   }
 
   ::-webkit-scrollbar-track {
-    background: transparent;
+    background: #FAFBF7;
   }
 
   ::-webkit-scrollbar-thumb {
-    background: rgba(148, 163, 184, 0.2);
+    background: #D1D5CB;
     border-radius: 9999px;
   }
 
   ::-webkit-scrollbar-thumb:hover {
-    background: rgba(148, 163, 184, 0.4);
+    background: #A3A89D;
   }
 }
 
-/* Glassmorphism & Micro-Interactions */
-.glass-panel {
-  background: rgba(15, 23, 42, 0.75);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(255, 255, 255, 0.08);
+/* Practical Product Cards & Panels */
+.rf-card {
+  background-color: #FFFFFF;
+  border: 1px solid #E5E8E2;
+  border-radius: 1rem;
+  box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.03), 0 1px 2px -1px rgba(0, 0, 0, 0.03);
 }
 
-.glass-panel-light {
-  background: rgba(255, 255, 255, 0.85);
-  backdrop-filter: blur(16px);
-  -webkit-backdrop-filter: blur(16px);
-  border: 1px solid rgba(0, 0, 0, 0.06);
-}
-
-.glow-emerald {
-  box-shadow: 0 0 40px -10px rgba(16, 185, 129, 0.25);
-}
-
-.glow-sky {
-  box-shadow: 0 0 40px -10px rgba(14, 165, 233, 0.25);
-}
-
-.glow-violet {
-  box-shadow: 0 0 40px -10px rgba(139, 92, 246, 0.25);
-}
-
-/* Subtle grid background pattern */
-.bg-grid-pattern {
-  background-size: 40px 40px;
-  background-image: 
-    linear-gradient(to right, rgba(255, 255, 255, 0.03) 1px, transparent 1px),
-    linear-gradient(to bottom, rgba(255, 255, 255, 0.03) 1px, transparent 1px);
-}
-
-.light .bg-grid-pattern {
-  background-size: 40px 40px;
-  background-image: 
-    linear-gradient(to right, rgba(0, 0, 0, 0.03) 1px, transparent 1px),
-    linear-gradient(to bottom, rgba(0, 0, 0, 0.03) 1px, transparent 1px);
+.rf-card-subtle {
+  background-color: #F8FAF8;
+  border: 1px solid #EAECE6;
+  border-radius: 0.875rem;
 }
 
 /* Focus rings for keyboard accessibility */
 :focus-visible {
-  outline: 2px solid #10b981;
+  outline: 2px solid #2E7D32;
   outline-offset: 2px;
 }

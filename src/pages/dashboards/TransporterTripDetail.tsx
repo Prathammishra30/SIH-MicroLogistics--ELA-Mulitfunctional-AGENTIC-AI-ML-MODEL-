@@ -1,6 +1,6 @@
 import React from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { ArrowLeft, CheckCircle2, Truck, AlertTriangle, Loader2 } from 'lucide-react';
+import { ArrowLeft, CheckCircle2, Truck, AlertTriangle, Loader2, MapPin } from 'lucide-react';
 import { useSharedContext } from '../../context/SharedContext';
 import { transporterApi } from '../../services/api';
 
@@ -40,14 +40,22 @@ export const TransporterTripDetail: React.FC = () => {
 
   if (!trip) {
     return (
-      <div className="p-8 text-white text-center">Trip not found</div>
+      <div className="min-h-[50vh] flex flex-col items-center justify-center space-y-4">
+        <h2 className="text-xl font-bold text-gray-900">Trip Record Not Found</h2>
+        <button
+          onClick={() => navigate('/transporter/trips')}
+          className="px-4 py-2 rounded-xl bg-amber-700 hover:bg-amber-800 text-white text-xs font-semibold shadow-2xs transition-colors cursor-pointer"
+        >
+          Back to Available Trips
+        </button>
+      </div>
     );
   }
 
   const handleAcceptTrip = async () => {
     if (!trip) return;
     setIsSubmitting(true);
-    const vehicleStr = selectedVehicle ? `${selectedVehicle.type} (${selectedVehicle.registration})` : 'Pickup (1.5 MT)';
+    const vehicleStr = selectedVehicle ? `${selectedVehicle.type} (${selectedVehicle.registration})` : 'Bolero Pickup (1.5 MT)';
     const driverName = state.auth.user?.name || 'Driver';
 
     try {
@@ -68,11 +76,14 @@ export const TransporterTripDetail: React.FC = () => {
           status: 'Assigned',
           driver: driverName,
           vehicle: vehicleStr,
-          newTimelineEvent: { status: 'Vehicle Assigned', time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }), completed: true }
-        }
+          newTimelineEvent: {
+            status: 'Vehicle Assigned',
+            time: new Date().toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' }),
+            completed: true,
+          },
+        },
       });
 
-      // Mark vehicle as Busy locally
       if (selectedVehicle) {
         dispatch({
           type: 'UPDATE_VEHICLE_STATUS',
@@ -83,9 +94,9 @@ export const TransporterTripDetail: React.FC = () => {
       dispatch({
         type: 'ADD_NOTIFICATION',
         payload: {
-          message: `Trip ${trip.id} accepted successfully!`,
-          type: 'success'
-        }
+          message: `Trip #${trip.id} accepted successfully!`,
+          type: 'success',
+        },
       });
 
       navigate('/transporter/active');
@@ -95,74 +106,86 @@ export const TransporterTripDetail: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen flex flex-col z-10 px-4 sm:px-6 lg:px-8 py-6 max-w-3xl mx-auto w-full text-slate-100">
-      <div className="flex items-center gap-4 mb-6">
+    <div className="max-w-3xl mx-auto space-y-6">
+      
+      {/* Header */}
+      <header className="flex items-center gap-3 bg-white p-5 rounded-2xl border border-gray-200 shadow-2xs">
         <button
           onClick={() => navigate(-1)}
-          className="p-2 rounded-xl bg-slate-900 border border-slate-800 hover:border-slate-700 text-slate-300 transition-colors"
+          className="p-2 rounded-xl bg-gray-50 border border-gray-200 hover:bg-gray-100 text-gray-600 hover:text-gray-900 transition-colors cursor-pointer"
         >
-          <ArrowLeft className="w-5 h-5" />
+          <ArrowLeft className="w-4 h-4" />
         </button>
-        <h1 className="text-xl sm:text-2xl font-bold text-white tracking-tight">Trip Details</h1>
-      </div>
+        <div>
+          <h1 className="text-xl font-bold text-gray-900 tracking-tight">
+            Trip Acceptance Details • #{trip.id}
+          </h1>
+          <p className="text-xs text-gray-500">
+            Review freight specifications, route distances, and assign an eligible fleet vehicle.
+          </p>
+        </div>
+      </header>
 
-      <div className="bg-slate-900/80 border border-slate-800 p-6 rounded-2xl mb-6">
-        <div className="flex justify-between items-start mb-4">
+      {/* Cargo & Route Card */}
+      <div className="bg-white border border-gray-200 p-6 rounded-2xl shadow-2xs space-y-4">
+        <div className="flex justify-between items-start border-b border-gray-100 pb-3">
           <div>
-            <h2 className="text-xl font-semibold text-white">{trip.productName}</h2>
-            <p className="text-slate-400 text-sm mt-1">ID: <span className="font-mono">{trip.id}</span></p>
+            <h2 className="text-base font-bold text-gray-900">{trip.productName}</h2>
+            <p className="text-gray-500 text-xs mt-0.5">Shipment Reference: <span className="font-mono font-bold text-gray-700">{trip.id}</span></p>
           </div>
-          <span className="px-3 py-1 bg-sky-500/20 text-sky-400 border border-sky-500/20 rounded-full text-xs font-semibold">
+          <span className="px-2.5 py-0.5 bg-amber-50 text-amber-800 border border-amber-200 rounded-full text-xs font-semibold">
             {trip.status}
           </span>
         </div>
 
-        <div className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="p-4 bg-slate-950 rounded-xl border border-slate-800">
-              <h3 className="text-sm font-semibold text-slate-400 mb-1">Pickup Location</h3>
-              <p className="text-white">{trip.pickupLocation || 'Pending'}</p>
-            </div>
-            <div className="p-4 bg-slate-950 rounded-xl border border-slate-800">
-              <h3 className="text-sm font-semibold text-slate-400 mb-1">Destination</h3>
-              <p className="text-white">{trip.destination}</p>
-            </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
+          <div className="p-3.5 bg-gray-50 rounded-xl border border-gray-200/80 space-y-1">
+            <span className="text-gray-400 font-semibold uppercase text-[10px] flex items-center gap-1">
+              <MapPin className="w-3 h-3 text-green-700" /> Farm Pickup
+            </span>
+            <p className="text-gray-900 font-medium">{trip.pickupLocation || 'Farm Gate'}</p>
           </div>
 
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            <div className="p-4 bg-slate-950 rounded-xl border border-slate-800">
-              <h3 className="text-sm font-semibold text-slate-400 mb-1">Required Load</h3>
-              <p className="text-white">{trip.quantity || 'Unknown'}</p>
-            </div>
-            <div className="p-4 bg-slate-950 rounded-xl border border-slate-800">
-              <h3 className="text-sm font-semibold text-slate-400 mb-1">Estimated Payout</h3>
-              <p className="text-emerald-400 font-bold font-mono">{trip.estimatedEarnings || 'TBD'}</p>
-            </div>
+          <div className="p-3.5 bg-gray-50 rounded-xl border border-gray-200/80 space-y-1">
+            <span className="text-gray-400 font-semibold uppercase text-[10px] flex items-center gap-1">
+              <MapPin className="w-3 h-3 text-amber-700" /> Mandi Drop Point
+            </span>
+            <p className="text-gray-900 font-medium">{trip.destination}</p>
+          </div>
+
+          <div className="p-3.5 bg-gray-50 rounded-xl border border-gray-200/80 space-y-1">
+            <span className="text-gray-400 font-semibold uppercase text-[10px]">Required Load Payload</span>
+            <p className="text-gray-900 font-bold font-mono text-sm">{trip.quantity || '1.5 MT'}</p>
+          </div>
+
+          <div className="p-3.5 bg-gray-50 rounded-xl border border-gray-200/80 space-y-1">
+            <span className="text-gray-400 font-semibold uppercase text-[10px]">Estimated Freight Payout</span>
+            <p className="text-[#2E7D32] font-bold font-mono text-sm">{trip.estimatedEarnings || '₹1,850'}</p>
           </div>
         </div>
       </div>
 
-      {/* Vehicle Selection */}
-      <div className="bg-slate-900/80 border border-slate-800 p-6 rounded-2xl mb-6">
-        <h3 className="text-lg font-semibold text-white mb-4 flex items-center gap-2">
-          <Truck className="w-5 h-5 text-emerald-400" />
-          Select Vehicle
+      {/* Vehicle Selection & Capacity Validation */}
+      <div className="bg-white border border-gray-200 p-6 rounded-2xl shadow-2xs space-y-4">
+        <h3 className="text-sm font-bold text-gray-900 flex items-center gap-2">
+          <Truck className="w-4 h-4 text-amber-700" />
+          Assign Fleet Vehicle
         </h3>
 
         {state.vehicles.length === 0 ? (
-          <div className="flex items-center justify-between p-4 bg-rose-500/10 border border-rose-500/20 rounded-xl">
-            <div className="flex items-center gap-3 text-rose-400">
-              <AlertTriangle className="w-5 h-5" />
+          <div className="flex items-center justify-between p-4 bg-amber-50 border border-amber-200 rounded-xl text-xs">
+            <div className="flex items-center gap-2 text-amber-800">
+              <AlertTriangle className="w-4 h-4" />
               <div>
-                <p className="font-semibold">No Vehicles Registered</p>
-                <p className="text-xs mt-1">Please add a vehicle before accepting trips.</p>
+                <p className="font-bold">No Registered Vehicles</p>
+                <p className="text-[11px] text-amber-700">Please register a vehicle in your fleet before accepting trips.</p>
               </div>
             </div>
             <button
               onClick={() => navigate('/transporter/vehicles')}
-              className="px-4 py-2 rounded-xl bg-rose-500/20 text-rose-300 text-xs font-semibold hover:bg-rose-500/30 transition-colors"
+              className="px-3 py-1.5 rounded-lg bg-amber-700 text-white font-semibold hover:bg-amber-800 transition-colors shadow-2xs cursor-pointer"
             >
-              Add Vehicle →
+              + Add Vehicle
             </button>
           </div>
         ) : (
@@ -170,59 +193,59 @@ export const TransporterTripDetail: React.FC = () => {
             <select
               value={effectiveVehicleId}
               onChange={(e) => setSelectedVehicleId(e.target.value)}
-              className="w-full px-4 py-3 rounded-xl bg-slate-950 border border-slate-700 text-white text-sm focus:border-emerald-500 focus:outline-none"
+              className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-gray-300 text-gray-900 text-xs focus:border-amber-600 focus:ring-2 focus:ring-amber-100 outline-none"
             >
-              <option value="">Select a vehicle...</option>
+              <option value="">Select a vehicle from your fleet...</option>
               {availableVehicles.map((v) => (
                 <option key={v.id} value={v.id}>
-                  {v.type} — {v.registration} ({v.capacity})
+                  {v.type} — {v.registration} (Rated: {v.capacity})
                 </option>
               ))}
             </select>
 
             {availableVehicles.length === 0 && (
-              <p className="text-sm text-amber-400">All vehicles are currently busy. Free up a vehicle or add a new one.</p>
+              <p className="text-xs text-amber-800">All registered fleet vehicles are currently busy on other active trips.</p>
             )}
 
             {selectedVehicle && (
               isCompatible ? (
-                <div className="flex items-center justify-between p-4 bg-emerald-500/10 border border-emerald-500/20 rounded-xl">
-                  <div className="flex items-center gap-3 text-emerald-400">
-                    <CheckCircle2 className="w-5 h-5" />
+                <div className="flex items-center justify-between p-3.5 bg-[#E8F5E9] border border-green-200 rounded-xl text-xs">
+                  <div className="flex items-center gap-2 text-[#2E7D32]">
+                    <CheckCircle2 className="w-4 h-4" />
                     <div>
-                      <p className="font-semibold">{selectedVehicle.type}</p>
-                      <p className="text-xs mt-1">{selectedVehicle.registration} • Capacity: {selectedVehicle.capacity}</p>
+                      <p className="font-bold">{selectedVehicle.type} ({selectedVehicle.registration})</p>
+                      <p className="text-[11px] text-green-700">Rated: {selectedVehicle.capacity} • Compatible with required load</p>
                     </div>
                   </div>
-                  <span className="text-xs bg-emerald-500/20 px-2 py-1 rounded text-emerald-300">Optimal Match</span>
+                  <span className="text-[10px] font-bold bg-white text-[#2E7D32] px-2 py-0.5 rounded border border-green-200">
+                    Capacity Validated
+                  </span>
                 </div>
               ) : (
-                <div className="flex items-center justify-between p-4 bg-rose-500/10 border border-rose-500/20 rounded-xl">
-                  <div className="flex items-center gap-3 text-rose-400">
-                    <AlertTriangle className="w-5 h-5" />
-                    <div>
-                      <p className="font-semibold">Capacity Exceeded</p>
-                      <p className="text-xs mt-1">
-                        Your {selectedVehicle.capacity} vehicle (~{vehicleKg} kg) cannot carry {trip.quantity} (~{requestedKg} kg).
-                      </p>
-                    </div>
+                <div className="flex items-center gap-2 p-3.5 bg-red-50 border border-red-200 rounded-xl text-xs text-red-700">
+                  <AlertTriangle className="w-4 h-4 shrink-0" />
+                  <div>
+                    <p className="font-bold">Capacity Exceeded</p>
+                    <p className="text-[11px]">
+                      Vehicle capacity ({selectedVehicle.capacity}) cannot carry the requested payload of {trip.quantity}.
+                    </p>
                   </div>
                 </div>
               )
             )}
           </div>
         )}
-      </div>
 
-      <div className="flex justify-end mt-4">
-        <button
-          onClick={handleAcceptTrip}
-          disabled={!selectedVehicle || !isCompatible || isSubmitting || state.vehicles.length === 0}
-          className="px-6 py-3 bg-sky-600 hover:bg-sky-500 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-xl font-semibold transition-colors flex items-center gap-2"
-        >
-          {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : null}
-          {isSubmitting ? 'Accepting Trip...' : 'Accept Trip'}
-        </button>
+        <div className="flex justify-end pt-2">
+          <button
+            onClick={handleAcceptTrip}
+            disabled={!selectedVehicle || !isCompatible || isSubmitting || state.vehicles.length === 0}
+            className="px-6 py-2.5 bg-amber-700 hover:bg-amber-800 disabled:opacity-50 disabled:cursor-not-allowed text-white rounded-xl font-semibold text-xs transition-colors flex items-center gap-2 shadow-2xs cursor-pointer"
+          >
+            {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <Truck className="w-4 h-4" />}
+            <span>{isSubmitting ? 'Assigning Vehicle...' : 'Accept & Dispatch Trip'}</span>
+          </button>
+        </div>
       </div>
     </div>
   );

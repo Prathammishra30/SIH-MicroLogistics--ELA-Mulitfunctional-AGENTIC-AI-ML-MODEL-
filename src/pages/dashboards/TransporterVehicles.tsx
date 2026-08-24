@@ -1,6 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowLeft, Gauge, Plus, Truck, AlertTriangle, CheckCircle2, Loader2 } from 'lucide-react';
+import { ArrowLeft, Plus, Truck, CheckCircle2, Loader2, X, Car } from 'lucide-react';
 import { useSharedContext } from '../../context/SharedContext';
 import { transporterApi } from '../../services/api';
 
@@ -12,17 +12,16 @@ export const TransporterVehicles: React.FC = () => {
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [formData, setFormData] = useState({
-    type: '',
+    type: 'Bolero Pickup',
     registration: '',
-    capacity: '',
+    capacity: '2.0 MT',
   });
 
   const vehicleTypes = [
-    'Tata Ace (Mini Truck)',
     'Bolero Pickup',
+    'Tata Ace (Mini Truck)',
     'Eicher Pro 2049',
     'Medium Goods Carrier',
-    'Large Goods Carrier',
     'Three Wheeler Cargo',
     'Tempo Traveller (Goods)',
   ];
@@ -35,8 +34,7 @@ export const TransporterVehicles: React.FC = () => {
         type: 'UPDATE_VEHICLE_STATUS',
         payload: { id, status: newStatus as 'Available' | 'Busy' },
       });
-    } catch (err) {
-      console.warn('Status toggle error:', err);
+    } catch {
       dispatch({
         type: 'UPDATE_VEHICLE_STATUS',
         payload: { id, status: newStatus as 'Available' | 'Busy' },
@@ -71,12 +69,12 @@ export const TransporterVehicles: React.FC = () => {
       dispatch({
         type: 'ADD_NOTIFICATION',
         payload: {
-          message: `Vehicle ${vehicle.registration} added successfully!`,
+          message: `Vehicle ${vehicle.registration} registered successfully.`,
           type: 'success',
         },
       });
 
-      setFormData({ type: '', registration: '', capacity: '' });
+      setFormData({ type: 'Bolero Pickup', registration: '', capacity: '2.0 MT' });
       setShowAddForm(false);
     } catch (err) {
       const msg = err instanceof Error ? err.message : 'Failed to add vehicle';
@@ -86,173 +84,239 @@ export const TransporterVehicles: React.FC = () => {
     }
   };
 
-  const statusColor = (status: string) => {
-    switch (status) {
-      case 'Available': return 'bg-emerald-500/20 text-emerald-400 border-emerald-500/20';
-      case 'Busy': return 'bg-amber-500/20 text-amber-400 border-amber-500/20';
-      case 'Maintenance': return 'bg-rose-500/20 text-rose-400 border-rose-500/20';
-      case 'Offline': return 'bg-slate-700/50 text-slate-400 border-slate-600';
-      default: return 'bg-slate-800 text-slate-400 border-slate-700';
-    }
-  };
-
   return (
-    <div className="min-h-screen flex flex-col z-10 px-4 sm:px-6 lg:px-8 py-6 max-w-7xl mx-auto w-full text-slate-100">
-      <div className="flex items-center justify-between mb-6">
-        <div className="flex items-center gap-4">
+    <div className="space-y-6">
+      
+      {/* Header */}
+      <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-5 rounded-2xl border border-gray-200 shadow-2xs">
+        <div className="flex items-center gap-3">
           <button
             onClick={() => navigate('/transporter/dashboard')}
-            className="p-2 rounded-xl bg-slate-900 border border-slate-800 hover:border-slate-700 text-slate-300 transition-colors"
+            className="p-2 rounded-xl bg-gray-50 border border-gray-200 hover:bg-gray-100 text-gray-600 hover:text-gray-900 transition-colors cursor-pointer"
+            title="Back to dashboard"
           >
-            <ArrowLeft className="w-5 h-5" />
+            <ArrowLeft className="w-4 h-4" />
           </button>
-          <h1 className="text-xl sm:text-2xl font-bold text-white tracking-tight flex items-center gap-3">
-            <Gauge className="w-6 h-6 text-violet-400" />
-            Vehicle & Health Status
-          </h1>
+          <div>
+            <h1 className="text-xl sm:text-2xl font-bold text-gray-900 flex items-center gap-2">
+              <Car className="w-5 h-5 text-amber-700" />
+              Vehicle Fleet & Health Status
+            </h1>
+            <p className="text-xs text-gray-500">
+              Manage your commercial vehicle registrations, payload capacity, and health inspections.
+            </p>
+          </div>
         </div>
 
         <button
-          onClick={() => { setShowAddForm(!showAddForm); setError(null); }}
-          className="px-4 py-2 rounded-xl bg-violet-600 hover:bg-violet-500 text-white text-sm font-semibold flex items-center gap-2 transition-colors shadow-lg shadow-violet-500/20"
+          onClick={() => setShowAddForm(true)}
+          className="px-4 py-2 rounded-xl bg-amber-700 hover:bg-amber-800 text-white text-xs font-semibold shadow-2xs flex items-center justify-center gap-1.5 transition-colors cursor-pointer"
         >
           <Plus className="w-4 h-4" />
-          Add Vehicle
+          <span>+ Add Vehicle</span>
         </button>
-      </div>
+      </header>
 
-      {/* Add Vehicle Form */}
-      {showAddForm && (
-        <div className="mb-6 p-6 rounded-2xl bg-slate-900/90 border border-violet-500/30 space-y-4">
-          <h2 className="text-lg font-bold text-white flex items-center gap-2">
-            <Truck className="w-5 h-5 text-violet-400" />
-            Register New Vehicle
-          </h2>
-
-          {error && (
-            <div className="p-3 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-400 text-sm flex items-center gap-2">
-              <AlertTriangle className="w-4 h-4 shrink-0" />
-              {error}
-            </div>
-          )}
-
-          <form onSubmit={handleAddVehicle} className="space-y-4">
-            <div>
-              <label className="block text-sm font-medium text-slate-300 mb-1.5">Vehicle Type *</label>
-              <select
-                value={formData.type}
-                onChange={(e) => setFormData({ ...formData, type: e.target.value })}
-                required
-                className="w-full px-4 py-2.5 rounded-xl bg-slate-950 border border-slate-700 text-white text-sm focus:border-violet-500 focus:outline-none"
-              >
-                <option value="">Select vehicle type...</option>
-                {vehicleTypes.map((t) => (
-                  <option key={t} value={t}>{t}</option>
-                ))}
-              </select>
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-slate-300 mb-1.5">Registration Number *</label>
-              <input
-                type="text"
-                value={formData.registration}
-                onChange={(e) => setFormData({ ...formData, registration: e.target.value })}
-                placeholder="e.g. MH 12 AB 1234"
-                required
-                className="w-full px-4 py-2.5 rounded-xl bg-slate-950 border border-slate-700 text-white text-sm focus:border-violet-500 focus:outline-none font-mono uppercase"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-slate-300 mb-1.5">Capacity *</label>
-              <input
-                type="text"
-                value={formData.capacity}
-                onChange={(e) => setFormData({ ...formData, capacity: e.target.value })}
-                placeholder="e.g. 750 kg or 2.5 MT"
-                required
-                className="w-full px-4 py-2.5 rounded-xl bg-slate-950 border border-slate-700 text-white text-sm focus:border-violet-500 focus:outline-none"
-              />
-            </div>
-
-            <div className="flex items-center gap-3 pt-2">
-              <button
-                type="submit"
-                disabled={isSubmitting || !formData.type || !formData.registration || !formData.capacity}
-                className="px-6 py-2.5 rounded-xl bg-violet-600 hover:bg-violet-500 disabled:opacity-50 disabled:cursor-not-allowed text-white font-semibold text-sm flex items-center gap-2 transition-colors"
-              >
-                {isSubmitting ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />}
-                {isSubmitting ? 'Registering...' : 'Register Vehicle'}
-              </button>
-              <button
-                type="button"
-                onClick={() => { setShowAddForm(false); setError(null); }}
-                className="px-4 py-2.5 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 text-sm font-semibold transition-colors"
-              >
-                Cancel
-              </button>
-            </div>
-          </form>
-        </div>
-      )}
-
-      {/* Vehicle List */}
-      {state.vehicles.length === 0 ? (
-        <div className="flex flex-col items-center justify-center py-16 px-8 rounded-2xl bg-slate-900/50 border border-dashed border-slate-700 text-center space-y-4">
-          <div className="w-16 h-16 rounded-2xl bg-violet-500/10 border border-violet-500/30 flex items-center justify-center">
-            <Truck className="w-8 h-8 text-violet-400" />
-          </div>
+      {/* Vehicles Table / Cards */}
+      <div className="bg-white rounded-2xl border border-gray-200 p-5 shadow-2xs space-y-4">
+        <div className="flex items-center justify-between">
           <div>
-            <h3 className="text-lg font-bold text-white">No Vehicles Registered</h3>
-            <p className="text-sm text-slate-400 mt-1">Add your first vehicle to start accepting logistics trips.</p>
+            <h2 className="text-base font-bold text-gray-900">Registered Fleet</h2>
+            <p className="text-xs text-gray-500">Active transport vehicles validated for rural load dispatch</p>
           </div>
-          {!showAddForm && (
+          <span className="text-xs font-bold text-gray-500">
+            {state.vehicles.length} {state.vehicles.length === 1 ? 'Vehicle' : 'Vehicles'}
+          </span>
+        </div>
+
+        {state.vehicles.length === 0 ? (
+          <div className="p-12 text-center border border-dashed border-gray-200 rounded-xl bg-gray-50 space-y-3">
+            <Truck className="w-10 h-10 text-gray-400 mx-auto" />
+            <div className="space-y-1">
+              <h3 className="text-sm font-bold text-gray-900">No Vehicles Registered</h3>
+              <p className="text-xs text-gray-500">Add your first vehicle to start accepting crop logistics loads.</p>
+            </div>
             <button
               onClick={() => setShowAddForm(true)}
-              className="px-6 py-3 rounded-xl bg-violet-600 hover:bg-violet-500 text-white font-semibold text-sm flex items-center gap-2 transition-colors shadow-lg shadow-violet-500/20"
+              className="px-4 py-2 rounded-xl bg-amber-700 hover:bg-amber-800 text-white text-xs font-semibold shadow-2xs inline-flex items-center gap-1.5 cursor-pointer"
             >
               <Plus className="w-4 h-4" />
-              Add Your First Vehicle
+              <span>+ Add Vehicle</span>
             </button>
-          )}
-        </div>
-      ) : (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {state.vehicles.map((vehicle) => (
-            <div key={vehicle.id} className="p-6 rounded-2xl bg-slate-900/80 border border-slate-800">
-              <div className="flex justify-between items-start mb-4">
-                <div>
-                  <h3 className="text-lg font-bold text-white">{vehicle.type}</h3>
-                  <p className="text-sm text-slate-400 mt-1 font-mono">{vehicle.registration}</p>
-                </div>
-                <button
-                  onClick={() => toggleStatus(vehicle.id, vehicle.status)}
-                  className={`px-3 py-1 rounded-full text-xs font-semibold border ${statusColor(vehicle.status)}`}
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs">
+              <thead>
+                <tr className="border-b border-gray-200 text-gray-500 font-semibold uppercase tracking-wider text-[10px] bg-gray-50/50">
+                  <th className="py-2.5 px-3">Vehicle Type</th>
+                  <th className="py-2.5 px-3">Registration Number</th>
+                  <th className="py-2.5 px-3">Capacity</th>
+                  <th className="py-2.5 px-3">Status</th>
+                  <th className="py-2.5 px-3">Health</th>
+                  <th className="py-2.5 px-3">Current Assignment</th>
+                  <th className="py-2.5 px-3 text-right">Action</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100">
+                {state.vehicles.map((v) => {
+                  const assignedShipment = state.logisticsRequests.find(
+                    (r) => (r.status === 'Assigned' || r.status === 'In Transit') && (r.vehicle?.includes(v.registration) || r.vehicle?.includes(v.type))
+                  );
+
+                  return (
+                    <tr key={v.id} className="hover:bg-gray-50/80 transition-colors">
+                      <td className="py-3.5 px-3">
+                        <div className="flex items-center gap-2">
+                          <div className="w-7 h-7 rounded-lg bg-amber-50 border border-amber-200 flex items-center justify-center text-amber-800">
+                            <Truck className="w-3.5 h-3.5" />
+                          </div>
+                          <span className="font-semibold text-gray-900">{v.type}</span>
+                        </div>
+                      </td>
+                      <td className="py-3.5 px-3 font-mono font-bold text-gray-900">
+                        {v.registration}
+                      </td>
+                      <td className="py-3.5 px-3 font-mono text-gray-600">
+                        {v.capacity}
+                      </td>
+                      <td className="py-3.5 px-3">
+                        <span
+                          className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold border ${
+                            v.status === 'Available'
+                              ? 'bg-[#E8F5E9] text-[#2E7D32] border-green-200'
+                              : v.status === 'Busy'
+                              ? 'bg-amber-50 text-amber-800 border-amber-200'
+                              : 'bg-gray-100 text-gray-700 border-gray-200'
+                          }`}
+                        >
+                          {v.status}
+                        </span>
+                      </td>
+                      <td className="py-3.5 px-3">
+                        <span className="inline-flex items-center gap-1 text-[11px] font-semibold text-[#2E7D32]">
+                          <CheckCircle2 className="w-3.5 h-3.5" />
+                          <span>Good (98%)</span>
+                        </span>
+                      </td>
+                      <td className="py-3.5 px-3 text-gray-600">
+                        {assignedShipment ? (
+                          <div className="truncate max-w-[150px]">
+                            <span className="font-semibold text-gray-900">#{assignedShipment.id}</span> • {assignedShipment.productName}
+                          </div>
+                        ) : (
+                          <span className="text-gray-400 italic">No active trip</span>
+                        )}
+                      </td>
+                      <td className="py-3.5 px-3 text-right">
+                        <button
+                          onClick={() => toggleStatus(v.id, v.status)}
+                          className="px-2.5 py-1 rounded-lg border border-gray-300 hover:bg-gray-100 text-gray-700 text-[11px] font-semibold transition-colors cursor-pointer"
+                        >
+                          Toggle {v.status === 'Available' ? 'Busy' : 'Available'}
+                        </button>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
+      </div>
+
+      {/* Add Vehicle Modal */}
+      {showAddForm && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-xs">
+          <div className="w-full max-w-md bg-white rounded-2xl border border-gray-200 shadow-xl p-6 space-y-5">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-base font-bold text-gray-900">Register Fleet Vehicle</h3>
+                <p className="text-xs text-gray-500">Enter commercial vehicle details for capacity validation.</p>
+              </div>
+              <button
+                onClick={() => setShowAddForm(false)}
+                className="p-1.5 rounded-lg text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-colors cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
+
+            {error && (
+              <div className="p-3 rounded-xl bg-red-50 border border-red-200 text-red-700 text-xs font-semibold">
+                {error}
+              </div>
+            )}
+
+            <form onSubmit={handleAddVehicle} className="space-y-4">
+              <div>
+                <label className="block text-xs font-semibold text-gray-700 mb-1">
+                  Vehicle Model / Type *
+                </label>
+                <select
+                  value={formData.type}
+                  onChange={(e) => setFormData({ ...formData, type: e.target.value })}
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-gray-300 text-gray-900 text-xs focus:border-amber-600 focus:ring-2 focus:ring-amber-100 outline-none"
                 >
-                  {vehicle.status}
-                </button>
+                  {vehicleTypes.map((t) => (
+                    <option key={t} value={t}>{t}</option>
+                  ))}
+                </select>
               </div>
 
-              <div className="space-y-3 mt-6">
-                <div className="flex justify-between items-center text-sm">
-                  <span className="text-slate-400">Capacity</span>
-                  <span className="text-white font-semibold">{vehicle.capacity}</span>
-                </div>
-                <div className="flex justify-between items-center text-sm">
-                  <span className="text-slate-400">Utilization</span>
-                  <span className="text-violet-400 font-semibold">{vehicle.utilization}%</span>
-                </div>
-                <div className="flex justify-between items-center text-sm">
-                  <span className="text-slate-400">Health</span>
-                  <span className="text-emerald-400 font-semibold flex items-center gap-1">
-                    <CheckCircle2 className="w-3 h-3" />
-                    {vehicle.status === 'Maintenance' ? 'Under Maintenance' : 'Good'}
-                  </span>
-                </div>
+              <div>
+                <label className="block text-xs font-semibold text-gray-700 mb-1">
+                  Registration Number (Plate) *
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={formData.registration}
+                  onChange={(e) => setFormData({ ...formData, registration: e.target.value.toUpperCase() })}
+                  placeholder="e.g. MH-12-PQ-8890"
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-gray-300 text-gray-900 text-xs font-mono focus:border-amber-600 focus:ring-2 focus:ring-amber-100 outline-none"
+                />
               </div>
-            </div>
-          ))}
+
+              <div>
+                <label className="block text-xs font-semibold text-gray-700 mb-1">
+                  Rated Payload Capacity *
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={formData.capacity}
+                  onChange={(e) => setFormData({ ...formData, capacity: e.target.value })}
+                  placeholder="e.g. 2.0 MT, 1500 kg, 750 kg"
+                  className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-gray-300 text-gray-900 text-xs focus:border-amber-600 focus:ring-2 focus:ring-amber-100 outline-none"
+                />
+              </div>
+
+              <div className="flex items-center justify-end gap-3 pt-2">
+                <button
+                  type="button"
+                  onClick={() => setShowAddForm(false)}
+                  className="px-4 py-2 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-semibold transition-colors cursor-pointer"
+                >
+                  Cancel
+                </button>
+                <button
+                  type="submit"
+                  disabled={isSubmitting}
+                  className="px-5 py-2 rounded-xl bg-amber-700 hover:bg-amber-800 text-white text-xs font-semibold shadow-2xs transition-colors flex items-center gap-2 cursor-pointer disabled:opacity-50"
+                >
+                  {isSubmitting ? (
+                    <>
+                      <Loader2 className="w-4 h-4 animate-spin" />
+                      <span>Saving...</span>
+                    </>
+                  ) : (
+                    <span>Register Vehicle</span>
+                  )}
+                </button>
+              </div>
+            </form>
+          </div>
         </div>
       )}
     </div>

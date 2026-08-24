@@ -8,15 +8,15 @@ export const FarmerDeliveryDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const { state } = useSharedContext();
 
-  const shipment = state.logisticsRequests.find(req => req.id === id);
+  const shipment = state.logisticsRequests.find((req) => req.id === id);
 
   if (!shipment) {
     return (
-      <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col items-center justify-center">
-        <h2 className="text-2xl font-bold mb-4">Shipment Not Found</h2>
-        <button 
+      <div className="min-h-[50vh] flex flex-col items-center justify-center space-y-4">
+        <h2 className="text-xl font-bold text-gray-900">Shipment Record Not Found</h2>
+        <button
           onClick={() => navigate('/farmer/deliveries')}
-          className="px-6 py-2.5 rounded-xl bg-violet-500 hover:bg-violet-600 font-bold transition-colors"
+          className="px-4 py-2 rounded-xl bg-[#2E7D32] hover:bg-[#256628] text-white text-xs font-semibold shadow-2xs transition-colors cursor-pointer"
         >
           Back to Deliveries
         </button>
@@ -25,97 +25,116 @@ export const FarmerDeliveryDetail: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 p-4 sm:p-6 lg:p-8 max-w-4xl mx-auto w-full relative z-10">
-      <header className="flex items-center gap-4 mb-8">
-        <button 
+    <div className="max-w-4xl mx-auto space-y-6">
+      
+      {/* Header */}
+      <header className="flex items-center gap-3 bg-white p-5 rounded-2xl border border-gray-200 shadow-2xs">
+        <button
           onClick={() => navigate('/farmer/deliveries')}
-          className="p-2 rounded-xl bg-slate-900 border border-slate-800 hover:bg-slate-800 text-slate-400 hover:text-white transition-colors"
+          className="p-2 rounded-xl bg-gray-50 border border-gray-200 hover:bg-gray-100 text-gray-600 hover:text-gray-900 transition-colors cursor-pointer"
+          title="Back to deliveries"
         >
-          <ArrowLeft className="w-5 h-5" />
+          <ArrowLeft className="w-4 h-4" />
         </button>
         <div>
-          <h1 className="text-xl sm:text-2xl font-bold text-white flex items-center gap-2">
-            Shipment {shipment.id}
+          <h1 className="text-xl font-bold text-gray-900 flex items-center gap-2">
+            Shipment #{shipment.id}
           </h1>
-          <p className="text-sm text-slate-400">Delivery Status & Tracking</p>
+          <p className="text-xs text-gray-500">Live delivery tracking & vehicle dispatch details.</p>
         </div>
       </header>
 
       <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-        <div className="md:col-span-2 space-y-6">
-          <div className="p-6 rounded-2xl bg-slate-900/80 border border-slate-800">
-            <h3 className="text-lg font-bold text-white mb-4 border-b border-slate-800 pb-2">Shipment Details</h3>
-            <div className="grid grid-cols-2 gap-y-4">
+        
+        {/* Left 2 Cols: Details */}
+        <div className="md:col-span-2 space-y-5">
+          
+          {/* Cargo Details Card */}
+          <div className="p-5 rounded-2xl bg-white border border-gray-200 shadow-2xs space-y-4">
+            <h3 className="text-sm font-bold text-gray-900 border-b border-gray-100 pb-2.5">
+              Produce Cargo Details
+            </h3>
+            <div className="grid grid-cols-2 gap-4 text-xs">
               <div>
-                <span className="text-xs text-slate-500 font-semibold uppercase tracking-wider block mb-1">Product</span>
-                <span className="text-sm font-semibold text-slate-200">{shipment.productName} ({shipment.quantity || 'Standard'})</span>
+                <span className="text-gray-400 font-semibold uppercase text-[10px] block mb-0.5">Produce</span>
+                <span className="text-gray-900 font-semibold">{shipment.productName} ({shipment.quantity || 'Standard'})</span>
               </div>
               <div>
-                <span className="text-xs text-slate-500 font-semibold uppercase tracking-wider block mb-1">Status</span>
-                <span className="text-sm font-bold text-violet-400">{shipment.status}</span>
-              </div>
-              <div>
-                <span className="text-xs text-slate-500 font-semibold uppercase tracking-wider block mb-1">Pickup</span>
-                <span className="text-sm font-semibold text-slate-200 flex items-center gap-1">
-                  <MapPin className="w-4 h-4 text-slate-400" /> {shipment.pickupLocation || 'Farm Gate'}
+                <span className="text-gray-400 font-semibold uppercase text-[10px] block mb-0.5">Shipment Status</span>
+                <span
+                  className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold border ${
+                    shipment.status === 'Delivered'
+                      ? 'bg-[#E8F5E9] text-[#2E7D32] border-green-200'
+                      : shipment.status === 'In Transit'
+                      ? 'bg-blue-50 text-blue-700 border-blue-200'
+                      : 'bg-amber-50 text-amber-800 border-amber-200'
+                  }`}
+                >
+                  {shipment.status}
                 </span>
               </div>
               <div>
-                <span className="text-xs text-slate-500 font-semibold uppercase tracking-wider block mb-1">Destination</span>
-                <span className="text-sm font-semibold text-slate-200 flex items-center gap-1">
-                  <MapPin className="w-4 h-4 text-slate-400" /> {shipment.destination}
+                <span className="text-gray-400 font-semibold uppercase text-[10px] block mb-0.5">Pickup Point</span>
+                <span className="text-gray-900 font-medium flex items-center gap-1">
+                  <MapPin className="w-3.5 h-3.5 text-green-700 shrink-0" /> {shipment.pickupLocation || 'Farm Gate'}
                 </span>
               </div>
-              {shipment.procurementRequestId && (
-                <div className="col-span-2 pt-2 border-t border-slate-800/50">
-                  <span className="text-xs text-slate-500 font-semibold uppercase tracking-wider block mb-1">Linked Procurement Demand</span>
-                  <span className="text-xs font-mono text-violet-400 font-semibold">{shipment.procurementRequestId} (Commercial APMC Order)</span>
-                </div>
-              )}
+              <div>
+                <span className="text-gray-400 font-semibold uppercase text-[10px] block mb-0.5">Destination</span>
+                <span className="text-gray-900 font-medium flex items-center gap-1">
+                  <MapPin className="w-3.5 h-3.5 text-amber-700 shrink-0" /> {shipment.destination}
+                </span>
+              </div>
             </div>
           </div>
 
-          <div className="p-6 rounded-2xl bg-slate-900/80 border border-slate-800">
-            <h3 className="text-lg font-bold text-white mb-4 border-b border-slate-800 pb-2 flex items-center gap-2">
-              <Truck className="w-5 h-5 text-sky-400" />
-              Transport Details
+          {/* Transport & Vehicle Details */}
+          <div className="p-5 rounded-2xl bg-white border border-gray-200 shadow-2xs space-y-4">
+            <h3 className="text-sm font-bold text-gray-900 border-b border-gray-100 pb-2.5 flex items-center gap-1.5">
+              <Truck className="w-4 h-4 text-amber-700" />
+              Assigned Fleet Details
             </h3>
-            <div className="grid grid-cols-2 gap-y-4">
+            <div className="grid grid-cols-2 gap-4 text-xs">
               <div>
-                <span className="text-xs text-slate-500 font-semibold uppercase tracking-wider block mb-1">Driver</span>
-                <span className="text-sm font-semibold text-slate-200">{shipment.driver || 'Pending Assignment'}</span>
+                <span className="text-gray-400 font-semibold uppercase text-[10px] block mb-0.5">Assigned Transporter</span>
+                <span className="text-gray-900 font-semibold">{shipment.driver || 'Pending Assignment'}</span>
               </div>
               <div>
-                <span className="text-xs text-slate-500 font-semibold uppercase tracking-wider block mb-1">Vehicle</span>
-                <span className="text-sm font-semibold text-slate-200">{shipment.vehicle || 'Pending Allocation'}</span>
+                <span className="text-gray-400 font-semibold uppercase text-[10px] block mb-0.5">Vehicle</span>
+                <span className="text-gray-900 font-semibold">{shipment.vehicle || 'Pending Allocation'}</span>
               </div>
               <div>
-                <span className="text-xs text-slate-500 font-semibold uppercase tracking-wider block mb-1">Estimated Cost / Payout</span>
-                <span className="text-sm font-bold text-emerald-400 font-mono">{shipment.estimatedEarnings || '₹1,850'}</span>
+                <span className="text-gray-400 font-semibold uppercase text-[10px] block mb-0.5">Freight Fare</span>
+                <span className="text-[#2E7D32] font-bold font-mono text-sm">{shipment.estimatedEarnings || '₹1,850'}</span>
               </div>
               <div>
-                <span className="text-xs text-slate-500 font-semibold uppercase tracking-wider block mb-1">ETA</span>
-                <span className="text-sm font-semibold text-slate-200">{shipment.eta || (shipment.status === 'Searching' ? 'Awaiting Transporter' : 'En Route')}</span>
+                <span className="text-gray-400 font-semibold uppercase text-[10px] block mb-0.5">Estimated Arrival</span>
+                <span className="text-gray-900 font-semibold">{shipment.eta || 'En Route'}</span>
               </div>
             </div>
           </div>
         </div>
 
-        <div className="md:col-span-1 p-6 rounded-2xl bg-slate-900/80 border border-slate-800 h-fit">
-          <h3 className="text-lg font-bold text-white mb-6">Status Timeline</h3>
-          <div className="relative">
-            <div className="absolute left-[11px] top-3 bottom-4 w-[2px] bg-slate-800"></div>
-            <div className="space-y-6">
+        {/* Right 1 Col: Status Timeline */}
+        <div className="p-5 rounded-2xl bg-white border border-gray-200 shadow-2xs h-fit space-y-4">
+          <h3 className="text-sm font-bold text-gray-900">Delivery Milestone Timeline</h3>
+          <div className="relative pl-2">
+            <div className="absolute left-[17px] top-2 bottom-3 w-[2px] bg-gray-200"></div>
+            <div className="space-y-5">
               {shipment.timeline.map((event, idx) => (
-                <div key={idx} className="relative flex items-start gap-4">
-                  <div className={`mt-0.5 shrink-0 bg-slate-900 relative z-10 ${event.completed ? 'text-emerald-400' : 'text-slate-600'}`}>
-                    {event.completed ? <CheckCircle2 className="w-6 h-6" /> : <Circle className="w-6 h-6" />}
+                <div key={idx} className="relative flex items-start gap-3">
+                  <div
+                    className={`mt-0.5 shrink-0 bg-white relative z-10 ${
+                      event.completed ? 'text-[#2E7D32]' : 'text-gray-300'
+                    }`}
+                  >
+                    {event.completed ? <CheckCircle2 className="w-5 h-5" /> : <Circle className="w-5 h-5" />}
                   </div>
                   <div>
-                    <h4 className={`text-sm font-bold ${event.completed ? 'text-white' : 'text-slate-400'}`}>
+                    <h4 className={`text-xs font-bold ${event.completed ? 'text-gray-900' : 'text-gray-400'}`}>
                       {event.status}
                     </h4>
-                    <span className="text-xs text-slate-500">{event.time}</span>
+                    <span className="text-[11px] text-gray-500">{event.time}</span>
                   </div>
                 </div>
               ))}

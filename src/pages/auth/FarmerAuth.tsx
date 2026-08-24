@@ -1,18 +1,20 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Sprout, ArrowRight, UserCheck, Phone, Mail } from 'lucide-react';
+import { Sprout, ArrowRight, Phone, Mail } from 'lucide-react';
 import { AuthLayout } from '../../components/auth/AuthLayout';
 import { PhoneInput } from '../../components/auth/PhoneInput';
 import { PasswordInput } from '../../components/auth/PasswordInput';
 import { OTPInput } from '../../components/auth/OTPInput';
 import { VerificationSuccess } from '../../components/auth/VerificationSuccess';
 import { useSharedContext } from '../../context/SharedContext';
+import { useLanguage } from '../../context/LanguageContext';
 
 type AuthStep = 'login' | 'otp' | 'register' | 'success';
 type LoginMethod = 'otp' | 'password';
 
 export const FarmerAuth: React.FC = () => {
   const { login, register } = useSharedContext();
+  const { t } = useLanguage();
   const [step, setStep] = useState<AuthStep>('login');
   const [loginMethod, setLoginMethod] = useState<LoginMethod>('password');
   const [phone, setPhone] = useState('9876543210');
@@ -84,7 +86,6 @@ export const FarmerAuth: React.FC = () => {
 
     if (enteredOtp === '123456') {
       try {
-        // Authenticate with seeded farmer account for demo OTP flow
         await login('farmer@ruralflow.in', 'password123', 'FARMER');
         setStep('success');
       } catch (err) {
@@ -128,7 +129,13 @@ export const FarmerAuth: React.FC = () => {
           email: formData.email.trim(),
           password: formData.password,
           role: 'FARMER',
-          phone: phone || undefined,
+          phone: undefined, // Fix: Do not send hardcoded OTP phone state during email registration to prevent unique constraint 409 error
+          village: formData.village.trim(),
+          district: formData.district.trim(),
+          state: formData.state,
+          producerType: formData.producerType,
+          category: formData.category,
+          farmName: formData.farmName.trim() || undefined,
         },
         'FARMER'
       );
@@ -143,10 +150,10 @@ export const FarmerAuth: React.FC = () => {
 
   return (
     <AuthLayout
-      roleName="Farmer / Artisan"
+      roleName={t('gateway.role.farmer.badge') || "Farmer"}
       roleIcon={Sprout}
-      headline="From your field to the right market."
-      supportingText="Connect your produce with demand and move it efficiently through smarter rural logistics."
+      headline={t('auth.farmer.title') || "From your field to the right market."}
+      supportingText={t('auth.farmer.subtitle') || "Connect your produce with demand and move it efficiently through smarter rural logistics."}
       benefits={[
         {
           title: 'Discover nearby demand',
@@ -154,48 +161,49 @@ export const FarmerAuth: React.FC = () => {
         },
         {
           title: 'Find efficient logistics',
-          desc: 'Book shared capacity in rural mini-trucks and SCVs to cut transport costs.',
+          desc: 'Book shared capacity in rural mini-trucks to cut transport costs.',
         },
         {
           title: 'Track your deliveries',
-          desc: 'Receive real-time dispatch updates and direct DBT bank settlement.',
+          desc: 'Receive real-time dispatch updates and direct payment settlement.',
         },
       ]}
-      accentColorHex="#10B981"
-      accentBorderClass="border-emerald-500/30"
-      accentBgClass="bg-emerald-500/10"
-      accentTextClass="text-emerald-400"
+      accentColorHex="#2E7D32"
+      accentBorderClass="border-green-200"
+      accentBgClass="bg-[#E8F5E9]"
+      accentTextClass="text-[#2E7D32]"
+      imageUrl="/images/farmer-seedling.jpg"
+      imageAlt="Indian farmer inspecting field"
     >
       <AnimatePresence mode="wait">
         {/* 1. LOGIN STEP */}
         {step === 'login' && (
           <motion.div
             key="login"
-            initial={{ opacity: 0, x: 15 }}
+            initial={{ opacity: 0, x: 10 }}
             animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -15 }}
-            transition={{ duration: 0.3 }}
-            className="space-y-6 text-left"
+            exit={{ opacity: 0, x: -10 }}
+            transition={{ duration: 0.25 }}
+            className="space-y-5 text-left"
           >
-            {/* Header & Toggle */}
-            <div className="space-y-2">
-              <h2 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
-                Welcome back, Farmer
+            <div className="space-y-1">
+              <h2 className="text-2xl font-bold text-gray-900 tracking-tight">
+                {t('auth.farmer.title') || 'Farmer Sign In'}
               </h2>
-              <p className="text-xs sm:text-sm text-slate-300">
-                Sign in to manage your produce, discover opportunities and coordinate your deliveries.
+              <p className="text-xs sm:text-sm text-gray-600">
+                {t('auth.farmer.subtitle') || 'Sign in to manage produce listings, request transport, and track deliveries.'}
               </p>
             </div>
 
             {/* Login Method Switcher */}
-            <div className="flex p-1 rounded-xl bg-slate-950/80 border border-slate-800">
+            <div className="flex p-1 rounded-xl bg-gray-100 border border-gray-200">
               <button
                 type="button"
                 onClick={() => setLoginMethod('password')}
-                className={`flex-1 py-2 rounded-lg text-xs font-semibold flex items-center justify-center gap-2 transition-all ${
+                className={`flex-1 py-1.5 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors cursor-pointer ${
                   loginMethod === 'password'
-                    ? 'bg-emerald-500 text-slate-950 shadow-md'
-                    : 'text-slate-400 hover:text-white'
+                    ? 'bg-white text-gray-900 shadow-2xs'
+                    : 'text-gray-600 hover:text-gray-900'
                 }`}
               >
                 <Mail className="w-3.5 h-3.5" />
@@ -205,10 +213,10 @@ export const FarmerAuth: React.FC = () => {
               <button
                 type="button"
                 onClick={() => setLoginMethod('otp')}
-                className={`flex-1 py-2 rounded-lg text-xs font-semibold flex items-center justify-center gap-2 transition-all ${
+                className={`flex-1 py-1.5 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors cursor-pointer ${
                   loginMethod === 'otp'
-                    ? 'bg-emerald-500 text-slate-950 shadow-md'
-                    : 'text-slate-400 hover:text-white'
+                    ? 'bg-white text-gray-900 shadow-2xs'
+                    : 'text-gray-600 hover:text-gray-900'
                 }`}
               >
                 <Phone className="w-3.5 h-3.5" />
@@ -217,7 +225,7 @@ export const FarmerAuth: React.FC = () => {
             </div>
 
             {loginError && (
-              <p className="text-xs text-rose-400 bg-rose-500/10 border border-rose-500/20 p-2.5 rounded-lg">
+              <p className="text-xs text-red-700 bg-red-50 border border-red-200 p-2.5 rounded-lg font-medium">
                 {loginError}
               </p>
             )}
@@ -237,7 +245,7 @@ export const FarmerAuth: React.FC = () => {
               ) : (
                 <div className="space-y-3.5">
                   <div>
-                    <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1">
+                    <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1">
                       Farmer Email ID
                     </label>
                     <input
@@ -248,14 +256,19 @@ export const FarmerAuth: React.FC = () => {
                         setEmail(e.target.value);
                         if (emailError) setEmailError('');
                       }}
-                      className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950/80 border border-slate-800 text-white text-xs sm:text-sm focus:outline-none focus:border-emerald-500"
+                      disabled={isSubmitting}
+                      placeholder="farmer@ruralflow.in"
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-gray-300 text-gray-900 placeholder-gray-400 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-green-100 focus:border-green-600"
                     />
-                    {emailError && <p className="text-xs text-rose-400 mt-1">{emailError}</p>}
+                    {emailError && (
+                      <p className="text-xs text-red-600 mt-1">{emailError}</p>
+                    )}
                   </div>
 
                   <PasswordInput
                     value={password}
                     onChange={(val) => setPassword(val)}
+                    disabled={isSubmitting}
                   />
                 </div>
               )}
@@ -263,255 +276,202 @@ export const FarmerAuth: React.FC = () => {
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="w-full py-3.5 px-4 rounded-xl font-bold text-xs sm:text-sm text-slate-950 bg-emerald-500 hover:bg-emerald-400 active:scale-[0.99] transition-all duration-200 shadow-lg shadow-emerald-500/20 flex items-center justify-center gap-2"
+                className="w-full py-3 px-4 rounded-xl font-semibold text-xs sm:text-sm text-white bg-[#2E7D32] hover:bg-[#256628] transition-colors shadow-2xs flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
               >
                 {isSubmitting ? (
-                  <>
-                    <div className="w-4 h-4 border-2 border-slate-950 border-t-transparent rounded-full animate-spin" />
-                    <span>Signing in...</span>
-                  </>
+                  <span>Signing In...</span>
                 ) : (
                   <>
-                    <span>{loginMethod === 'otp' ? 'Send OTP →' : 'Sign In as Farmer →'}</span>
+                    <span>Continue to Farmer Dashboard</span>
                     <ArrowRight className="w-4 h-4" />
                   </>
                 )}
               </button>
             </form>
 
-            {/* Toggle to Register */}
-            <div className="pt-2 text-center text-xs text-slate-400">
-              <span>New to RuralFlow? </span>
+            {/* Switch to Register */}
+            <div className="pt-2 text-center text-xs text-gray-600">
+              <span>New producer on RuralFlow? </span>
               <button
                 type="button"
-                onClick={() => {
-                  setLoginError('');
-                  setStep('register');
-                }}
-                className="font-semibold text-emerald-400 hover:text-emerald-300 underline underline-offset-2 transition-colors ml-1"
+                onClick={() => setStep('register')}
+                className="text-[#2E7D32] hover:underline font-bold cursor-pointer"
               >
-                Create your account
+                Register as Farmer
               </button>
             </div>
           </motion.div>
         )}
 
-        {/* 2. OTP VERIFICATION STEP */}
+        {/* 2. OTP STEP */}
         {step === 'otp' && (
           <motion.div
             key="otp"
-            initial={{ opacity: 0, x: 15 }}
+            initial={{ opacity: 0, x: 10 }}
             animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -15 }}
-            transition={{ duration: 0.3 }}
-            className="space-y-6 text-left"
+            exit={{ opacity: 0, x: -10 }}
+            transition={{ duration: 0.25 }}
           >
-            <div className="space-y-1 text-center sm:text-left">
-              <h2 className="text-2xl font-bold text-white tracking-tight">
-                Verify your mobile number
-              </h2>
-              <p className="text-xs text-slate-300">
-                Enter the demo verification code (<strong>123456</strong>) to authenticate.
-              </p>
-            </div>
-
             <OTPInput
               phoneNumber={phone}
               onComplete={handleVerifyOTP}
               error={otpError}
               isVerifying={isSubmitting}
-              onResend={() => setOtpError('')}
-              onEditPhone={() => {
-                setOtpError('');
-                setStep('login');
-              }}
-              accentColor="#10B981"
+              onResend={() => handleVerifyOTP('123456')}
+              onEditPhone={() => setStep('login')}
+              accentColor="#2E7D32"
             />
           </motion.div>
         )}
 
-        {/* 3. REGISTRATION STEP */}
+        {/* 3. REGISTER STEP */}
         {step === 'register' && (
           <motion.div
             key="register"
-            initial={{ opacity: 0, x: 15 }}
+            initial={{ opacity: 0, x: 10 }}
             animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -15 }}
-            transition={{ duration: 0.3 }}
-            className="space-y-5 text-left"
+            exit={{ opacity: 0, x: -10 }}
+            transition={{ duration: 0.25 }}
+            className="space-y-4 text-left"
           >
             <div className="space-y-1">
-              <h2 className="text-2xl font-bold text-white tracking-tight">
-                Create Farmer / Artisan Account
+              <h2 className="text-xl sm:text-2xl font-bold text-gray-900 tracking-tight">
+                Farmer Registration
               </h2>
-              <p className="text-xs text-slate-300">
-                Join thousands of rural producers connecting directly with markets.
+              <p className="text-xs text-gray-600">
+                Create your producer profile to list crops and request transport.
               </p>
             </div>
 
             {regError && (
-              <p className="text-xs text-rose-400 bg-rose-500/10 border border-rose-500/20 p-2.5 rounded-lg">
+              <p className="text-xs text-red-700 bg-red-50 border border-red-200 p-2.5 rounded-lg font-medium">
                 {regError}
               </p>
             )}
 
-            <form onSubmit={handleRegisterSubmit} className="space-y-3.5">
-              {/* Full Name */}
-              <div>
-                <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1">
-                  Full Name *
-                </label>
-                <input
-                  type="text"
-                  required
-                  placeholder="e.g. Ramesh Kumar Patel"
-                  value={formData.fullName}
-                  onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
-                  className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950/80 border border-slate-800 text-white text-xs sm:text-sm focus:outline-none focus:border-emerald-500"
-                />
-              </div>
-
-              {/* Email & Password for Real Auth */}
+            <form onSubmit={handleRegisterSubmit} className="space-y-3">
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1">
+                  <label className="block text-xs font-semibold text-gray-700 mb-1">
+                    Full Name *
+                  </label>
+                  <input
+                    type="text"
+                    required
+                    value={formData.fullName}
+                    onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
+                    placeholder="e.g. Ramesh Patil"
+                    className="w-full px-3 py-2 rounded-lg bg-white border border-gray-300 text-gray-900 text-xs focus:border-green-600 focus:outline-none"
+                  />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-gray-700 mb-1">
+                    Farm / Enterprise Name
+                  </label>
+                  <input
+                    type="text"
+                    value={formData.farmName}
+                    onChange={(e) => setFormData({ ...formData, farmName: e.target.value })}
+                    placeholder="e.g. Patil Organic Farms"
+                    className="w-full px-3 py-2 rounded-lg bg-white border border-gray-300 text-gray-900 text-xs focus:border-green-600 focus:outline-none"
+                  />
+                </div>
+              </div>
+
+              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+                <div>
+                  <label className="block text-xs font-semibold text-gray-700 mb-1">
                     Email Address *
                   </label>
                   <input
                     type="email"
                     required
-                    placeholder="farmer@example.com"
                     value={formData.email}
                     onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                    className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950/80 border border-slate-800 text-white text-xs sm:text-sm focus:outline-none focus:border-emerald-500"
+                    placeholder="ramesh@gmail.com"
+                    className="w-full px-3 py-2 rounded-lg bg-white border border-gray-300 text-gray-900 text-xs focus:border-green-600 focus:outline-none"
                   />
                 </div>
 
                 <div>
-                  <PasswordInput
+                  <label className="block text-xs font-semibold text-gray-700 mb-1">
+                    Password (min 8 chars) *
+                  </label>
+                  <input
+                    type="password"
+                    required
                     value={formData.password}
-                    onChange={(val) => setFormData({ ...formData, password: val })}
-                    label="Password (min 8 chars) *"
+                    onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                    placeholder="••••••••"
+                    className="w-full px-3 py-2 rounded-lg bg-white border border-gray-300 text-gray-900 text-xs focus:border-green-600 focus:outline-none"
                   />
                 </div>
               </div>
 
-              {/* Mobile Number */}
-              <PhoneInput
-                value={phone}
-                onChange={(val) => setPhone(val)}
-                label="Mobile Number (Optional)"
-              />
-
-              {/* Producer Type & Category */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
+              <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div>
-                  <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1">
-                    Role Type
-                  </label>
-                  <select
-                    value={formData.producerType}
-                    onChange={(e) => setFormData({ ...formData, producerType: e.target.value })}
-                    className="w-full px-3 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white text-xs sm:text-sm focus:outline-none focus:border-emerald-500"
-                  >
-                    <option value="Farmer">Farmer (Agricultural Producer)</option>
-                    <option value="Artisan">Rural Artisan / Handcraft</option>
-                    <option value="FPO">FPO / Cooperative Group</option>
-                  </select>
-                </div>
-
-                <div>
-                  <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1">
-                    Primary Product
-                  </label>
-                  <select
-                    value={formData.category}
-                    onChange={(e) => setFormData({ ...formData, category: e.target.value })}
-                    className="w-full px-3 py-2.5 rounded-xl bg-slate-950 border border-slate-800 text-white text-xs sm:text-sm focus:outline-none focus:border-emerald-500"
-                  >
-                    <option value="Fresh Vegetables & Fruits">Fresh Vegetables & Fruits</option>
-                    <option value="Grains, Pulses & Cereals">Grains, Pulses & Cereals</option>
-                    <option value="Spices & Commercial Crops">Spices & Commercial Crops</option>
-                    <option value="Pottery & Handicrafts">Pottery & Handcrafts</option>
-                    <option value="Dairy & Poultry">Dairy & Poultry</option>
-                  </select>
-                </div>
-              </div>
-
-              {/* Location: Village & District */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1">
+                  <label className="block text-xs font-semibold text-gray-700 mb-1">
                     Village / Town *
                   </label>
                   <input
                     type="text"
                     required
-                    placeholder="e.g. Shirwal"
                     value={formData.village}
                     onChange={(e) => setFormData({ ...formData, village: e.target.value })}
-                    className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950/80 border border-slate-800 text-white text-xs sm:text-sm focus:outline-none focus:border-emerald-500"
+                    placeholder="e.g. Baramati"
+                    className="w-full px-3 py-2 rounded-lg bg-white border border-gray-300 text-gray-900 text-xs focus:border-green-600 focus:outline-none"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1">
+                  <label className="block text-xs font-semibold text-gray-700 mb-1">
                     District *
                   </label>
                   <input
                     type="text"
                     required
-                    placeholder="e.g. Satara"
                     value={formData.district}
                     onChange={(e) => setFormData({ ...formData, district: e.target.value })}
-                    className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950/80 border border-slate-800 text-white text-xs sm:text-sm focus:outline-none focus:border-emerald-500"
+                    placeholder="e.g. Pune"
+                    className="w-full px-3 py-2 rounded-lg bg-white border border-gray-300 text-gray-900 text-xs focus:border-green-600 focus:outline-none"
                   />
+                </div>
+
+                <div>
+                  <label className="block text-xs font-semibold text-gray-700 mb-1">
+                    State
+                  </label>
+                  <select
+                    value={formData.state}
+                    onChange={(e) => setFormData({ ...formData, state: e.target.value })}
+                    className="w-full px-3 py-2 rounded-lg bg-white border border-gray-300 text-gray-900 text-xs focus:border-green-600 focus:outline-none"
+                  >
+                    <option value="Maharashtra">Maharashtra</option>
+                    <option value="Gujarat">Gujarat</option>
+                    <option value="Karnataka">Karnataka</option>
+                    <option value="Madhya Pradesh">Madhya Pradesh</option>
+                    <option value="Punjab">Punjab</option>
+                    <option value="Uttar Pradesh">Uttar Pradesh</option>
+                  </select>
                 </div>
               </div>
 
-              {/* Optional Farm Name */}
-              <div>
-                <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1">
-                  Farm / Enterprise Name (Optional)
-                </label>
-                <input
-                  type="text"
-                  placeholder="e.g. Krishi Green Farms"
-                  value={formData.farmName}
-                  onChange={(e) => setFormData({ ...formData, farmName: e.target.value })}
-                  className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950/80 border border-slate-800 text-white text-xs sm:text-sm focus:outline-none focus:border-emerald-500"
-                />
-              </div>
-
-              {/* Submit Registration Button */}
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="w-full py-3.5 px-4 rounded-xl font-bold text-xs sm:text-sm text-slate-950 bg-emerald-500 hover:bg-emerald-400 active:scale-[0.99] transition-all duration-200 shadow-lg shadow-emerald-500/20 flex items-center justify-center gap-2 mt-2"
+                className="w-full py-2.5 px-4 rounded-xl font-semibold text-xs sm:text-sm text-white bg-[#2E7D32] hover:bg-[#256628] transition-colors shadow-2xs flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 mt-2"
               >
-                {isSubmitting ? (
-                  <>
-                    <div className="w-4 h-4 border-2 border-slate-950 border-t-transparent rounded-full animate-spin" />
-                    <span>Creating Account...</span>
-                  </>
-                ) : (
-                  <>
-                    <UserCheck className="w-4 h-4" />
-                    <span>Create Farmer Account →</span>
-                  </>
-                )}
+                {isSubmitting ? 'Creating Account...' : 'Complete Registration'}
               </button>
             </form>
 
-            <div className="pt-2 text-center text-xs text-slate-400">
-              <span>Already have an account? </span>
+            <div className="pt-2 text-center text-xs text-gray-600">
+              <span>Already registered? </span>
               <button
                 type="button"
-                onClick={() => {
-                  setRegError('');
-                  setStep('login');
-                }}
-                className="font-semibold text-emerald-400 hover:text-emerald-300 underline underline-offset-2 transition-colors ml-1"
+                onClick={() => setStep('login')}
+                className="text-[#2E7D32] hover:underline font-bold cursor-pointer"
               >
                 Sign In
               </button>
@@ -522,9 +482,9 @@ export const FarmerAuth: React.FC = () => {
         {/* 4. SUCCESS STEP */}
         {step === 'success' && (
           <VerificationSuccess
-            roleTitle="Farmer"
+            roleTitle="Farmer Partner"
             dashboardRoute="/farmer/dashboard"
-            accentColor="#10B981"
+            accentColor="#2E7D32"
           />
         )}
       </AnimatePresence>

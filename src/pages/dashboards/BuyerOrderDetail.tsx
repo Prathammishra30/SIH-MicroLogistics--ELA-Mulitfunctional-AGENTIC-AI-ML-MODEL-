@@ -1,7 +1,6 @@
 import React from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
-import { motion } from 'framer-motion';
-import { ArrowLeft, Package, MapPin, Truck, User, CheckCircle2, Clock, CircleDot } from 'lucide-react';
+import { ArrowLeft, Truck, CheckCircle2, Circle } from 'lucide-react';
 import { useSharedContext } from '../../context/SharedContext';
 
 export const BuyerOrderDetail: React.FC = () => {
@@ -9,185 +8,182 @@ export const BuyerOrderDetail: React.FC = () => {
   const { id } = useParams<{ id: string }>();
   const { state, dispatch } = useSharedContext();
 
-  const order = state.procurementRequests.find(pr => pr.id === id);
+  const order = state.procurementRequests.find((pr) => pr.id === id);
   const linkedShipment = order?.logisticsRequestId
-    ? state.logisticsRequests.find(lr => lr.id === order.logisticsRequestId)
+    ? state.logisticsRequests.find((lr) => lr.id === order.logisticsRequestId)
     : null;
 
   if (!order) {
     return (
-      <div className="min-h-screen bg-slate-950 text-slate-100 flex items-center justify-center">
-        <div className="text-center space-y-4">
-          <p className="text-slate-400">Procurement order not found.</p>
-          <button
-            onClick={() => navigate('/buyer/orders')}
-            className="px-5 py-2 rounded-xl bg-violet-600 text-white text-sm font-bold"
-          >
-            Back to Orders
-          </button>
-        </div>
+      <div className="min-h-[50vh] flex flex-col items-center justify-center space-y-4">
+        <h2 className="text-xl font-bold text-gray-900">Procurement Order Not Found</h2>
+        <button
+          onClick={() => navigate('/buyer/orders')}
+          className="px-4 py-2 rounded-xl bg-blue-700 hover:bg-blue-800 text-white text-xs font-semibold shadow-2xs transition-colors cursor-pointer"
+        >
+          Back to Orders
+        </button>
       </div>
     );
   }
 
-  // Determine effective display status
   const effectiveStatus = linkedShipment
     ? (linkedShipment.status === 'Delivered' ? 'Delivered' : linkedShipment.status)
     : order.status;
 
-  // Build unified timeline
   const timeline = [
-    { label: 'Procurement Created', completed: true, time: new Date(order.createdAt).toLocaleString() },
-    { 
-      label: 'Farmer Fulfilling', 
-      completed: order.status !== 'Open', 
-      time: order.farmerName ? `${order.farmerName} (Confirmed)` : (order.status !== 'Open' ? 'Confirmed' : 'Pending') 
+    { label: 'Procurement Created', completed: true, time: new Date(order.createdAt).toLocaleDateString() },
+    {
+      label: 'Farmer Match & Fulfilling',
+      completed: order.status !== 'Open',
+      time: order.farmerName ? `${order.farmerName} (Confirmed)` : (order.status !== 'Open' ? 'Confirmed' : 'Awaiting Farmer Match'),
     },
-    { 
-      label: 'Logistics Requested', 
-      completed: !!order.logisticsRequestId || order.status === 'Logistics Requested' || order.status === 'Completed', 
-      time: order.logisticsRequestId ? `Dispatched (${order.logisticsRequestId})` : 'Pending' 
+    {
+      label: 'Logistics Requested',
+      completed: !!order.logisticsRequestId || order.status === 'Logistics Requested' || order.status === 'Completed',
+      time: order.logisticsRequestId ? `Dispatched (${order.logisticsRequestId})` : 'Pending Transporter Assignment',
     },
   ];
 
   if (linkedShipment) {
-    const statusOrder = ['Searching', 'Assigned', 'At Pickup', 'Picked Up', 'In Transit', 'Delivered'];
+    const statusOrder = ['Searching', 'Pending', 'Assigned', 'At Pickup', 'Picked Up', 'In Transit', 'Delivered'];
     const currentIdx = statusOrder.indexOf(linkedShipment.status);
-    
+
     timeline.push(
-      { label: 'Transport Matched', completed: currentIdx >= 1, time: currentIdx >= 1 ? (linkedShipment.driver || 'Assigned') : 'Pending' },
-      { label: 'Pickup Completed', completed: currentIdx >= 3, time: currentIdx >= 3 ? 'Picked Up from Farm' : 'Pending' },
-      { label: 'In Transit', completed: currentIdx >= 4, time: currentIdx >= 4 ? 'En Route to APMC' : 'Pending' },
-      { label: 'Delivered', completed: currentIdx >= 5, time: currentIdx >= 5 ? 'Delivered & Verified' : 'Pending' },
+      { label: 'Transport Matched', completed: currentIdx >= 2, time: currentIdx >= 2 ? (linkedShipment.driver || 'Assigned') : 'Pending' },
+      { label: 'Picked Up from Farm', completed: currentIdx >= 4, time: currentIdx >= 4 ? 'Crop Loaded at Farm' : 'Pending' },
+      { label: 'In Transit to Destination', completed: currentIdx >= 5, time: currentIdx >= 5 ? 'En Route to Warehouse' : 'Pending' },
+      { label: 'Delivered & Handed Over', completed: currentIdx >= 6, time: currentIdx >= 6 ? 'Delivered & Verified' : 'Pending' },
     );
   }
 
-  // Mark completed when delivered
   const isDelivered = linkedShipment?.status === 'Delivered';
   if (isDelivered && order.status !== 'Completed') {
     dispatch({ type: 'UPDATE_PROCUREMENT', payload: { id: order.id, status: 'Completed' } });
   }
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 p-4 sm:p-6 lg:p-8 max-w-4xl mx-auto w-full relative z-10">
-      <header className="flex items-center gap-3 mb-8">
+    <div className="max-w-4xl mx-auto space-y-6">
+      
+      {/* Header */}
+      <header className="flex items-center gap-3 bg-white p-5 rounded-2xl border border-gray-200 shadow-2xs">
         <button
           onClick={() => navigate('/buyer/orders')}
-          className="p-2 rounded-xl bg-slate-900 border border-slate-800 hover:bg-slate-800 text-slate-400 hover:text-white transition-colors"
+          className="p-2 rounded-xl bg-gray-50 border border-gray-200 hover:bg-gray-100 text-gray-600 hover:text-gray-900 transition-colors cursor-pointer"
         >
-          <ArrowLeft className="w-5 h-5" />
+          <ArrowLeft className="w-4 h-4" />
         </button>
         <div>
-          <h1 className="text-xl sm:text-2xl font-bold text-white flex items-center gap-2">
-            <Package className="w-6 h-6 text-violet-400" />
-            {order.id}
+          <h1 className="text-xl font-bold text-gray-900 flex items-center gap-2">
+            Procurement Order #{order.id}
           </h1>
-          <p className="text-sm text-slate-400">{order.product} — {order.quantity}</p>
+          <p className="text-xs text-gray-500">{order.product} — {order.quantity}</p>
         </div>
       </header>
 
       <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-        {/* Procurement Info */}
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="p-6 rounded-2xl bg-slate-900/80 border border-slate-800 space-y-4"
-        >
-          <h2 className="text-base font-bold text-white">Procurement Details</h2>
-          <div className="space-y-3">
-            {[
-              { label: 'Product', value: order.product },
-              { label: 'Quantity', value: order.quantity },
-              { label: 'Target Price', value: order.targetPrice },
-              { label: 'Destination', value: order.destination },
-              { label: 'Assigned Producer', value: order.farmerName || (order.status !== 'Open' ? 'Ramesh Patel' : 'Awaiting Farmer') },
-              { label: 'Required By', value: order.requiredBy },
-              { label: 'Status', value: effectiveStatus },
-            ].map(item => (
-              <div key={item.label} className="flex items-center justify-between py-2 border-b border-slate-800/50 text-sm">
-                <span className="text-slate-400">{item.label}</span>
-                <span className="font-semibold text-white">{item.value}</span>
-              </div>
-            ))}
+        
+        {/* Left Col: Order Details */}
+        <div className="p-6 rounded-2xl bg-white border border-gray-200 shadow-2xs space-y-4">
+          <h2 className="text-sm font-bold text-gray-900 border-b border-gray-100 pb-2.5">
+            Procurement Specifications
+          </h2>
+          <div className="space-y-3 text-xs">
+            <div className="flex items-center justify-between py-1 border-b border-gray-100">
+              <span className="text-gray-500">Commodity</span>
+              <span className="font-bold text-gray-900">{order.product}</span>
+            </div>
+            <div className="flex items-center justify-between py-1 border-b border-gray-100">
+              <span className="text-gray-500">Procurement Volume</span>
+              <span className="font-bold font-mono text-gray-900">{order.quantity}</span>
+            </div>
+            <div className="flex items-center justify-between py-1 border-b border-gray-100">
+              <span className="text-gray-500">Target Offering Rate</span>
+              <span className="font-bold text-[#2E7D32] font-mono">{order.targetPrice}</span>
+            </div>
+            <div className="flex items-center justify-between py-1 border-b border-gray-100">
+              <span className="text-gray-500">Destination</span>
+              <span className="font-medium text-gray-900">{order.destination}</span>
+            </div>
+            <div className="flex items-center justify-between py-1 border-b border-gray-100">
+              <span className="text-gray-500">Fulfilling Producer</span>
+              <span className="font-semibold text-gray-900">{order.farmerName || 'Awaiting Farmer Match'}</span>
+            </div>
+            <div className="flex items-center justify-between py-1">
+              <span className="text-gray-500">Order Status</span>
+              <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-blue-50 text-blue-700 border border-blue-200">
+                {effectiveStatus}
+              </span>
+            </div>
           </div>
-        </motion.div>
+        </div>
 
-        {/* Shipment Info */}
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.1 }}
-          className="p-6 rounded-2xl bg-slate-900/80 border border-slate-800 space-y-4"
-        >
-          <h2 className="text-base font-bold text-white flex items-center gap-2">
-            <Truck className="w-4 h-4 text-sky-400" />
-            Shipment & Transport
+        {/* Right Col: Linked Shipment */}
+        <div className="p-6 rounded-2xl bg-white border border-gray-200 shadow-2xs space-y-4">
+          <h2 className="text-sm font-bold text-gray-900 border-b border-gray-100 pb-2.5 flex items-center gap-1.5">
+            <Truck className="w-4 h-4 text-amber-700" />
+            Freight & Dispatch Info
           </h2>
 
           {linkedShipment ? (
-            <div className="space-y-3">
-              {[
-                { label: 'Shipment ID', value: linkedShipment.id, icon: Package },
-                { label: 'Origin', value: linkedShipment.pickupLocation || 'Farm Gate', icon: MapPin },
-                { label: 'Destination', value: linkedShipment.destination, icon: MapPin },
-                { label: 'Transporter', value: linkedShipment.driver || 'Searching...', icon: User },
-                { label: 'Vehicle', value: linkedShipment.vehicle || 'Pending', icon: Truck },
-                { label: 'ETA', value: linkedShipment.eta || 'Calculating...', icon: Clock },
-              ].map(item => (
-                <div key={item.label} className="flex items-center justify-between py-2 border-b border-slate-800/50 text-sm">
-                  <span className="text-slate-400 flex items-center gap-1.5">
-                    <item.icon className="w-3.5 h-3.5" /> {item.label}
-                  </span>
-                  <span className="font-semibold text-white text-right max-w-[60%] truncate">{item.value}</span>
+            <div className="space-y-3 text-xs">
+              <div className="flex items-center justify-between py-1 border-b border-gray-100">
+                <span className="text-gray-500">Shipment Ref</span>
+                <span className="font-mono font-bold text-gray-900">#{linkedShipment.id}</span>
+              </div>
+              <div className="flex items-center justify-between py-1 border-b border-gray-100">
+                <span className="text-gray-500">Farm Origin</span>
+                <span className="font-medium text-gray-900">{linkedShipment.pickupLocation || 'Farm Gate'}</span>
+              </div>
+              <div className="flex items-center justify-between py-1 border-b border-gray-100">
+                <span className="text-gray-500">Driver</span>
+                <span className="font-medium text-gray-900">{linkedShipment.driver || 'Searching Transporter'}</span>
+              </div>
+              <div className="flex items-center justify-between py-1 border-b border-gray-100">
+                <span className="text-gray-500">Vehicle</span>
+                <span className="font-medium text-gray-900">{linkedShipment.vehicle || 'Vehicle Allocation Pending'}</span>
+              </div>
+              <div className="flex items-center justify-between py-1">
+                <span className="text-gray-500">ETA</span>
+                <span className="font-semibold text-blue-700">{linkedShipment.eta || 'En Route'}</span>
+              </div>
+            </div>
+          ) : (
+            <div className="p-6 rounded-xl bg-gray-50 border border-dashed border-gray-200 text-center text-xs text-gray-500 space-y-1">
+              <p className="font-medium text-gray-700">No transport linked yet.</p>
+              <p>Will automatically link once a regional farmer fulfills the demand.</p>
+            </div>
+          )}
+        </div>
+
+        {/* Bottom: Timeline */}
+        <div className="lg:col-span-2 p-6 rounded-2xl bg-white border border-gray-200 shadow-2xs space-y-4">
+          <h2 className="text-sm font-bold text-gray-900">Procurement Progress Timeline</h2>
+          <div className="relative pl-1">
+            <div className="space-y-4">
+              {timeline.map((step, idx) => (
+                <div key={idx} className="flex gap-3">
+                  <div className="flex flex-col items-center">
+                    <div
+                      className={`w-6 h-6 rounded-full flex items-center justify-center ${
+                        step.completed ? 'bg-[#E8F5E9] text-[#2E7D32]' : 'bg-gray-100 text-gray-300'
+                      }`}
+                    >
+                      {step.completed ? <CheckCircle2 className="w-4 h-4" /> : <Circle className="w-4 h-4" />}
+                    </div>
+                    {idx < timeline.length - 1 && <div className="w-0.5 h-6 bg-gray-200 my-1" />}
+                  </div>
+                  <div className="pb-1 text-xs">
+                    <p className={`font-bold ${step.completed ? 'text-gray-900' : 'text-gray-400'}`}>
+                      {step.label}
+                    </p>
+                    <p className="text-gray-500 text-[11px] mt-0.5">{step.time}</p>
+                  </div>
                 </div>
               ))}
             </div>
-          ) : (
-            <div className="p-4 rounded-xl bg-slate-950 border border-dashed border-slate-800 text-center text-sm text-slate-500">
-              No shipment linked yet. Awaiting farmer fulfillment and transport matching.
-            </div>
-          )}
-        </motion.div>
-
-        {/* Timeline */}
-        <motion.div
-          initial={{ opacity: 0, y: 10 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ delay: 0.2 }}
-          className="lg:col-span-2 p-6 rounded-2xl bg-slate-900/80 border border-slate-800 space-y-4"
-        >
-          <h2 className="text-base font-bold text-white">Procurement Timeline</h2>
-          <div className="space-y-0">
-            {timeline.map((step, idx) => {
-              const isLast = idx === timeline.length - 1;
-              const isCurrent = step.completed && (isLast || !timeline[idx + 1]?.completed);
-              return (
-                <div key={step.label} className="flex gap-3">
-                  <div className="flex flex-col items-center">
-                    {step.completed ? (
-                      isCurrent ? (
-                        <CircleDot className="w-5 h-5 text-sky-400 shrink-0" />
-                      ) : (
-                        <CheckCircle2 className="w-5 h-5 text-emerald-400 shrink-0" />
-                      )
-                    ) : (
-                      <div className="w-5 h-5 rounded-full border-2 border-slate-700 shrink-0" />
-                    )}
-                    {!isLast && (
-                      <div className={`w-0.5 h-8 ${step.completed ? 'bg-emerald-500/30' : 'bg-slate-800'}`} />
-                    )}
-                  </div>
-                  <div className="pb-6">
-                    <p className={`text-sm font-semibold ${step.completed ? (isCurrent ? 'text-sky-400' : 'text-white') : 'text-slate-500'}`}>
-                      {step.label}
-                    </p>
-                    <p className="text-[11px] text-slate-500">{step.time}</p>
-                  </div>
-                </div>
-              );
-            })}
           </div>
-        </motion.div>
+        </div>
       </div>
     </div>
   );

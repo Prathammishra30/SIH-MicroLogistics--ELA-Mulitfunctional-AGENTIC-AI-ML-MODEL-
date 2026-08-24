@@ -1,7 +1,6 @@
 import React from 'react';
 import { useNavigate } from 'react-router-dom';
-import { motion } from 'framer-motion';
-import { ArrowLeft, ClipboardList, Package, Truck, CheckCircle2, Clock, Search } from 'lucide-react';
+import { ArrowLeft, ClipboardList, Package, Truck, MapPin, Plus } from 'lucide-react';
 import { useSharedContext } from '../../context/SharedContext';
 
 export const BuyerOrders: React.FC = () => {
@@ -10,7 +9,7 @@ export const BuyerOrders: React.FC = () => {
 
   const getTransportStatus = (logisticsRequestId: string | null) => {
     if (!logisticsRequestId) return null;
-    return state.logisticsRequests.find(lr => lr.id === logisticsRequestId) || null;
+    return state.logisticsRequests.find((lr) => lr.id === logisticsRequestId) || null;
   };
 
   const getDisplayStatus = (pr: typeof state.procurementRequests[0]) => {
@@ -24,23 +23,6 @@ export const BuyerOrders: React.FC = () => {
     return pr.status;
   };
 
-  const getStatusColor = (status: string) => {
-    switch (status) {
-      case 'Open': return 'text-violet-400 bg-violet-500/10 border-violet-500/20';
-      case 'Fulfilling': return 'text-amber-400 bg-amber-500/10 border-amber-500/20';
-      case 'Logistics Requested':
-      case 'Searching': return 'text-sky-400 bg-sky-500/10 border-sky-500/20';
-      case 'Assigned':
-      case 'At Pickup':
-      case 'Picked Up': return 'text-sky-400 bg-sky-500/10 border-sky-500/20';
-      case 'In Transit': return 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20';
-      case 'Delivered':
-      case 'Completed': return 'text-emerald-400 bg-emerald-500/10 border-emerald-500/20';
-      default: return 'text-slate-400 bg-slate-500/10 border-slate-500/20';
-    }
-  };
-
-  // Sort: active first, completed last
   const sortedOrders = [...state.procurementRequests].sort((a, b) => {
     if (a.status === 'Completed' && b.status !== 'Completed') return 1;
     if (a.status !== 'Completed' && b.status === 'Completed') return -1;
@@ -48,106 +30,104 @@ export const BuyerOrders: React.FC = () => {
   });
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto w-full relative z-10">
-      <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
+    <div className="space-y-6">
+      
+      {/* Header */}
+      <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-5 rounded-2xl border border-gray-200 shadow-2xs">
         <div className="flex items-center gap-3">
           <button
             onClick={() => navigate('/buyer/dashboard')}
-            className="p-2 rounded-xl bg-slate-900 border border-slate-800 hover:bg-slate-800 text-slate-400 hover:text-white transition-colors"
+            className="p-2 rounded-xl bg-gray-50 border border-gray-200 hover:bg-gray-100 text-gray-600 hover:text-gray-900 transition-colors cursor-pointer"
+            title="Back to dashboard"
           >
-            <ArrowLeft className="w-5 h-5" />
+            <ArrowLeft className="w-4 h-4" />
           </button>
           <div>
-            <h1 className="text-xl sm:text-2xl font-bold text-white flex items-center gap-2">
-              <ClipboardList className="w-6 h-6 text-violet-400" />
-              Procurement Orders
+            <h1 className="text-xl sm:text-2xl font-bold text-gray-900 flex items-center gap-2">
+              <ClipboardList className="w-5 h-5 text-blue-700" />
+              Procurement Orders & Deliveries
             </h1>
-            <p className="text-sm text-slate-400">Track all your procurement requests and deliveries.</p>
+            <p className="text-xs text-gray-500">
+              Track all your broadcasted procurement demands, fulfilling farmers, and incoming shipments.
+            </p>
           </div>
         </div>
 
         <button
           onClick={() => navigate('/buyer/procurement')}
-          className="px-5 py-2.5 rounded-xl bg-violet-600 hover:bg-violet-500 text-white font-bold text-xs transition-colors shadow-lg shadow-violet-500/20"
+          className="px-4 py-2 rounded-xl bg-blue-700 hover:bg-blue-800 text-white text-xs font-semibold shadow-2xs flex items-center gap-1.5 transition-colors cursor-pointer"
         >
-          + New Procurement
+          <Plus className="w-4 h-4" />
+          <span>+ Post Procurement</span>
         </button>
       </header>
 
+      {/* Orders List */}
       <div className="space-y-4">
-        {sortedOrders.map((order, idx) => {
+        {sortedOrders.map((order) => {
           const displayStatus = getDisplayStatus(order);
           const linkedShipment = getTransportStatus(order.logisticsRequestId);
 
           return (
-            <motion.div
+            <div
               key={order.id}
-              initial={{ opacity: 0, y: 10 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ delay: idx * 0.05 }}
               onClick={() => navigate(`/buyer/orders/${order.id}`)}
-              className="p-5 sm:p-6 rounded-2xl bg-slate-900/80 border border-slate-800 hover:border-violet-500/30 transition-all cursor-pointer flex flex-col sm:flex-row sm:items-center justify-between gap-4"
+              className="p-5 rounded-2xl bg-white border border-gray-200 hover:border-gray-300 shadow-2xs hover:shadow-sm transition-all cursor-pointer flex flex-col sm:flex-row sm:items-center justify-between gap-4"
             >
               <div className="flex-1 space-y-2">
-                <div className="flex items-start justify-between sm:justify-start gap-3">
-                  <h3 className="text-base font-bold text-white">{order.product}</h3>
-                  <span className={`px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider border ${getStatusColor(displayStatus)}`}>
+                <div className="flex items-center gap-3">
+                  <h3 className="text-base font-bold text-gray-900">{order.product}</h3>
+                  <span
+                    className={`px-2 py-0.5 rounded text-[10px] font-bold border ${
+                      displayStatus === 'Completed' || displayStatus === 'Delivered'
+                        ? 'bg-[#E8F5E9] text-[#2E7D32] border-green-200'
+                        : displayStatus === 'In Transit' || displayStatus === 'Fulfilling'
+                        ? 'bg-blue-50 text-blue-700 border-blue-200'
+                        : 'bg-amber-50 text-amber-800 border-amber-200'
+                    }`}
+                  >
                     {displayStatus}
                   </span>
                 </div>
-                <div className="flex items-center gap-4 text-xs text-slate-400">
-                  <span className="font-mono text-slate-500">{order.id}</span>
-                  <span>Qty: <strong className="text-slate-300">{order.quantity}</strong></span>
-                  <span>Price: <strong className="text-slate-300">{order.targetPrice}</strong></span>
+
+                <div className="flex flex-wrap items-center gap-4 text-xs text-gray-600">
+                  <span className="font-mono text-gray-400 font-bold">#{order.id}</span>
+                  <span>Volume: <strong className="text-gray-900 font-mono">{order.quantity}</strong></span>
+                  <span>Target: <strong className="text-[#2E7D32] font-mono">{order.targetPrice}</strong></span>
+                  <span className="flex items-center gap-1">
+                    <MapPin className="w-3 h-3 text-blue-700" />
+                    <span>{order.destination}</span>
+                  </span>
                 </div>
-                <div className="flex flex-wrap items-center gap-4 text-xs text-slate-500">
-                  <span>→ {order.destination}</span>
+
+                <div className="flex flex-wrap items-center gap-3 text-xs text-gray-500">
                   {order.farmerName && (
-                    <span className="text-emerald-400 font-medium">Producer: {order.farmerName}</span>
+                    <span className="text-[#2E7D32] font-semibold">Fulfilling Producer: {order.farmerName}</span>
                   )}
                   {linkedShipment?.driver && (
-                    <span className="flex items-center gap-1 text-sky-400 font-medium">
-                      <Truck className="w-3 h-3" /> {linkedShipment.driver}
+                    <span className="flex items-center gap-1 text-amber-800 font-medium">
+                      <Truck className="w-3.5 h-3.5" /> Assigned: {linkedShipment.driver} ({linkedShipment.vehicle || 'Vehicle'})
                     </span>
                   )}
                 </div>
               </div>
 
-              <div className="flex flex-col items-end gap-2 shrink-0">
-                {linkedShipment ? (
-                  <div className="flex items-center gap-1.5 text-xs">
-                    {linkedShipment.status === 'Delivered' ? (
-                      <CheckCircle2 className="w-4 h-4 text-emerald-400" />
-                    ) : linkedShipment.status === 'In Transit' ? (
-                      <Truck className="w-4 h-4 text-emerald-400" />
-                    ) : linkedShipment.status === 'Searching' ? (
-                      <Search className="w-4 h-4 text-sky-400" />
-                    ) : (
-                      <Clock className="w-4 h-4 text-sky-400" />
-                    )}
-                    <span className="font-mono text-slate-400">{linkedShipment.id}</span>
-                  </div>
-                ) : (
-                  <span className="text-[11px] text-slate-500">Awaiting fulfillment</span>
-                )}
+              <div className="flex flex-col sm:items-end gap-1 shrink-0 pt-2 sm:pt-0 border-t sm:border-t-0 border-gray-100">
+                <span className="text-xs font-semibold text-blue-700 hover:underline">
+                  View Order Details →
+                </span>
                 {linkedShipment?.eta && (
-                  <span className="text-[11px] text-emerald-400 font-semibold">ETA: {linkedShipment.eta}</span>
+                  <span className="text-[11px] text-gray-500 font-medium">ETA: {linkedShipment.eta}</span>
                 )}
               </div>
-            </motion.div>
+            </div>
           );
         })}
 
         {state.procurementRequests.length === 0 && (
-          <div className="p-12 text-center border border-dashed border-slate-800 rounded-2xl text-slate-400">
-            <Package className="w-8 h-8 mx-auto mb-3 text-slate-600" />
-            <p className="text-sm">No procurement orders yet.</p>
-            <button
-              onClick={() => navigate('/buyer/procurement')}
-              className="mt-4 px-5 py-2 rounded-xl bg-violet-600 hover:bg-violet-500 text-white text-xs font-bold transition-colors"
-            >
-              Create Your First Procurement
-            </button>
+          <div className="py-16 text-center border border-dashed border-gray-200 rounded-2xl bg-white space-y-2">
+            <Package className="w-8 h-8 text-gray-400 mx-auto" />
+            <p className="text-gray-600 text-xs font-medium">No procurement orders posted yet.</p>
           </div>
         )}
       </div>

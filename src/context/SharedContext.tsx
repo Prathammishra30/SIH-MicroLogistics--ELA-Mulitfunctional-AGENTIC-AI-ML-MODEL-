@@ -329,9 +329,9 @@ export const SharedProvider: React.FC<{ children: ReactNode }> = ({ children }) 
 
       if (user.role === 'FARMER') {
         const [remoteProducts, remoteLogistics, openDemands] = await Promise.all([
-          farmerApi.getProducts().catch(() => []),
-          farmerApi.getLogistics().catch(() => []),
-          marketApi.getDemands().catch(() => []),
+          farmerApi.getProducts(),
+          farmerApi.getLogistics(),
+          marketApi.getDemands(),
         ]);
 
         const mappedProducts: Product[] = remoteProducts.map((p) => ({
@@ -390,8 +390,8 @@ export const SharedProvider: React.FC<{ children: ReactNode }> = ({ children }) 
         });
       } else if (user.role === 'BUYER') {
         const [remoteProcurements, availableProduce] = await Promise.all([
-          buyerApi.getProcurements().catch(() => []),
-          buyerApi.getAvailableProduce().catch(() => []),
+          buyerApi.getProcurements(),
+          buyerApi.getAvailableProduce(),
         ]);
 
         const mappedProcurements: ProcurementRequest[] = remoteProcurements.map((pr) => ({
@@ -428,9 +428,9 @@ export const SharedProvider: React.FC<{ children: ReactNode }> = ({ children }) 
         });
       } else if (user.role === 'TRANSPORTER') {
         const [remoteVehicles, availableTrips, activeTrips] = await Promise.all([
-          transporterApi.getVehicles().catch(() => []),
-          transporterApi.getAvailableTrips().catch(() => []),
-          transporterApi.getActiveTrips().catch(() => []),
+          transporterApi.getVehicles(),
+          transporterApi.getAvailableTrips(),
+          transporterApi.getActiveTrips(),
         ]);
 
         const mappedVehicles: TransporterVehicle[] = remoteVehicles.map((v) => ({
@@ -477,7 +477,8 @@ export const SharedProvider: React.FC<{ children: ReactNode }> = ({ children }) 
         });
       }
     } catch (err) {
-      console.warn('Error loading user-owned data from backend:', err);
+      console.error('Error loading user-owned data from backend:', err);
+      throw err; // Re-throw to ensure login/register reveals the actual problem instead of showing an empty dashboard
     }
   }, []);
 

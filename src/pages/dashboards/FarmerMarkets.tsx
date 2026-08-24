@@ -1,7 +1,6 @@
 import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { motion, AnimatePresence } from 'framer-motion';
-import { TrendingUp, ArrowLeft, MapPin, Search, X, CheckCircle, Truck } from 'lucide-react';
+import { TrendingUp, ArrowLeft, MapPin, Search, X, Truck, Store } from 'lucide-react';
 import { useSharedContext } from '../../context/SharedContext';
 import type { MarketOpportunity } from '../../data/mockData';
 
@@ -9,12 +8,14 @@ export const FarmerMarkets: React.FC = () => {
   const navigate = useNavigate();
   const { state, dispatch } = useSharedContext();
   const [searchQuery, setSearchQuery] = useState('');
-  const [selectedMarket, setSelectedMarket] = useState<(MarketOpportunity & { isLiveBuyer?: boolean; procurementId?: string }) | null>(null);
+  const [selectedMarket, setSelectedMarket] = useState<
+    (MarketOpportunity & { isLiveBuyer?: boolean; procurementId?: string }) | null
+  >(null);
 
-  // Convert open & fulfilling buyer procurement requests into live market opportunities
+  // Convert open buyer procurement requests into live market opportunities
   const buyerOpportunities = state.procurementRequests
-    .filter(pr => pr.status === 'Open' || pr.status === 'Fulfilling')
-    .map(pr => ({
+    .filter((pr) => pr.status === 'Open' || pr.status === 'Fulfilling')
+    .map((pr) => ({
       id: pr.id,
       demandItem: pr.product,
       buyer: `${pr.buyerName} • ${pr.destination}`,
@@ -29,33 +30,35 @@ export const FarmerMarkets: React.FC = () => {
 
   const allOpportunities = [...buyerOpportunities, ...state.marketOpportunities];
 
-  const filteredMarkets = allOpportunities.filter(m => 
-    m.demandItem.toLowerCase().includes(searchQuery.toLowerCase()) || 
-    m.buyer.toLowerCase().includes(searchQuery.toLowerCase())
+  const filteredMarkets = allOpportunities.filter(
+    (m) =>
+      m.demandItem.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      m.buyer.toLowerCase().includes(searchQuery.toLowerCase())
   );
 
   const handleFulfillDemand = () => {
     if (!selectedMarket) return;
 
-    const matchingPr = state.procurementRequests.find(pr => pr.id === selectedMarket.id || pr.id === selectedMarket.procurementId);
+    const matchingPr = state.procurementRequests.find(
+      (pr) => pr.id === selectedMarket.id || pr.id === selectedMarket.procurementId
+    );
 
     if (matchingPr) {
-      // Mark as fulfilling by Farmer
       dispatch({
         type: 'UPDATE_PROCUREMENT',
         payload: {
           id: matchingPr.id,
           status: 'Fulfilling',
-          farmerName: 'Ramesh Patel'
-        }
+          farmerName: state.auth.user?.name || 'Farmer',
+        },
       });
 
       dispatch({
         type: 'ADD_NOTIFICATION',
         payload: {
           message: `Fulfilling demand ${matchingPr.id} for ${matchingPr.product}. Proceeding to transport booking.`,
-          type: 'info'
-        }
+          type: 'info',
+        },
       });
     }
 
@@ -66,204 +69,159 @@ export const FarmerMarkets: React.FC = () => {
           id: selectedMarket.id,
           product: selectedMarket.demandItem,
           quantity: selectedMarket.quantityRequired,
-          destination: selectedMarket.buyer
-        }
-      }
+          destination: selectedMarket.buyer,
+        },
+      },
     });
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 p-4 sm:p-6 lg:p-8 max-w-7xl mx-auto w-full relative z-10">
-      <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 mb-8">
+    <div className="space-y-6">
+      
+      {/* Top Header */}
+      <header className="flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-white p-5 rounded-2xl border border-gray-200 shadow-2xs">
         <div className="flex items-center gap-3">
-          <button 
+          <button
             onClick={() => navigate('/farmer/dashboard')}
-            className="p-2 rounded-xl bg-slate-900 border border-slate-800 hover:bg-slate-800 text-slate-400 hover:text-white transition-colors"
+            className="p-2 rounded-xl bg-gray-50 border border-gray-200 hover:bg-gray-100 text-gray-600 hover:text-gray-900 transition-colors cursor-pointer"
+            title="Back to dashboard"
           >
-            <ArrowLeft className="w-5 h-5" />
+            <ArrowLeft className="w-4 h-4" />
           </button>
           <div>
-            <h1 className="text-xl sm:text-2xl font-bold text-white flex items-center gap-2">
-              <TrendingUp className="w-6 h-6 text-amber-400" />
-              Market Opportunities & Buyer Demand
+            <h1 className="text-xl sm:text-2xl font-bold text-gray-900 flex items-center gap-2">
+              <TrendingUp className="w-5 h-5 text-blue-700" />
+              Market Demand & Opportunities
             </h1>
-            <p className="text-sm text-slate-400">Discover live commercial buyer procurement orders and regional Mandi signals.</p>
+            <p className="text-xs text-gray-500">
+              Discover verified buyer procurement requirements and regional mandi price rates.
+            </p>
           </div>
         </div>
       </header>
 
-      <div className="mb-6 relative">
-        <Search className="w-5 h-5 text-slate-500 absolute left-4 top-1/2 -translate-y-1/2" />
-        <input 
-          type="text" 
+      {/* Search Input */}
+      <div className="relative">
+        <Search className="w-4 h-4 text-gray-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
+        <input
+          type="text"
+          placeholder="Search by crop name or buyer location..."
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
-          placeholder="Search opportunities by produce name or buyer..." 
-          className="w-full bg-slate-900 border border-slate-800 focus:border-amber-500/50 rounded-xl py-3 pl-12 pr-4 text-sm text-white placeholder:text-slate-500 outline-none transition-all"
+          className="w-full bg-white border border-gray-300 focus:border-green-600 focus:ring-2 focus:ring-green-100 rounded-xl py-2.5 pl-10 pr-4 text-xs text-gray-900 placeholder:text-gray-400 outline-none transition-all"
         />
       </div>
 
-      <div className="space-y-4">
-        {filteredMarkets.map((market, idx) => (
-          <motion.div 
+      {/* Opportunities Grid */}
+      <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
+        {filteredMarkets.map((market) => (
+          <div
             key={market.id}
-            initial={{ opacity: 0, y: 10 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ delay: idx * 0.05 }}
-            className={`p-5 sm:p-6 rounded-2xl bg-slate-900/80 border ${
-              market.isLiveBuyer 
-                ? 'border-violet-500/40 hover:border-violet-500/80 bg-violet-950/10' 
-                : 'border-slate-800 hover:border-amber-500/30'
-            } transition-all flex flex-col sm:flex-row sm:items-center justify-between gap-6 cursor-pointer`}
             onClick={() => setSelectedMarket(market)}
+            className="p-5 rounded-2xl bg-white border border-gray-200 hover:border-gray-300 shadow-2xs hover:shadow-sm transition-all flex flex-col justify-between space-y-4 cursor-pointer"
           >
-            <div className="flex-1 space-y-2">
-              <div className="flex items-start justify-between sm:justify-start gap-4">
-                <h3 className="text-lg font-bold text-white flex items-center gap-2">
-                  {market.demandItem}
-                </h3>
-                {market.isLiveBuyer ? (
-                  <span className="px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider bg-violet-500/20 text-violet-300 border border-violet-500/30">
-                    Live Buyer Demand • {market.id}
-                  </span>
-                ) : (
-                  <span className="px-2.5 py-1 rounded-md text-[10px] font-bold uppercase tracking-wider bg-amber-500/10 text-amber-400 border border-amber-500/20">
-                    {market.matchScore}% Match
-                  </span>
-                )}
+            <div>
+              <div className="flex items-center justify-between mb-3">
+                <span
+                  className={`px-2 py-0.5 rounded text-[10px] font-bold border ${
+                    market.isLiveBuyer
+                      ? 'bg-blue-50 text-blue-700 border-blue-200'
+                      : 'bg-[#E8F5E9] text-[#2E7D32] border-green-200'
+                  }`}
+                >
+                  {market.isLiveBuyer ? 'Live Buyer Order' : 'Regional Mandi'}
+                </span>
+                <span className="text-[11px] font-semibold text-gray-500 flex items-center gap-1">
+                  <MapPin className="w-3 h-3 text-gray-400" />
+                  {market.distance}
+                </span>
               </div>
-              <p className="text-sm text-slate-400 flex items-center gap-1.5">
-                <MapPin className="w-4 h-4 text-slate-500" /> {market.buyer} • {market.distance}
-              </p>
-              <div className="flex items-center gap-4 text-xs font-medium text-slate-500 pt-2">
-                <span>Requires: <strong className="text-slate-300">{market.quantityRequired}</strong></span>
-                <span>Logistics: <strong className={market.logisticsAvailable ? 'text-emerald-400' : 'text-slate-400'}>{market.logisticsAvailable ? 'Ready for Booking' : 'Required'}</strong></span>
-              </div>
+
+              <h3 className="text-base font-bold text-gray-900 mb-1">{market.demandItem}</h3>
+              <p className="text-xs text-gray-500 line-clamp-1">{market.buyer}</p>
             </div>
 
-            <div className="flex flex-col sm:items-end gap-3 sm:gap-4 shrink-0 border-t sm:border-t-0 sm:border-l border-slate-800 pt-4 sm:pt-0 sm:pl-6">
-              <div className="flex flex-col sm:items-end">
-                <span className="text-xs text-slate-500 font-semibold uppercase tracking-wider">Offered Price</span>
-                <span className="text-2xl font-bold text-white font-mono">{market.price}</span>
+            <div className="pt-3 border-t border-gray-100 space-y-2">
+              <div className="flex items-center justify-between text-xs">
+                <span className="text-gray-500">Target Rate:</span>
+                <strong className="text-gray-900 font-bold">{market.price}</strong>
               </div>
-              <button 
-                onClick={(e) => {
-                  e.stopPropagation();
-                  setSelectedMarket(market);
-                }}
-                className={`w-full sm:w-auto px-6 py-2.5 rounded-xl font-bold text-sm transition-colors ${
-                  market.isLiveBuyer
-                    ? 'bg-violet-600 hover:bg-violet-500 text-white shadow-lg shadow-violet-500/20'
-                    : 'bg-amber-500 hover:bg-amber-600 text-slate-950'
-                }`}
+
+              <div className="flex items-center justify-between text-xs">
+                <span className="text-gray-500">Required Qty:</span>
+                <strong className="text-gray-900 font-mono">{market.quantityRequired}</strong>
+              </div>
+
+              <button
+                type="button"
+                className="w-full py-2 px-3 rounded-xl bg-gray-50 hover:bg-gray-100 border border-gray-200 text-gray-700 text-xs font-semibold transition-colors flex items-center justify-center gap-1.5 cursor-pointer mt-1"
               >
-                {market.isLiveBuyer ? 'Fulfill Demand →' : 'View Details'}
+                <span>View Details & Fulfill</span>
               </button>
             </div>
-          </motion.div>
+          </div>
         ))}
+
         {filteredMarkets.length === 0 && (
-          <div className="p-12 text-center border border-dashed border-slate-800 rounded-2xl text-slate-400">
-            No market opportunities found.
+          <div className="col-span-full py-12 text-center border border-dashed border-gray-200 rounded-2xl bg-white">
+            <Store className="w-8 h-8 text-gray-400 mx-auto mb-2" />
+            <p className="text-gray-600 text-xs font-medium">No market demand items found matching your search query.</p>
           </div>
         )}
       </div>
 
-      {/* Modal for Market Details */}
-      <AnimatePresence>
-        {selectedMarket && (
-          <div className="fixed inset-0 z-50 flex items-center justify-center p-4">
-            <motion.div 
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              exit={{ opacity: 0 }}
-              className="absolute inset-0 bg-slate-950/80 backdrop-blur-sm"
-              onClick={() => setSelectedMarket(null)}
-            />
-            <motion.div 
-              initial={{ opacity: 0, scale: 0.95 }}
-              animate={{ opacity: 1, scale: 1 }}
-              exit={{ opacity: 0, scale: 0.95 }}
-              className="relative w-full max-w-md bg-slate-900 border border-slate-800 rounded-2xl shadow-2xl overflow-hidden"
-            >
-              <div className="p-6 border-b border-slate-800 flex items-start justify-between gap-4">
-                <div>
-                  <div className="flex items-center gap-2 mb-1">
-                    <TrendingUp className={`w-5 h-5 ${selectedMarket.isLiveBuyer ? 'text-violet-400' : 'text-amber-400'}`} />
-                    <h2 className="text-xl font-bold text-white">{selectedMarket.demandItem}</h2>
-                  </div>
-                  <p className="text-sm text-slate-400">
-                    {selectedMarket.isLiveBuyer ? 'Commercial Buyer Procurement Demand' : 'High Demand Opportunity'}
-                  </p>
-                </div>
-                <button 
-                  onClick={() => setSelectedMarket(null)}
-                  className="p-1 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
-                >
-                  <X className="w-5 h-5" />
-                </button>
+      {/* Selected Market Modal */}
+      {selectedMarket && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-slate-900/40 backdrop-blur-xs">
+          <div className="w-full max-w-md bg-white rounded-2xl border border-gray-200 shadow-xl p-6 space-y-5">
+            <div className="flex items-center justify-between">
+              <div>
+                <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-blue-50 text-blue-700 border border-blue-200">
+                  {selectedMarket.isLiveBuyer ? 'Commercial Procurement' : 'Mandi Opportunity'}
+                </span>
+                <h3 className="text-lg font-bold text-gray-900 mt-1">{selectedMarket.demandItem}</h3>
               </div>
+              <button
+                onClick={() => setSelectedMarket(null)}
+                className="p-1.5 rounded-lg text-gray-400 hover:text-gray-700 hover:bg-gray-100 transition-colors cursor-pointer"
+              >
+                <X className="w-4 h-4" />
+              </button>
+            </div>
 
-              <div className="p-6 space-y-3.5">
-                <div className="flex items-center justify-between py-1.5 border-b border-slate-800/50">
-                  <span className="text-sm text-slate-400">Buyer / Destination</span>
-                  <span className="text-sm font-semibold text-white">{selectedMarket.buyer}</span>
-                </div>
-                <div className="flex items-center justify-between py-1.5 border-b border-slate-800/50">
-                  <span className="text-sm text-slate-400">Quality Grade</span>
-                  <span className="text-sm font-semibold text-emerald-400">Grade A / Commercial Standard</span>
-                </div>
-                <div className="flex items-center justify-between py-1.5 border-b border-slate-800/50">
-                  <span className="text-sm text-slate-400">Target Price</span>
-                  <span className="text-sm font-bold text-emerald-400 font-mono">{selectedMarket.price}</span>
-                </div>
-                <div className="flex items-center justify-between py-1.5 border-b border-slate-800/50">
-                  <span className="text-sm text-slate-400">Required Quantity</span>
-                  <span className="text-sm font-semibold text-white">{selectedMarket.quantityRequired}</span>
-                </div>
-                <div className="flex items-center justify-between py-1.5 border-b border-slate-800/50">
-                  <span className="text-sm text-slate-400">Required By</span>
-                  <span className="text-sm font-semibold text-slate-300">
-                    {state.procurementRequests.find(pr => pr.id === selectedMarket.id || pr.id === selectedMarket.procurementId)?.requiredBy || 'Tomorrow, 5:00 PM'}
-                  </span>
-                </div>
-                <div className="flex items-center justify-between py-1.5 border-b border-slate-800/50">
-                  <span className="text-sm text-slate-400">Fulfillment Status</span>
-                  <span className="px-2 py-0.5 rounded text-xs font-semibold bg-violet-500/20 text-violet-300 border border-violet-500/30">
-                    {state.procurementRequests.find(pr => pr.id === selectedMarket.id || pr.id === selectedMarket.procurementId)?.status || 'Open / Ready'}
-                  </span>
-                </div>
-                <div className="flex items-center justify-between py-1.5">
-                  <span className="text-sm text-slate-400">Transport Availability</span>
-                  <span className="text-sm font-semibold text-sky-400 flex items-center gap-1">
-                    <CheckCircle className="w-4 h-4" /> Ready for Request
-                  </span>
-                </div>
+            <div className="space-y-2.5 p-4 rounded-xl bg-gray-50 border border-gray-200 text-xs">
+              <div className="flex items-center justify-between">
+                <span className="text-gray-500">Target Offering:</span>
+                <strong className="text-gray-900 font-bold">{selectedMarket.price}</strong>
               </div>
+              <div className="flex items-center justify-between">
+                <span className="text-gray-500">Volume Required:</span>
+                <strong className="text-gray-900 font-mono">{selectedMarket.quantityRequired}</strong>
+              </div>
+              <div className="flex items-center justify-between">
+                <span className="text-gray-500">Procuring Buyer:</span>
+                <span className="text-gray-900 font-medium text-right max-w-[200px] truncate">{selectedMarket.buyer}</span>
+              </div>
+            </div>
 
-              <div className="p-6 bg-slate-950/50 border-t border-slate-800 flex flex-col gap-3">
-                <button 
-                  onClick={handleFulfillDemand}
-                  className={`w-full py-3 rounded-xl font-bold text-sm transition-colors flex items-center justify-center gap-2 ${
-                    selectedMarket.isLiveBuyer
-                      ? 'bg-violet-600 hover:bg-violet-500 text-white shadow-lg shadow-violet-500/20'
-                      : 'bg-amber-500 hover:bg-amber-600 text-slate-950'
-                  }`}
-                >
-                  <Truck className="w-4 h-4" />
-                  {selectedMarket.isLiveBuyer ? 'Fulfill Demand & Book Logistics' : 'Create Logistics Request'}
-                </button>
-                <button 
-                  onClick={() => setSelectedMarket(null)}
-                  className="w-full py-3 rounded-xl border border-slate-700 hover:bg-slate-800 text-slate-300 font-semibold text-sm transition-colors"
-                >
-                  Cancel
-                </button>
-              </div>
-            </motion.div>
+            <div className="flex items-center gap-2 pt-2">
+              <button
+                onClick={() => setSelectedMarket(null)}
+                className="flex-1 py-2.5 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-semibold transition-colors cursor-pointer"
+              >
+                Close
+              </button>
+              <button
+                onClick={handleFulfillDemand}
+                className="flex-1 py-2.5 rounded-xl bg-[#2E7D32] hover:bg-[#256628] text-white text-xs font-semibold shadow-2xs transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
+              >
+                <Truck className="w-3.5 h-3.5" />
+                <span>Supply & Book Transport</span>
+              </button>
+            </div>
           </div>
-        )}
-      </AnimatePresence>
+        </div>
+      )}
     </div>
   );
 };

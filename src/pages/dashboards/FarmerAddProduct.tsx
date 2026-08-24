@@ -29,7 +29,6 @@ export const FarmerAddProduct: React.FC = () => {
     setErrorMsg(null);
 
     try {
-      // 1. Try persisting to PostgreSQL backend
       let newProduct: Product;
       try {
         const created = await farmerApi.addProduct(formData);
@@ -43,7 +42,6 @@ export const FarmerAddProduct: React.FC = () => {
           status: 'Available',
         };
       } catch {
-        // Fallback for offline demo mode
         newProduct = {
           id: `PRD-${Math.floor(1000 + Math.random() * 9000)}`,
           name: formData.name,
@@ -70,120 +68,137 @@ export const FarmerAddProduct: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 p-4 sm:p-6 lg:p-8 max-w-3xl mx-auto w-full relative z-10">
-      <header className="flex items-center gap-4 mb-8">
+    <div className="max-w-2xl mx-auto space-y-6">
+      <header className="flex items-center gap-3 bg-white p-5 rounded-2xl border border-gray-200 shadow-2xs">
         <button
           onClick={() => navigate('/farmer/products')}
-          className="p-2 rounded-xl bg-slate-900 border border-slate-800 hover:bg-slate-800 text-slate-400 hover:text-white transition-colors"
+          className="p-2 rounded-xl bg-gray-50 border border-gray-200 hover:bg-gray-100 text-gray-600 hover:text-gray-900 transition-colors cursor-pointer"
         >
-          <ArrowLeft className="w-5 h-5" />
+          <ArrowLeft className="w-4 h-4" />
         </button>
         <div>
-          <h1 className="text-xl sm:text-2xl font-bold text-white flex items-center gap-2">
-            <PackagePlus className="w-6 h-6 text-emerald-400" />
-            Add New Product
+          <h1 className="text-xl font-bold text-gray-900 flex items-center gap-2">
+            <PackagePlus className="w-5 h-5 text-[#2E7D32]" />
+            Add New Produce
           </h1>
-          <p className="text-sm text-slate-400">Enter details of your new harvest or produce batch.</p>
+          <p className="text-xs text-gray-500">List your harvest batch to make it discoverable for buyers.</p>
         </div>
       </header>
 
       {errorMsg && (
-        <div className="mb-6 p-4 rounded-xl bg-rose-500/10 border border-rose-500/30 text-rose-400 text-xs font-semibold">
+        <div className="p-3.5 rounded-xl bg-red-50 border border-red-200 text-red-700 text-xs font-semibold">
           {errorMsg}
         </div>
       )}
 
-      <form onSubmit={handleSubmit} className="p-6 rounded-2xl bg-slate-900/80 border border-slate-800 space-y-6">
+      <form onSubmit={handleSubmit} className="p-6 rounded-2xl bg-white border border-gray-200 shadow-2xs space-y-5">
         <div className="space-y-4">
           <div>
-            <label className="block text-xs font-semibold text-slate-400 mb-1.5 uppercase tracking-wide">Product Name</label>
+            <label className="block text-xs font-semibold text-gray-700 mb-1">
+              Produce / Crop Name *
+            </label>
             <input
               type="text"
               name="name"
               required
               value={formData.name}
               onChange={handleChange}
-              placeholder="e.g., Organic Tomatoes"
-              className="w-full bg-slate-950 border border-slate-800 focus:border-emerald-500 rounded-xl px-4 py-2.5 text-sm text-white outline-none transition-colors"
+              placeholder="e.g. Alphonso Mangoes, Organic Tomatoes, Basmati Rice"
+              className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-gray-300 text-gray-900 text-xs focus:border-green-600 focus:ring-2 focus:ring-green-100 outline-none"
             />
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-semibold text-slate-400 mb-1.5 uppercase tracking-wide">Category</label>
+              <label className="block text-xs font-semibold text-gray-700 mb-1">
+                Category
+              </label>
               <select
                 name="category"
                 value={formData.category}
                 onChange={handleChange}
-                className="w-full bg-slate-950 border border-slate-800 focus:border-emerald-500 rounded-xl px-4 py-2.5 text-sm text-white outline-none transition-colors appearance-none"
+                className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-gray-300 text-gray-900 text-xs focus:border-green-600 focus:ring-2 focus:ring-green-100 outline-none"
               >
                 <option value="Vegetables">Vegetables</option>
                 <option value="Fruits">Fruits</option>
-                <option value="Grains">Grains</option>
-                <option value="Spices">Spices</option>
+                <option value="Grains & Cereals">Grains & Cereals</option>
+                <option value="Pulses & Legumes">Pulses & Legumes</option>
+                <option value="Spices & Herbs">Spices & Herbs</option>
+                <option value="Dairy & Farm Goods">Dairy & Farm Goods</option>
               </select>
             </div>
+
             <div>
-              <label className="block text-xs font-semibold text-slate-400 mb-1.5 uppercase tracking-wide">Grade / Quality</label>
+              <label className="block text-xs font-semibold text-gray-700 mb-1">
+                Quality Grade
+              </label>
               <select
                 name="grade"
                 value={formData.grade}
                 onChange={handleChange}
-                className="w-full bg-slate-950 border border-slate-800 focus:border-emerald-500 rounded-xl px-4 py-2.5 text-sm text-white outline-none transition-colors appearance-none"
+                className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-gray-300 text-gray-900 text-xs focus:border-green-600 focus:ring-2 focus:ring-green-100 outline-none"
               >
-                <option value="Premium">Premium / Grade A</option>
-                <option value="Standard">Standard / Grade B</option>
-                <option value="Processing">Processing Grade</option>
+                <option value="Premium">Grade A (Premium Export Quality)</option>
+                <option value="Standard">Grade B (Standard Market Quality)</option>
+                <option value="Commercial">Grade C (Processing / Mandi Grade)</option>
               </select>
             </div>
           </div>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
-              <label className="block text-xs font-semibold text-slate-400 mb-1.5 uppercase tracking-wide">Quantity (with Unit)</label>
+              <label className="block text-xs font-semibold text-gray-700 mb-1">
+                Total Quantity Available *
+              </label>
               <input
                 type="text"
                 name="quantity"
                 required
                 value={formData.quantity}
                 onChange={handleChange}
-                placeholder="e.g., 2.5 MT or 500 Kg"
-                className="w-full bg-slate-950 border border-slate-800 focus:border-emerald-500 rounded-xl px-4 py-2.5 text-sm text-white outline-none transition-colors"
+                placeholder="e.g. 500 kg, 2 MT, 50 Crates"
+                className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-gray-300 text-gray-900 text-xs focus:border-green-600 focus:ring-2 focus:ring-green-100 outline-none"
               />
             </div>
+
             <div>
-              <label className="block text-xs font-semibold text-slate-400 mb-1.5 uppercase tracking-wide">Harvest Date</label>
+              <label className="block text-xs font-semibold text-gray-700 mb-1">
+                Harvest / Ready Date *
+              </label>
               <input
                 type="date"
                 name="harvestDate"
                 required
                 value={formData.harvestDate}
                 onChange={handleChange}
-                className="w-full bg-slate-950 border border-slate-800 focus:border-emerald-500 rounded-xl px-4 py-2.5 text-sm text-white outline-none transition-colors [color-scheme:dark]"
+                className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-gray-300 text-gray-900 text-xs focus:border-green-600 focus:ring-2 focus:ring-green-100 outline-none"
               />
             </div>
           </div>
         </div>
 
-        <div className="pt-6 border-t border-slate-800 flex justify-end gap-3">
+        <div className="pt-4 border-t border-gray-100 flex items-center justify-end gap-3">
           <button
             type="button"
             onClick={() => navigate('/farmer/products')}
-            className="px-5 py-2.5 rounded-xl border border-slate-700 hover:bg-slate-800 text-slate-300 font-semibold text-sm transition-colors"
+            className="px-4 py-2.5 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-semibold transition-colors cursor-pointer"
           >
             Cancel
           </button>
           <button
             type="submit"
             disabled={isSubmitting}
-            className="px-6 py-2.5 rounded-xl bg-emerald-500 hover:bg-emerald-600 text-white font-semibold text-sm transition-colors flex items-center justify-center gap-2 min-w-[140px]"
+            className="px-5 py-2.5 rounded-xl bg-[#2E7D32] hover:bg-[#256628] text-white text-xs font-semibold shadow-2xs transition-colors flex items-center gap-2 cursor-pointer disabled:opacity-50"
           >
             {isSubmitting ? (
-              <Loader2 className="w-4 h-4 animate-spin" />
+              <>
+                <Loader2 className="w-4 h-4 animate-spin" />
+                <span>Publishing Listing...</span>
+              </>
             ) : (
               <>
                 <Save className="w-4 h-4" />
-                Save Product
+                <span>Publish Produce Listing</span>
               </>
             )}
           </button>

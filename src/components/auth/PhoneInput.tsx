@@ -19,7 +19,6 @@ export const PhoneInput: React.FC<PhoneInputProps> = ({
   disabled = false,
 }) => {
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    // Keep only digits and max 10 chars
     const cleaned = e.target.value.replace(/\D/g, '').slice(0, 10);
     onChange(cleaned);
   };
@@ -29,11 +28,11 @@ export const PhoneInput: React.FC<PhoneInputProps> = ({
   return (
     <div className="space-y-1.5 text-left w-full">
       <div className="flex items-center justify-between">
-        <label className="text-xs font-semibold text-slate-300 uppercase tracking-wider">
+        <label className="text-xs font-semibold text-gray-700 uppercase tracking-wider">
           {label}
         </label>
         {isValid && !error && (
-          <span className="text-[11px] font-medium text-emerald-400 flex items-center gap-1">
+          <span className="text-[11px] font-medium text-[#2E7D32] flex items-center gap-1">
             <CheckCircle2 className="w-3 h-3" /> Valid mobile number
           </span>
         )}
@@ -41,11 +40,11 @@ export const PhoneInput: React.FC<PhoneInputProps> = ({
 
       <div className="relative flex items-center">
         {/* Country Code Prefix */}
-        <div className="absolute left-3.5 flex items-center gap-2 pointer-events-none text-slate-400 border-r border-slate-700/80 pr-2.5">
+        <div className="absolute left-3.5 flex items-center gap-1.5 pointer-events-none text-gray-500 border-r border-gray-200 pr-2.5">
           <span className="text-sm" role="img" aria-label="India flag">
             🇮🇳
           </span>
-          <span className="text-xs font-semibold text-slate-200">+91</span>
+          <span className="text-xs font-semibold text-gray-700">+91</span>
         </div>
 
         {/* Input */}
@@ -58,27 +57,27 @@ export const PhoneInput: React.FC<PhoneInputProps> = ({
           onChange={handleChange}
           disabled={disabled}
           placeholder={placeholder}
-          className={`w-full pl-24 pr-10 py-3 rounded-xl bg-slate-950/80 border text-white placeholder-slate-500 text-sm font-medium tracking-wider transition-all focus:outline-none focus:ring-2 ${
+          className={`w-full pl-22 pr-10 py-2.5 rounded-xl bg-white border text-gray-900 placeholder-gray-400 text-sm font-medium tracking-wider transition-all focus:outline-none focus:ring-2 ${
             error
-              ? 'border-rose-500/80 focus:ring-rose-500/30'
+              ? 'border-red-500 focus:ring-red-200'
               : isValid
-              ? 'border-emerald-500/60 focus:ring-emerald-500/30'
-              : 'border-slate-800 focus:border-slate-600 focus:ring-slate-700/30'
+              ? 'border-green-600 focus:ring-green-100'
+              : 'border-gray-300 focus:border-gray-400 focus:ring-gray-100'
           } ${disabled ? 'opacity-60 cursor-not-allowed' : ''}`}
         />
 
         {/* Right Status Icon */}
-        <div className="absolute right-3.5 pointer-events-none text-slate-400">
+        <div className="absolute right-3.5 pointer-events-none text-gray-400">
           {error ? (
-            <AlertCircle className="w-4 h-4 text-rose-400" />
+            <AlertCircle className="w-4 h-4 text-red-500" />
           ) : (
-            <Phone className="w-4 h-4 text-slate-500" />
+            <Phone className="w-4 h-4 text-gray-400" />
           )}
         </div>
       </div>
 
       {error && (
-        <p className="text-xs text-rose-400 flex items-center gap-1 mt-1 font-medium">
+        <p className="text-xs text-red-600 flex items-center gap-1 mt-1 font-medium">
           <AlertCircle className="w-3.5 h-3.5 shrink-0" />
           <span>{error}</span>
         </p>

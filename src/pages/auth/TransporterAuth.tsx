@@ -1,18 +1,20 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Truck, FileCheck, ShieldCheck, Mail, Phone } from 'lucide-react';
+import { Truck, Mail, Phone, ArrowRight } from 'lucide-react';
 import { AuthLayout } from '../../components/auth/AuthLayout';
 import { PhoneInput } from '../../components/auth/PhoneInput';
 import { PasswordInput } from '../../components/auth/PasswordInput';
 import { OTPInput } from '../../components/auth/OTPInput';
 import { VerificationSuccess } from '../../components/auth/VerificationSuccess';
 import { useSharedContext } from '../../context/SharedContext';
+import { useLanguage } from '../../context/LanguageContext';
 
 type AuthStep = 'login' | 'otp' | 'register' | 'success';
 type LoginMethod = 'otp' | 'password';
 
 export const TransporterAuth: React.FC = () => {
   const { login, register } = useSharedContext();
+  const { t } = useLanguage();
   const [step, setStep] = useState<AuthStep>('login');
   const [loginMethod, setLoginMethod] = useState<LoginMethod>('password');
   const [phone, setPhone] = useState('9876543212');
@@ -29,9 +31,7 @@ export const TransporterAuth: React.FC = () => {
     fullName: '',
     email: '',
     password: '',
-    vehicleType: 'Pickup (1.5 - 2.5 MT)',
-    vehicleRegNo: '',
-    capacity: '2.0 MT',
+    vehicleType: 'Bolero Pickup (1.5 - 2.5 MT)',
     operatingRegion: 'Western Maharashtra (Pune - Satara - Kolhapur)',
     ownership: 'Driver & Owner',
   });
@@ -102,13 +102,8 @@ export const TransporterAuth: React.FC = () => {
     e.preventDefault();
     setRegError('');
 
-    if (
-      !regForm.fullName.trim() ||
-      !regForm.vehicleRegNo.trim() ||
-      !regForm.email.trim() ||
-      !regForm.password
-    ) {
-      setRegError('Please fill all required details with vehicle registration');
+    if (!regForm.fullName.trim() || !regForm.email.trim() || !regForm.password) {
+      setRegError('Please complete all mandatory fields');
       return;
     }
 
@@ -121,11 +116,15 @@ export const TransporterAuth: React.FC = () => {
     try {
       await register(
         {
-          name: `${regForm.fullName.trim()} (${regForm.vehicleRegNo.trim()})`,
+          name: regForm.fullName.trim(),
           email: regForm.email.trim(),
           password: regForm.password,
           role: 'TRANSPORTER',
-          phone: phone || undefined,
+          phone: undefined, // Fix: Do not send hardcoded OTP phone state during email registration to prevent unique constraint 409 error
+          fullName: regForm.fullName.trim(),
+          vehicleType: regForm.vehicleType,
+          operatingRegion: regForm.operatingRegion,
+          ownership: regForm.ownership,
         },
         'TRANSPORTER'
       );
@@ -140,58 +139,60 @@ export const TransporterAuth: React.FC = () => {
 
   return (
     <AuthLayout
-      roleName="Transporter"
+      roleName={t('gateway.role.transporter.badge') || "Transporter"}
       roleIcon={Truck}
-      headline="Turn available vehicle capacity into smarter, more profitable trips."
-      supportingText="Join the shared rural micro-logistics network to find aggregated loads, eliminate empty return journeys, and boost monthly vehicle earnings."
+      headline={t('auth.transporter.title') || "Maximize fleet utilization."}
+      supportingText={t('auth.transporter.subtitle') || "Reduce empty miles by finding local return loads, managing routes, and tracking payments seamlessly."}
       benefits={[
         {
-          title: 'Find load pooling orders',
-          desc: 'Get matched with grouped smallholder consignments along your route.',
+          title: 'Fill empty return trips',
+          desc: 'Get notified for on-route farm pickups matching your truck capacity.',
         },
         {
-          title: 'Eliminate empty backhauls',
-          desc: 'Pick up return freight automatically from APMCs and mandis.',
+          title: 'Direct transporter payout',
+          desc: 'Transparent trip fares deposited directly into your verified bank account.',
         },
         {
-          title: 'Guaranteed trip payouts',
-          desc: 'Instant milestone verification and direct electronic trip settlement.',
+          title: 'Manage your vehicle fleet',
+          desc: 'Register vehicles, track maintenance, and accept capacity-matched trips.',
         },
       ]}
-      accentColorHex="#0EA5E9"
-      accentBorderClass="border-sky-500/30"
-      accentBgClass="bg-sky-500/10"
-      accentTextClass="text-sky-400"
+      accentColorHex="#C2410C"
+      accentBorderClass="border-amber-200"
+      accentBgClass="bg-amber-50"
+      accentTextClass="text-amber-800"
+      imageUrl="/images/transporter-truck.jpg"
+      imageAlt="Indian rural transport mini-truck"
     >
       <AnimatePresence mode="wait">
         {/* 1. LOGIN STEP */}
         {step === 'login' && (
           <motion.div
             key="login"
-            initial={{ opacity: 0, x: 15 }}
+            initial={{ opacity: 0, x: 10 }}
             animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -15 }}
-            transition={{ duration: 0.3 }}
-            className="space-y-6 text-left"
+            exit={{ opacity: 0, x: -10 }}
+            transition={{ duration: 0.25 }}
+            className="space-y-5 text-left"
           >
             <div className="space-y-1">
-              <h2 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
-                Welcome back, Transporter
+              <h2 className="text-2xl font-bold text-gray-900 tracking-tight">
+                {t('auth.transporter.title') || 'Transporter Sign In'}
               </h2>
-              <p className="text-xs sm:text-sm text-slate-300">
-                Sign in to view nearby load boards, accept route dispatches, and track earnings.
+              <p className="text-xs sm:text-sm text-gray-600">
+                {t('auth.transporter.subtitle') || 'Sign in to discover freight, manage your vehicles, and accept trips.'}
               </p>
             </div>
 
-            {/* Login Method Switcher: Mobile OTP vs Email & Password */}
-            <div className="flex p-1 rounded-xl bg-slate-950/80 border border-slate-800">
+            {/* Login Method Switcher */}
+            <div className="flex p-1 rounded-xl bg-gray-100 border border-gray-200">
               <button
                 type="button"
                 onClick={() => setLoginMethod('password')}
-                className={`flex-1 py-2 rounded-lg text-xs font-semibold flex items-center justify-center gap-2 transition-all ${
+                className={`flex-1 py-1.5 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors cursor-pointer ${
                   loginMethod === 'password'
-                    ? 'bg-sky-500 text-slate-950 shadow-md'
-                    : 'text-slate-400 hover:text-white'
+                    ? 'bg-white text-gray-900 shadow-2xs'
+                    : 'text-gray-600 hover:text-gray-900'
                 }`}
               >
                 <Mail className="w-3.5 h-3.5" />
@@ -201,10 +202,10 @@ export const TransporterAuth: React.FC = () => {
               <button
                 type="button"
                 onClick={() => setLoginMethod('otp')}
-                className={`flex-1 py-2 rounded-lg text-xs font-semibold flex items-center justify-center gap-2 transition-all ${
+                className={`flex-1 py-1.5 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors cursor-pointer ${
                   loginMethod === 'otp'
-                    ? 'bg-sky-500 text-slate-950 shadow-md'
-                    : 'text-slate-400 hover:text-white'
+                    ? 'bg-white text-gray-900 shadow-2xs'
+                    : 'text-gray-600 hover:text-gray-900'
                 }`}
               >
                 <Phone className="w-3.5 h-3.5" />
@@ -213,12 +214,11 @@ export const TransporterAuth: React.FC = () => {
             </div>
 
             {loginError && (
-              <p className="text-xs text-rose-400 bg-rose-500/10 border border-rose-500/20 p-2.5 rounded-lg">
+              <p className="text-xs text-red-700 bg-red-50 border border-red-200 p-2.5 rounded-lg font-medium">
                 {loginError}
               </p>
             )}
 
-            {/* Form based on selected login method */}
             <form onSubmit={handleLoginSubmit} className="space-y-4">
               {loginMethod === 'otp' ? (
                 <PhoneInput
@@ -233,7 +233,7 @@ export const TransporterAuth: React.FC = () => {
               ) : (
                 <div className="space-y-3.5">
                   <div>
-                    <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1">
+                    <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1">
                       Transporter Email ID
                     </label>
                     <input
@@ -244,14 +244,19 @@ export const TransporterAuth: React.FC = () => {
                         setEmail(e.target.value);
                         if (emailError) setEmailError('');
                       }}
-                      className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950/80 border border-slate-800 text-white text-xs sm:text-sm focus:outline-none focus:border-sky-500"
+                      disabled={isSubmitting}
+                      placeholder="transporter@ruralflow.in"
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-gray-300 text-gray-900 placeholder-gray-400 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-amber-100 focus:border-amber-600"
                     />
-                    {emailError && <p className="text-xs text-rose-400 mt-1">{emailError}</p>}
+                    {emailError && (
+                      <p className="text-xs text-red-600 mt-1">{emailError}</p>
+                    )}
                   </div>
 
                   <PasswordInput
                     value={password}
                     onChange={(val) => setPassword(val)}
+                    disabled={isSubmitting}
                   />
                 </div>
               )}
@@ -259,32 +264,27 @@ export const TransporterAuth: React.FC = () => {
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="w-full py-3.5 px-4 rounded-xl font-bold text-xs sm:text-sm text-slate-950 bg-sky-500 hover:bg-sky-400 active:scale-[0.99] transition-all duration-200 shadow-lg shadow-sky-500/20 flex items-center justify-center gap-2"
+                className="w-full py-3 px-4 rounded-xl font-semibold text-xs sm:text-sm text-white bg-amber-700 hover:bg-amber-800 transition-colors shadow-2xs flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
               >
                 {isSubmitting ? (
-                  <>
-                    <div className="w-4 h-4 border-2 border-slate-950 border-t-transparent rounded-full animate-spin" />
-                    <span>Signing in...</span>
-                  </>
+                  <span>Signing In...</span>
                 ) : (
                   <>
-                    <span>{loginMethod === 'otp' ? 'Send OTP →' : 'Sign In as Transporter →'}</span>
+                    <span>Continue to Transporter Dashboard</span>
+                    <ArrowRight className="w-4 h-4" />
                   </>
                 )}
               </button>
             </form>
 
-            <div className="pt-2 text-center text-xs text-slate-400">
-              <span>Have a commercial vehicle? </span>
+            <div className="pt-2 text-center text-xs text-gray-600">
+              <span>New transport partner? </span>
               <button
                 type="button"
-                onClick={() => {
-                  setLoginError('');
-                  setStep('register');
-                }}
-                className="font-semibold text-sky-400 hover:text-sky-300 underline underline-offset-2 transition-colors ml-1"
+                onClick={() => setStep('register')}
+                className="text-amber-800 hover:underline font-bold cursor-pointer"
               >
-                Register your vehicle
+                Register as Transporter
               </button>
             </div>
           </motion.div>
@@ -294,206 +294,139 @@ export const TransporterAuth: React.FC = () => {
         {step === 'otp' && (
           <motion.div
             key="otp"
-            initial={{ opacity: 0, x: 15 }}
+            initial={{ opacity: 0, x: 10 }}
             animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -15 }}
-            transition={{ duration: 0.3 }}
-            className="space-y-6 text-left"
+            exit={{ opacity: 0, x: -10 }}
+            transition={{ duration: 0.25 }}
           >
-            <div className="space-y-1">
-              <h2 className="text-2xl font-bold text-white tracking-tight">
-                Verify Transporter Mobile
-              </h2>
-              <p className="text-xs text-slate-300">
-                Enter the demo 6-digit code (<strong>123456</strong>) sent to your mobile.
-              </p>
-            </div>
-
             <OTPInput
               phoneNumber={phone}
               onComplete={handleVerifyOTP}
               error={otpError}
               isVerifying={isSubmitting}
-              onResend={() => setOtpError('')}
-              onEditPhone={() => {
-                setOtpError('');
-                setStep('login');
-              }}
-              accentColor="#0EA5E9"
+              onResend={() => handleVerifyOTP('123456')}
+              onEditPhone={() => setStep('login')}
+              accentColor="#C2410C"
             />
           </motion.div>
         )}
 
-        {/* 3. REGISTRATION STEP */}
+        {/* 3. REGISTER STEP */}
         {step === 'register' && (
           <motion.div
             key="register"
-            initial={{ opacity: 0, x: 15 }}
+            initial={{ opacity: 0, x: 10 }}
             animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -15 }}
-            transition={{ duration: 0.3 }}
+            exit={{ opacity: 0, x: -10 }}
+            transition={{ duration: 0.25 }}
             className="space-y-4 text-left"
           >
             <div className="space-y-1">
-              <h2 className="text-2xl font-bold text-white tracking-tight">
-                Register Transporter Vehicle
+              <h2 className="text-xl sm:text-2xl font-bold text-gray-900 tracking-tight">
+                Transporter Registration
               </h2>
-              <p className="text-xs text-slate-300">
-                Onboard your pickup or commercial truck to the RuralFlow fleet.
+              <p className="text-xs text-gray-600">
+                Register as a rural fleet partner to accept trips.
               </p>
             </div>
 
             {regError && (
-              <p className="text-xs text-rose-400 bg-rose-500/10 border border-rose-500/20 p-2 rounded-lg">
+              <p className="text-xs text-red-700 bg-red-50 border border-red-200 p-2.5 rounded-lg font-medium">
                 {regError}
               </p>
             )}
 
             <form onSubmit={handleRegisterSubmit} className="space-y-3">
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <div>
-                  <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1">
-                    Owner / Driver Name *
-                  </label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="e.g. Sunil Deshmukh"
-                    value={regForm.fullName}
-                    onChange={(e) => setRegForm({ ...regForm, fullName: e.target.value })}
-                    className="w-full px-3 py-2 rounded-xl bg-slate-950/80 border border-slate-800 text-white text-xs sm:text-sm focus:outline-none focus:border-sky-500"
-                  />
-                </div>
-
-                <div>
-                  <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1">
-                    Vehicle Type
-                  </label>
-                  <select
-                    value={regForm.vehicleType}
-                    onChange={(e) => setRegForm({ ...regForm, vehicleType: e.target.value })}
-                    className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-white text-xs sm:text-sm focus:outline-none focus:border-sky-500"
-                  >
-                    <option value="Pickup (1.5 - 2.5 MT)">Pickup (Bolero / Tata Yodha 1.5 - 2.5 MT)</option>
-                    <option value="Small Commercial Vehicle (SCV)">SCV (Tata Ace / Dost 0.7 - 1.2 MT)</option>
-                    <option value="Light Commercial Truck">LCV / Mini-Truck (3.5 - 5 MT)</option>
-                    <option value="Tractor Trolley">Tractor Trolley (Agri-haul)</option>
-                  </select>
-                </div>
+              <div>
+                <label className="block text-xs font-semibold text-gray-700 mb-1">
+                  Full Name / Fleet Owner Name *
+                </label>
+                <input
+                  type="text"
+                  required
+                  value={regForm.fullName}
+                  onChange={(e) => setRegForm({ ...regForm, fullName: e.target.value })}
+                  placeholder="e.g. Sunil Deshmukh"
+                  className="w-full px-3 py-2 rounded-lg bg-white border border-gray-300 text-gray-900 text-xs focus:border-amber-600 focus:outline-none"
+                />
               </div>
 
-              {/* Email & Password for Real Auth */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1">
-                    Transporter Email *
+                  <label className="block text-xs font-semibold text-gray-700 mb-1">
+                    Email Address *
                   </label>
                   <input
                     type="email"
                     required
-                    placeholder="driver@example.com"
                     value={regForm.email}
                     onChange={(e) => setRegForm({ ...regForm, email: e.target.value })}
-                    className="w-full px-3 py-2 rounded-xl bg-slate-950/80 border border-slate-800 text-white text-xs sm:text-sm focus:outline-none focus:border-sky-500"
+                    placeholder="sunil@logistics.in"
+                    className="w-full px-3 py-2 rounded-lg bg-white border border-gray-300 text-gray-900 text-xs focus:border-amber-600 focus:outline-none"
                   />
                 </div>
 
                 <div>
-                  <PasswordInput
+                  <label className="block text-xs font-semibold text-gray-700 mb-1">
+                    Password (min 8 chars) *
+                  </label>
+                  <input
+                    type="password"
+                    required
                     value={regForm.password}
-                    onChange={(val) => setRegForm({ ...regForm, password: val })}
-                    label="Password (min 8 chars) *"
+                    onChange={(e) => setRegForm({ ...regForm, password: e.target.value })}
+                    placeholder="••••••••"
+                    className="w-full px-3 py-2 rounded-lg bg-white border border-gray-300 text-gray-900 text-xs focus:border-amber-600 focus:outline-none"
                   />
                 </div>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1">
-                    Vehicle Reg Number *
+                  <label className="block text-xs font-semibold text-gray-700 mb-1">
+                    Primary Vehicle Type
                   </label>
-                  <input
-                    type="text"
-                    required
-                    placeholder="e.g. MH 12 AB 1234"
-                    value={regForm.vehicleRegNo}
-                    onChange={(e) => setRegForm({ ...regForm, vehicleRegNo: e.target.value })}
-                    className="w-full px-3 py-2 rounded-xl bg-slate-950/80 border border-slate-800 text-white text-xs sm:text-sm font-mono uppercase focus:outline-none focus:border-sky-500"
-                  />
+                  <select
+                    value={regForm.vehicleType}
+                    onChange={(e) => setRegForm({ ...regForm, vehicleType: e.target.value })}
+                    className="w-full px-3 py-2 rounded-lg bg-white border border-gray-300 text-gray-900 text-xs focus:border-amber-600 focus:outline-none"
+                  >
+                    <option value="Bolero Pickup (1.5 - 2.5 MT)">Bolero Pickup (1.5 - 2.5 MT)</option>
+                    <option value="Tata Ace (Mini Truck 750 kg)">Tata Ace (Mini Truck 750 kg)</option>
+                    <option value="Medium Goods Carrier (3.5 MT)">Medium Goods Carrier (3.5 MT)</option>
+                    <option value="Three Wheeler Cargo (500 kg)">Three Wheeler Cargo (500 kg)</option>
+                  </select>
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1">
-                    Pay Load Capacity
+                  <label className="block text-xs font-semibold text-gray-700 mb-1">
+                    Operating Hub / Region
                   </label>
                   <input
                     type="text"
-                    value={regForm.capacity}
-                    onChange={(e) => setRegForm({ ...regForm, capacity: e.target.value })}
-                    className="w-full px-3 py-2 rounded-xl bg-slate-950/80 border border-slate-800 text-white text-xs sm:text-sm focus:outline-none focus:border-sky-500"
+                    value={regForm.operatingRegion}
+                    onChange={(e) => setRegForm({ ...regForm, operatingRegion: e.target.value })}
+                    placeholder="e.g. Pune - Satara"
+                    className="w-full px-3 py-2 rounded-lg bg-white border border-gray-300 text-gray-900 text-xs focus:border-amber-600 focus:outline-none"
                   />
-                </div>
-              </div>
-
-              <PhoneInput
-                value={phone}
-                onChange={(val) => setPhone(val)}
-                label="Driver Mobile (Optional)"
-              />
-
-              {/* Visual Demo Vehicle Verification Section */}
-              <div className="p-3 rounded-xl bg-slate-950 border border-slate-800/80 space-y-2">
-                <div className="flex items-center justify-between text-xs">
-                  <span className="font-semibold text-slate-300 flex items-center gap-1.5">
-                    <FileCheck className="w-3.5 h-3.5 text-sky-400" /> Vehicle Verification Preview
-                  </span>
-                  <span className="text-[10px] text-sky-400 font-medium px-2 py-0.5 rounded bg-sky-500/10 border border-sky-500/20">
-                    Fast Track Demo
-                  </span>
-                </div>
-                <div className="grid grid-cols-3 gap-2 text-[11px] text-slate-400">
-                  <div className="p-2 rounded-lg bg-slate-900 border border-slate-800 text-center">
-                    <ShieldCheck className="w-3 h-3 text-emerald-400 mx-auto mb-1" />
-                    <span>RC Document</span>
-                  </div>
-                  <div className="p-2 rounded-lg bg-slate-900 border border-slate-800 text-center">
-                    <ShieldCheck className="w-3 h-3 text-emerald-400 mx-auto mb-1" />
-                    <span>Driving License</span>
-                  </div>
-                  <div className="p-2 rounded-lg bg-slate-900 border border-slate-800 text-center">
-                    <ShieldCheck className="w-3 h-3 text-emerald-400 mx-auto mb-1" />
-                    <span>Permit / Fitness</span>
-                  </div>
                 </div>
               </div>
 
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="w-full py-3 px-4 rounded-xl font-bold text-xs sm:text-sm text-slate-950 bg-sky-500 hover:bg-sky-400 active:scale-[0.99] transition-all duration-200 shadow-lg shadow-sky-500/20 flex items-center justify-center gap-2 mt-1"
+                className="w-full py-2.5 px-4 rounded-xl font-semibold text-xs sm:text-sm text-white bg-amber-700 hover:bg-amber-800 transition-colors shadow-2xs flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 mt-2"
               >
-                {isSubmitting ? (
-                  <>
-                    <div className="w-4 h-4 border-2 border-slate-950 border-t-transparent rounded-full animate-spin" />
-                    <span>Registering Vehicle...</span>
-                  </>
-                ) : (
-                  <>
-                    <span>Create Transporter Account →</span>
-                  </>
-                )}
+                {isSubmitting ? 'Registering...' : 'Register as Transporter'}
               </button>
             </form>
 
-            <div className="text-center text-xs text-slate-400">
+            <div className="pt-2 text-center text-xs text-gray-600">
               <span>Already registered? </span>
               <button
                 type="button"
-                onClick={() => {
-                  setRegError('');
-                  setStep('login');
-                }}
-                className="font-semibold text-sky-400 hover:text-sky-300 underline underline-offset-2 transition-colors ml-1"
+                onClick={() => setStep('login')}
+                className="text-amber-800 hover:underline font-bold cursor-pointer"
               >
                 Sign In
               </button>
@@ -504,9 +437,9 @@ export const TransporterAuth: React.FC = () => {
         {/* 4. SUCCESS STEP */}
         {step === 'success' && (
           <VerificationSuccess
-            roleTitle="Transporter"
+            roleTitle="Transporter Fleet Partner"
             dashboardRoute="/transporter/dashboard"
-            accentColor="#0EA5E9"
+            accentColor="#C2410C"
           />
         )}
       </AnimatePresence>

@@ -1,5 +1,4 @@
 import React, { useRef, useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
 import { AlertCircle, RotateCcw, KeyRound, Sparkles } from 'lucide-react';
 
 interface OTPInputProps {
@@ -19,7 +18,7 @@ export const OTPInput: React.FC<OTPInputProps> = ({
   isVerifying = false,
   onResend,
   onEditPhone,
-  accentColor = '#10B981',
+  accentColor = '#2E7D32',
 }) => {
   const [digits, setDigits] = useState<string[]>(['', '', '', '', '', '']);
   const [countdown, setCountdown] = useState<number>(30);
@@ -107,17 +106,17 @@ export const OTPInput: React.FC<OTPInputProps> = ({
       
       {/* Phone Destination Info */}
       <div className="space-y-1">
-        <p className="text-xs text-slate-400">
+        <p className="text-xs text-gray-500">
           We sent a 6-digit verification code to
         </p>
         <div className="flex items-center justify-center gap-2">
-          <strong className="text-sm font-bold text-white tracking-wide font-mono">
+          <strong className="text-sm font-bold text-gray-900 tracking-wide font-mono">
             {formattedPhone}
           </strong>
           <button
             type="button"
             onClick={onEditPhone}
-            className="text-xs font-semibold text-emerald-400 hover:text-emerald-300 underline underline-offset-2 transition-colors"
+            className="text-xs font-semibold text-[#2E7D32] hover:underline cursor-pointer"
           >
             Change
           </button>
@@ -125,17 +124,13 @@ export const OTPInput: React.FC<OTPInputProps> = ({
       </div>
 
       {/* Demo helper pill */}
-      <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-500/10 border border-amber-500/20 text-amber-300 text-xs font-medium">
-        <Sparkles className="w-3.5 h-3.5 text-amber-400" />
-        <span>Demo verification code: <strong className="font-mono text-amber-200">123456</strong></span>
+      <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-50 border border-amber-200 text-amber-800 text-xs font-medium">
+        <Sparkles className="w-3.5 h-3.5 text-amber-600" />
+        <span>Demo code: <strong className="font-mono text-amber-900">123456</strong></span>
       </div>
 
       {/* 6-box input container */}
-      <motion.div
-        animate={error ? { x: [-8, 8, -6, 6, -3, 3, 0] } : {}}
-        transition={{ duration: 0.4 }}
-        className="flex items-center justify-center gap-2 sm:gap-3"
-      >
+      <div className="flex items-center justify-center gap-2 sm:gap-3">
         {digits.map((digit, idx) => (
           <input
             key={idx}
@@ -151,28 +146,24 @@ export const OTPInput: React.FC<OTPInputProps> = ({
             onKeyDown={(e) => handleKeyDown(idx, e)}
             onPaste={handlePaste}
             disabled={isVerifying}
-            className={`w-11 h-13 sm:w-13 sm:h-15 text-center text-lg sm:text-xl font-bold font-mono rounded-xl bg-slate-950/90 border text-white transition-all duration-200 focus:outline-none focus:ring-2 ${
+            className={`w-11 h-13 sm:w-12 sm:h-14 text-center text-lg sm:text-xl font-bold font-mono rounded-xl bg-white border text-gray-900 transition-all focus:outline-none focus:ring-2 ${
               error
-                ? 'border-rose-500/80 focus:ring-rose-500/30'
+                ? 'border-red-500 focus:ring-red-100'
                 : digit
-                ? 'border-emerald-500/70 focus:ring-emerald-500/30'
-                : 'border-slate-800 focus:border-slate-600 focus:ring-slate-700/30'
+                ? 'border-green-600 focus:ring-green-100'
+                : 'border-gray-300 focus:border-gray-400 focus:ring-gray-100'
             } ${isVerifying ? 'opacity-50 cursor-not-allowed' : ''}`}
             aria-label={`Digit ${idx + 1}`}
           />
         ))}
-      </motion.div>
+      </div>
 
       {/* Error text if invalid */}
       {error && (
-        <motion.p
-          initial={{ opacity: 0, y: -4 }}
-          animate={{ opacity: 1, y: 0 }}
-          className="text-xs text-rose-400 font-medium flex items-center justify-center gap-1.5"
-        >
+        <p className="text-xs text-red-600 font-medium flex items-center justify-center gap-1.5">
           <AlertCircle className="w-3.5 h-3.5 shrink-0" />
           <span>{error}</span>
-        </motion.p>
+        </p>
       )}
 
       {/* Submit Button */}
@@ -180,10 +171,10 @@ export const OTPInput: React.FC<OTPInputProps> = ({
         type="button"
         onClick={() => onComplete(digits.join(''))}
         disabled={isVerifying || digits.includes('')}
-        className={`w-full py-3 px-4 rounded-xl font-semibold text-xs sm:text-sm text-slate-950 transition-all duration-200 shadow-md flex items-center justify-center gap-2 ${
+        className={`w-full py-3 px-4 rounded-xl font-semibold text-xs sm:text-sm text-white transition-colors shadow-2xs flex items-center justify-center gap-2 cursor-pointer ${
           digits.includes('') || isVerifying
-            ? 'opacity-50 cursor-not-allowed bg-slate-700 text-slate-400'
-            : 'hover:opacity-90 active:scale-[0.99]'
+            ? 'opacity-50 cursor-not-allowed bg-gray-400'
+            : 'hover:opacity-90'
         }`}
         style={{
           backgroundColor: digits.includes('') ? undefined : accentColor,
@@ -191,7 +182,7 @@ export const OTPInput: React.FC<OTPInputProps> = ({
       >
         {isVerifying ? (
           <>
-            <div className="w-4 h-4 border-2 border-slate-950 border-t-transparent rounded-full animate-spin" />
+            <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
             <span>Verifying Code...</span>
           </>
         ) : (
@@ -203,17 +194,17 @@ export const OTPInput: React.FC<OTPInputProps> = ({
       </button>
 
       {/* Resend OTP Row with Countdown */}
-      <div className="flex items-center justify-between text-xs text-slate-400 pt-2 px-1">
+      <div className="flex items-center justify-between text-xs text-gray-500 pt-2 px-1">
         <span>Didn't receive the code?</span>
         {countdown > 0 ? (
-          <span className="font-mono text-slate-300 font-medium">
+          <span className="font-mono text-gray-600 font-medium">
             Resend in {countdown}s
           </span>
         ) : (
           <button
             type="button"
             onClick={handleResendClick}
-            className="flex items-center gap-1 text-emerald-400 hover:text-emerald-300 font-semibold transition-colors"
+            className="flex items-center gap-1 text-[#2E7D32] hover:text-[#256628] font-semibold transition-colors cursor-pointer"
           >
             <RotateCcw className="w-3 h-3" />
             Resend OTP

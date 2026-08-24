@@ -1,18 +1,20 @@
 import React, { useState } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { Store, Building2, Phone, Mail, FileBadge } from 'lucide-react';
+import { Store, Mail, Phone, ArrowRight } from 'lucide-react';
 import { AuthLayout } from '../../components/auth/AuthLayout';
 import { PhoneInput } from '../../components/auth/PhoneInput';
 import { PasswordInput } from '../../components/auth/PasswordInput';
 import { OTPInput } from '../../components/auth/OTPInput';
 import { VerificationSuccess } from '../../components/auth/VerificationSuccess';
 import { useSharedContext } from '../../context/SharedContext';
+import { useLanguage } from '../../context/LanguageContext';
 
 type AuthStep = 'login' | 'otp' | 'register' | 'success';
 type LoginMethod = 'otp' | 'password';
 
 export const BuyerAuth: React.FC = () => {
   const { login, register } = useSharedContext();
+  const { t } = useLanguage();
   const [step, setStep] = useState<AuthStep>('login');
   const [loginMethod, setLoginMethod] = useState<LoginMethod>('password');
   const [phone, setPhone] = useState('9876543211');
@@ -31,7 +33,7 @@ export const BuyerAuth: React.FC = () => {
     email: '',
     password: '',
     location: 'Navi Mumbai APMC Mandi',
-    businessType: 'APMC Licensed Commission Agent & Trader',
+    businessType: 'Retailer & Distributor',
     gstin: '',
   });
   const [regError, setRegError] = useState('');
@@ -101,13 +103,8 @@ export const BuyerAuth: React.FC = () => {
     e.preventDefault();
     setRegError('');
 
-    if (
-      !regForm.businessName.trim() ||
-      !regForm.contactPerson.trim() ||
-      !regForm.email.trim() ||
-      !regForm.password
-    ) {
-      setRegError('Please complete all required fields');
+    if (!regForm.businessName.trim() || !regForm.email.trim() || !regForm.password) {
+      setRegError('Please complete all mandatory fields');
       return;
     }
 
@@ -120,11 +117,16 @@ export const BuyerAuth: React.FC = () => {
     try {
       await register(
         {
-          name: `${regForm.contactPerson.trim()} (${regForm.businessName.trim()})`,
+          name: regForm.contactPerson.trim() || regForm.businessName.trim(),
           email: regForm.email.trim(),
           password: regForm.password,
           role: 'BUYER',
-          phone: phone || undefined,
+          phone: undefined, // Fix: Do not send hardcoded OTP phone state during email registration to prevent unique constraint 409 error
+          businessName: regForm.businessName.trim(),
+          contactPerson: regForm.contactPerson.trim() || undefined,
+          location: regForm.location,
+          businessType: regForm.businessType,
+          gstin: regForm.gstin.trim() || undefined,
         },
         'BUYER'
       );
@@ -139,58 +141,60 @@ export const BuyerAuth: React.FC = () => {
 
   return (
     <AuthLayout
-      roleName="Buyer / Market"
+      roleName={t('gateway.role.buyer.badge') || "Buyer"}
       roleIcon={Store}
-      headline="Source reliable produce and connect directly with verified producers."
-      supportingText="Broadcast your procurement requirements, discover fresh farm-gate clusters, and monitor automated shared-logistics deliveries."
+      headline={t('auth.buyer.title') || "Secure quality produce directly."}
+      supportingText={t('auth.buyer.subtitle') || "Bypass intermediaries, track shipments in real-time, and guarantee steady supply chains."}
       benefits={[
         {
-          title: 'Direct farm-gate procurement',
-          desc: 'Access verified produce batches from certified farmer producer groups.',
+          title: 'Direct farm sourcing',
+          desc: 'Connect with verified regional farmer clusters with transparent harvest timelines.',
         },
         {
-          title: 'Quality-graded batches',
-          desc: 'Inspect origin reports, grading standards, and batch harvest timestamps.',
+          title: 'Broadcast procurement demand',
+          desc: 'Post required quantities and target pricing to discover matching farm produce.',
         },
         {
-          title: 'Transparent logistics tracking',
-          desc: 'Monitor incoming consignments with live vehicle ETAs and digital receipts.',
+          title: 'Verified shipment tracking',
+          desc: 'Monitor incoming freight from rural farm-gate pickups to your warehouse.',
         },
       ]}
-      accentColorHex="#8B5CF6"
-      accentBorderClass="border-violet-500/30"
-      accentBgClass="bg-violet-500/10"
-      accentTextClass="text-violet-400"
+      accentColorHex="#1D4ED8"
+      accentBorderClass="border-blue-200"
+      accentBgClass="bg-blue-50"
+      accentTextClass="text-blue-700"
+      imageUrl="/images/buyer-produce.jpg"
+      imageAlt="Wholesale produce at Indian mandi"
     >
       <AnimatePresence mode="wait">
         {/* 1. LOGIN STEP */}
         {step === 'login' && (
           <motion.div
             key="login"
-            initial={{ opacity: 0, x: 15 }}
+            initial={{ opacity: 0, x: 10 }}
             animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -15 }}
-            transition={{ duration: 0.3 }}
-            className="space-y-6 text-left"
+            exit={{ opacity: 0, x: -10 }}
+            transition={{ duration: 0.25 }}
+            className="space-y-5 text-left"
           >
             <div className="space-y-1">
-              <h2 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight">
-                Welcome, Buyer / Market
+              <h2 className="text-2xl font-bold text-gray-900 tracking-tight">
+                {t('auth.buyer.title') || 'Buyer Sign In'}
               </h2>
-              <p className="text-xs sm:text-sm text-slate-300">
-                Sign in to post procurement demand, bid on produce lots, and schedule intake.
+              <p className="text-xs sm:text-sm text-gray-600">
+                {t('auth.buyer.subtitle') || 'Sign in to post procurement demands and manage incoming farm shipments.'}
               </p>
             </div>
 
-            {/* Login Method Toggle */}
-            <div className="flex p-1 rounded-xl bg-slate-950/80 border border-slate-800">
+            {/* Login Method Switcher */}
+            <div className="flex p-1 rounded-xl bg-gray-100 border border-gray-200">
               <button
                 type="button"
                 onClick={() => setLoginMethod('password')}
-                className={`flex-1 py-2 rounded-lg text-xs font-semibold flex items-center justify-center gap-2 transition-all ${
+                className={`flex-1 py-1.5 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors cursor-pointer ${
                   loginMethod === 'password'
-                    ? 'bg-violet-500 text-white shadow-md'
-                    : 'text-slate-400 hover:text-white'
+                    ? 'bg-white text-gray-900 shadow-2xs'
+                    : 'text-gray-600 hover:text-gray-900'
                 }`}
               >
                 <Mail className="w-3.5 h-3.5" />
@@ -200,10 +204,10 @@ export const BuyerAuth: React.FC = () => {
               <button
                 type="button"
                 onClick={() => setLoginMethod('otp')}
-                className={`flex-1 py-2 rounded-lg text-xs font-semibold flex items-center justify-center gap-2 transition-all ${
+                className={`flex-1 py-1.5 rounded-lg text-xs font-semibold flex items-center justify-center gap-1.5 transition-colors cursor-pointer ${
                   loginMethod === 'otp'
-                    ? 'bg-violet-500 text-white shadow-md'
-                    : 'text-slate-400 hover:text-white'
+                    ? 'bg-white text-gray-900 shadow-2xs'
+                    : 'text-gray-600 hover:text-gray-900'
                 }`}
               >
                 <Phone className="w-3.5 h-3.5" />
@@ -212,12 +216,11 @@ export const BuyerAuth: React.FC = () => {
             </div>
 
             {loginError && (
-              <p className="text-xs text-rose-400 bg-rose-500/10 border border-rose-500/20 p-2.5 rounded-lg">
+              <p className="text-xs text-red-700 bg-red-50 border border-red-200 p-2.5 rounded-lg font-medium">
                 {loginError}
               </p>
             )}
 
-            {/* Form */}
             <form onSubmit={handleLoginSubmit} className="space-y-4">
               {loginMethod === 'otp' ? (
                 <PhoneInput
@@ -232,7 +235,7 @@ export const BuyerAuth: React.FC = () => {
               ) : (
                 <div className="space-y-3.5">
                   <div>
-                    <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1">
+                    <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1">
                       Business Email ID
                     </label>
                     <input
@@ -243,14 +246,19 @@ export const BuyerAuth: React.FC = () => {
                         setEmail(e.target.value);
                         if (emailError) setEmailError('');
                       }}
-                      className="w-full px-3.5 py-2.5 rounded-xl bg-slate-950/80 border border-slate-800 text-white text-xs sm:text-sm focus:outline-none focus:border-violet-500"
+                      disabled={isSubmitting}
+                      placeholder="buyer@ruralflow.in"
+                      className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-gray-300 text-gray-900 placeholder-gray-400 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-600"
                     />
-                    {emailError && <p className="text-xs text-rose-400 mt-1">{emailError}</p>}
+                    {emailError && (
+                      <p className="text-xs text-red-600 mt-1">{emailError}</p>
+                    )}
                   </div>
 
                   <PasswordInput
                     value={password}
                     onChange={(val) => setPassword(val)}
+                    disabled={isSubmitting}
                   />
                 </div>
               )}
@@ -258,32 +266,27 @@ export const BuyerAuth: React.FC = () => {
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="w-full py-3.5 px-4 rounded-xl font-bold text-xs sm:text-sm text-white bg-violet-600 hover:bg-violet-500 active:scale-[0.99] transition-all duration-200 shadow-lg shadow-violet-500/25 flex items-center justify-center gap-2"
+                className="w-full py-3 px-4 rounded-xl font-semibold text-xs sm:text-sm text-white bg-blue-700 hover:bg-blue-800 transition-colors shadow-2xs flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
               >
                 {isSubmitting ? (
-                  <>
-                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                    <span>Accessing Portal...</span>
-                  </>
+                  <span>Signing In...</span>
                 ) : (
                   <>
-                    <span>{loginMethod === 'otp' ? 'Send OTP →' : 'Sign In as Buyer →'}</span>
+                    <span>Continue to Buyer Dashboard</span>
+                    <ArrowRight className="w-4 h-4" />
                   </>
                 )}
               </button>
             </form>
 
-            <div className="pt-2 text-center text-xs text-slate-400">
-              <span>Looking to procure rural produce? </span>
+            <div className="pt-2 text-center text-xs text-gray-600">
+              <span>New commercial buyer? </span>
               <button
                 type="button"
-                onClick={() => {
-                  setLoginError('');
-                  setStep('register');
-                }}
-                className="font-semibold text-violet-400 hover:text-violet-300 underline underline-offset-2 transition-colors ml-1"
+                onClick={() => setStep('register')}
+                className="text-blue-700 hover:underline font-bold cursor-pointer"
               >
-                Register your business
+                Register as Buyer
               </button>
             </div>
           </motion.div>
@@ -293,199 +296,154 @@ export const BuyerAuth: React.FC = () => {
         {step === 'otp' && (
           <motion.div
             key="otp"
-            initial={{ opacity: 0, x: 15 }}
+            initial={{ opacity: 0, x: 10 }}
             animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -15 }}
-            transition={{ duration: 0.3 }}
-            className="space-y-6 text-left"
+            exit={{ opacity: 0, x: -10 }}
+            transition={{ duration: 0.25 }}
           >
-            <div className="space-y-1">
-              <h2 className="text-2xl font-bold text-white tracking-tight">
-                Verify Buyer Account
-              </h2>
-              <p className="text-xs text-slate-300">
-                Enter the demo authentication code (<strong>123456</strong>) sent to your mobile.
-              </p>
-            </div>
-
             <OTPInput
               phoneNumber={phone}
               onComplete={handleVerifyOTP}
               error={otpError}
               isVerifying={isSubmitting}
-              onResend={() => setOtpError('')}
-              onEditPhone={() => {
-                setOtpError('');
-                setStep('login');
-              }}
-              accentColor="#8B5CF6"
+              onResend={() => handleVerifyOTP('123456')}
+              onEditPhone={() => setStep('login')}
+              accentColor="#1D4ED8"
             />
           </motion.div>
         )}
 
-        {/* 3. REGISTRATION STEP */}
+        {/* 3. REGISTER STEP */}
         {step === 'register' && (
           <motion.div
             key="register"
-            initial={{ opacity: 0, x: 15 }}
+            initial={{ opacity: 0, x: 10 }}
             animate={{ opacity: 1, x: 0 }}
-            exit={{ opacity: 0, x: -15 }}
-            transition={{ duration: 0.3 }}
+            exit={{ opacity: 0, x: -10 }}
+            transition={{ duration: 0.25 }}
             className="space-y-4 text-left"
           >
             <div className="space-y-1">
-              <h2 className="text-2xl font-bold text-white tracking-tight">
-                Register Commercial Buyer Account
+              <h2 className="text-xl sm:text-2xl font-bold text-gray-900 tracking-tight">
+                Buyer Registration
               </h2>
-              <p className="text-xs text-slate-300">
-                Direct procurement access to regional farmer producer organizations.
+              <p className="text-xs text-gray-600">
+                Register your business to post procurement demands and source farm produce.
               </p>
             </div>
 
             {regError && (
-              <p className="text-xs text-rose-400 bg-rose-500/10 border border-rose-500/20 p-2 rounded-lg">
+              <p className="text-xs text-red-700 bg-red-50 border border-red-200 p-2.5 rounded-lg font-medium">
                 {regError}
               </p>
             )}
 
             <form onSubmit={handleRegisterSubmit} className="space-y-3">
-              <div>
-                <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1">
-                  Business / APMC Firm Name *
-                </label>
-                <input
-                  type="text"
-                  required
-                  placeholder="e.g. Sahyadri Agri Traders Pvt Ltd"
-                  value={regForm.businessName}
-                  onChange={(e) => setRegForm({ ...regForm, businessName: e.target.value })}
-                  className="w-full px-3 py-2 rounded-xl bg-slate-950/80 border border-slate-800 text-white text-xs sm:text-sm focus:outline-none focus:border-violet-500"
-                />
-              </div>
-
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1">
-                    Contact Person *
+                  <label className="block text-xs font-semibold text-gray-700 mb-1">
+                    Company / Firm Name *
                   </label>
                   <input
                     type="text"
                     required
-                    placeholder="e.g. Rajesh Singhania"
-                    value={regForm.contactPerson}
-                    onChange={(e) => setRegForm({ ...regForm, contactPerson: e.target.value })}
-                    className="w-full px-3 py-2 rounded-xl bg-slate-950/80 border border-slate-800 text-white text-xs sm:text-sm focus:outline-none focus:border-violet-500"
+                    value={regForm.businessName}
+                    onChange={(e) => setRegForm({ ...regForm, businessName: e.target.value })}
+                    placeholder="e.g. Mahavir Agro Traders"
+                    className="w-full px-3 py-2 rounded-lg bg-white border border-gray-300 text-gray-900 text-xs focus:border-blue-600 focus:outline-none"
                   />
                 </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1">
-                    Buyer Category
+                  <label className="block text-xs font-semibold text-gray-700 mb-1">
+                    Contact Person
                   </label>
-                  <select
-                    value={regForm.businessType}
-                    onChange={(e) => setRegForm({ ...regForm, businessType: e.target.value })}
-                    className="w-full px-3 py-2 rounded-xl bg-slate-950 border border-slate-800 text-white text-xs sm:text-sm focus:outline-none focus:border-violet-500"
-                  >
-                    <option value="APMC Licensed Commission Agent & Trader">APMC Licensed Trader / Mandi Agent</option>
-                    <option value="Retail Supermarket Chain">Retail Supermarket Chain</option>
-                    <option value="Food Processing Unit">Food Processing Unit</option>
-                    <option value="Hospitality & Institutional Buyer">Hospitality & Institutional Buyer</option>
-                    <option value="Agricultural Exporter">Agricultural Exporter</option>
-                  </select>
+                  <input
+                    type="text"
+                    value={regForm.contactPerson}
+                    onChange={(e) => setRegForm({ ...regForm, contactPerson: e.target.value })}
+                    placeholder="e.g. Suresh Jain"
+                    className="w-full px-3 py-2 rounded-lg bg-white border border-gray-300 text-gray-900 text-xs focus:border-blue-600 focus:outline-none"
+                  />
                 </div>
               </div>
 
-              {/* Email & Password for Real Auth */}
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
-                  <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1">
+                  <label className="block text-xs font-semibold text-gray-700 mb-1">
                     Business Email *
                   </label>
                   <input
                     type="email"
                     required
-                    placeholder="buyer@example.com"
                     value={regForm.email}
                     onChange={(e) => setRegForm({ ...regForm, email: e.target.value })}
-                    className="w-full px-3 py-2 rounded-xl bg-slate-950/80 border border-slate-800 text-white text-xs sm:text-sm focus:outline-none focus:border-violet-500"
+                    placeholder="suresh@mahaviragro.com"
+                    className="w-full px-3 py-2 rounded-lg bg-white border border-gray-300 text-gray-900 text-xs focus:border-blue-600 focus:outline-none"
                   />
                 </div>
 
                 <div>
-                  <PasswordInput
+                  <label className="block text-xs font-semibold text-gray-700 mb-1">
+                    Password (min 8 chars) *
+                  </label>
+                  <input
+                    type="password"
+                    required
                     value={regForm.password}
-                    onChange={(val) => setRegForm({ ...regForm, password: val })}
-                    label="Password (min 8 chars) *"
+                    onChange={(e) => setRegForm({ ...regForm, password: e.target.value })}
+                    placeholder="••••••••"
+                    className="w-full px-3 py-2 rounded-lg bg-white border border-gray-300 text-gray-900 text-xs focus:border-blue-600 focus:outline-none"
                   />
                 </div>
               </div>
 
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
-                <PhoneInput
-                  value={phone}
-                  onChange={(val) => setPhone(val)}
-                  label="Authorized Mobile"
-                />
+                <div>
+                  <label className="block text-xs font-semibold text-gray-700 mb-1">
+                    Business Category
+                  </label>
+                  <select
+                    value={regForm.businessType}
+                    onChange={(e) => setRegForm({ ...regForm, businessType: e.target.value })}
+                    className="w-full px-3 py-2 rounded-lg bg-white border border-gray-300 text-gray-900 text-xs focus:border-blue-600 focus:outline-none"
+                  >
+                    <option value="Retailer & Distributor">Retailer & Distributor</option>
+                    <option value="Wholesale Mandi Trader">Wholesale Mandi Trader</option>
+                    <option value="Food Processing Enterprise">Food Processing Enterprise</option>
+                    <option value="Export Merchant">Export Merchant</option>
+                  </select>
+                </div>
 
                 <div>
-                  <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1">
-                    Market Location / APMC Mandi
+                  <label className="block text-xs font-semibold text-gray-700 mb-1">
+                    Delivery Hub / Location
                   </label>
                   <input
                     type="text"
                     value={regForm.location}
                     onChange={(e) => setRegForm({ ...regForm, location: e.target.value })}
-                    className="w-full px-3 py-2 rounded-xl bg-slate-950/80 border border-slate-800 text-white text-xs sm:text-sm focus:outline-none focus:border-violet-500"
+                    placeholder="e.g. Navi Mumbai APMC"
+                    className="w-full px-3 py-2 rounded-lg bg-white border border-gray-300 text-gray-900 text-xs focus:border-blue-600 focus:outline-none"
                   />
-                </div>
-              </div>
-
-              {/* Optional License / GSTIN */}
-              <div>
-                <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-1">
-                  GSTIN / APMC Trader License (Optional)
-                </label>
-                <div className="relative flex items-center">
-                  <input
-                    type="text"
-                    placeholder="e.g. 27AAAAA0000A1Z5 or APMC-VSH-2024"
-                    value={regForm.gstin}
-                    onChange={(e) => setRegForm({ ...regForm, gstin: e.target.value })}
-                    className="w-full px-3 py-2 rounded-xl bg-slate-950/80 border border-slate-800 text-white text-xs sm:text-sm font-mono uppercase focus:outline-none focus:border-violet-500"
-                  />
-                  <FileBadge className="w-4 h-4 text-violet-400 absolute right-3 pointer-events-none" />
                 </div>
               </div>
 
               <button
                 type="submit"
                 disabled={isSubmitting}
-                className="w-full py-3 px-4 rounded-xl font-bold text-xs sm:text-sm text-white bg-violet-600 hover:bg-violet-500 active:scale-[0.99] transition-all duration-200 shadow-lg shadow-violet-500/25 flex items-center justify-center gap-2 mt-1"
+                className="w-full py-2.5 px-4 rounded-xl font-semibold text-xs sm:text-sm text-white bg-blue-700 hover:bg-blue-800 transition-colors shadow-2xs flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 mt-2"
               >
-                {isSubmitting ? (
-                  <>
-                    <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-                    <span>Registering Buyer Account...</span>
-                  </>
-                ) : (
-                  <>
-                    <Building2 className="w-4 h-4" />
-                    <span>Create Buyer Account →</span>
-                  </>
-                )}
+                {isSubmitting ? 'Registering...' : 'Complete Buyer Registration'}
               </button>
             </form>
 
-            <div className="text-center text-xs text-slate-400">
+            <div className="pt-2 text-center text-xs text-gray-600">
               <span>Already registered? </span>
               <button
                 type="button"
-                onClick={() => {
-                  setRegError('');
-                  setStep('login');
-                }}
-                className="font-semibold text-violet-400 hover:text-violet-300 underline underline-offset-2 transition-colors ml-1"
+                onClick={() => setStep('login')}
+                className="text-blue-700 hover:underline font-bold cursor-pointer"
               >
                 Sign In
               </button>
@@ -496,9 +454,9 @@ export const BuyerAuth: React.FC = () => {
         {/* 4. SUCCESS STEP */}
         {step === 'success' && (
           <VerificationSuccess
-            roleTitle="Buyer / Market"
+            roleTitle="Commercial Buyer"
             dashboardRoute="/buyer/dashboard"
-            accentColor="#8B5CF6"
+            accentColor="#1D4ED8"
           />
         )}
       </AnimatePresence>
