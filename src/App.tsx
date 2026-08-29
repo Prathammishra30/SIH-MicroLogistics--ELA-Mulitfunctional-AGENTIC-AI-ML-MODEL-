@@ -33,6 +33,7 @@ import { SharedProvider } from './context/SharedContext';
 import { Notifications } from './components/dashboards/Notifications';
 import { ProtectedRoute } from './components/auth/ProtectedRoute';
 import { LanguageProvider } from './context/LanguageContext';
+import { ElaProvider } from './context/ElaContext';
 import { ElaAssistant } from './components/ela/ElaAssistant';
 import type { ModalType } from './types';
 
@@ -42,8 +43,9 @@ export function App() {
   return (
     <BrowserRouter>
       <LanguageProvider>
-        <SharedProvider>
-          <div className="relative min-h-screen flex flex-col justify-between bg-[#F8FAF8] text-slate-800 font-sans antialiased">
+        <ElaProvider>
+          <SharedProvider>
+            <div className="relative min-h-screen flex flex-col justify-between bg-[#F8FAF8] text-slate-800 font-sans antialiased">
             {/* Global Navigation Header */}
             <Navbar
               onOpenModal={(modal) => setActiveModal(modal)}
@@ -129,10 +131,10 @@ export function App() {
           <ElaAssistant />
         </div>
         </SharedProvider>
+        </ElaProvider>
       </LanguageProvider>
     </BrowserRouter>
   );
 }
 
 export default App;
-

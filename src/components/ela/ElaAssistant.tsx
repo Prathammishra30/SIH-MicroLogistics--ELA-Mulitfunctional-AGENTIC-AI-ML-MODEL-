@@ -81,7 +81,7 @@ export const ElaAssistant: React.FC = () => {
           </div>
           {!isOpen && (
             <span className="text-[10px] text-green-100 font-medium tracking-tight">
-              {userRole ? `${userRole.toLowerCase()} AI` : 'AI Assistant'}
+              {userRole ? `${userRole.charAt(0).toUpperCase() + userRole.slice(1).toLowerCase()}` : 'AI Assistant'}
             </span>
           )}
         </div>

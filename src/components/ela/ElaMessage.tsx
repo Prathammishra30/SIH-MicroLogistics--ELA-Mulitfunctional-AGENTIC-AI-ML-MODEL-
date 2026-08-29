@@ -1,24 +1,41 @@
 // ELA Message Component
-// User & Assistant Chat Bubbles with Rich Card Rendering
+// User & Assistant Chat Bubbles with Rich Card, Confirmation, Voice Synthesis & Feedback Telemetry
 
-import React from 'react';
-import { Bot, User as UserIcon, AlertCircle } from 'lucide-react';
-import type { ElaMessage as ElaMessageType } from '../../services/elaApi';
+import React, { useState } from 'react';
+import { Bot, User as UserIcon, AlertCircle, Volume2, ThumbsUp, ThumbsDown } from 'lucide-react';
+import type { ElaMessage as ElaMessageType, ElaConfirmationAction } from '../../services/elaApi';
 import { ElaActionCard } from './ElaActionCard';
+import { ElaConfirmationCard } from './ElaConfirmationCard';
+import { useEla } from '../../context/ElaContext';
 
 interface ElaMessageProps {
   message: ElaMessageType;
   onNavigate?: () => void;
+  onConfirmAction?: (action: ElaConfirmationAction) => Promise<void>;
+  onCancelAction?: (action: ElaConfirmationAction) => void;
 }
 
-export const ElaMessage: React.FC<ElaMessageProps> = ({ message, onNavigate }) => {
+export const ElaMessage: React.FC<ElaMessageProps> = ({
+  message,
+  onNavigate,
+  onConfirmAction,
+  onCancelAction,
+}) => {
   const isUser = message.role === 'user';
   const isError = message.isError;
+  const { speakResponse, submitFeedback } = useEla();
+  const [feedbackGiven, setFeedbackGiven] = useState<'POSITIVE' | 'NEGATIVE' | null>(null);
 
   const formattedTime = new Date(message.timestamp).toLocaleTimeString([], {
     hour: '2-digit',
     minute: '2-digit',
   });
+
+  const handleFeedback = (rating: 'POSITIVE' | 'NEGATIVE') => {
+    if (feedbackGiven) return;
+    setFeedbackGiven(rating);
+    submitFeedback(rating, message.content.slice(0, 150));
+  };
 
   return (
     <div
@@ -47,7 +64,7 @@ export const ElaMessage: React.FC<ElaMessageProps> = ({ message, onNavigate }) =
 
       {/* Bubble */}
       <div
-        className={`max-w-[85%] sm:max-w-[78%] flex flex-col ${
+        className={`max-w-[85%] sm:max-w-[82%] flex flex-col ${
           isUser ? 'items-end' : 'items-start'
         }`}
       >
@@ -69,12 +86,56 @@ export const ElaMessage: React.FC<ElaMessageProps> = ({ message, onNavigate }) =
               onNavigate={onNavigate}
             />
           )}
+
+          {/* Confirmation Card if consequential action requires confirmation */}
+          {!isUser && message.confirmationAction && onConfirmAction && onCancelAction && (
+            <ElaConfirmationCard
+              confirmationAction={message.confirmationAction}
+              onConfirm={onConfirmAction}
+              onCancel={onCancelAction}
+            />
+          )}
         </div>
 
-        {/* Timestamp */}
-        <span className="text-[10px] text-slate-400 mt-1 px-1 font-mono">
-          {formattedTime}
-        </span>
+        {/* Message Footer: Timestamp, Voice TTS, Feedback */}
+        <div className="flex items-center gap-2 mt-1 px-1 text-[10px] text-slate-400">
+          <span className="font-mono">{formattedTime}</span>
+
+          {!isUser && !isError && (
+            <div className="flex items-center gap-1.5 ml-1">
+              <button
+                type="button"
+                onClick={() => speakResponse(message.content)}
+                title="Listen to message"
+                className="hover:text-emerald-700 transition-colors cursor-pointer"
+              >
+                <Volume2 className="w-3.5 h-3.5" />
+              </button>
+
+              <button
+                type="button"
+                onClick={() => handleFeedback('POSITIVE')}
+                title="Good response"
+                className={`hover:text-emerald-700 transition-colors cursor-pointer ${
+                  feedbackGiven === 'POSITIVE' ? 'text-emerald-600' : ''
+                }`}
+              >
+                <ThumbsUp className="w-3 h-3" />
+              </button>
+
+              <button
+                type="button"
+                onClick={() => handleFeedback('NEGATIVE')}
+                title="Needs improvement"
+                className={`hover:text-rose-600 transition-colors cursor-pointer ${
+                  feedbackGiven === 'NEGATIVE' ? 'text-rose-600' : ''
+                }`}
+              >
+                <ThumbsDown className="w-3 h-3" />
+              </button>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

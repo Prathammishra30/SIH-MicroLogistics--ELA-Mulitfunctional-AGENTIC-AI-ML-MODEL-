@@ -1,5 +1,5 @@
 // ELA Frontend API Client Service
-// RuralFlow Multilingual Logistics Intelligence Assistant
+// AgriRoute / RuralFlow Multilingual Logistics Intelligence Assistant
 
 import { tokenStorage } from './api';
 
@@ -14,12 +14,23 @@ export interface ElaNavigationAction {
   params?: Record<string, string>;
 }
 
+export interface ElaConfirmationAction {
+  actionId: string;
+  toolName: string;
+  title: string;
+  summary?: string;
+  params: Record<string, unknown>;
+  confirmLabel?: string;
+  cancelLabel?: string;
+}
+
 export interface ElaMessage {
   id: string;
   role: 'user' | 'assistant' | 'system';
   content: string;
   timestamp: string;
   navigationAction?: ElaNavigationAction | null;
+  confirmationAction?: ElaConfirmationAction | null;
   suggestions?: string[];
   isError?: boolean;
 }
@@ -37,6 +48,7 @@ export interface ElaChatResponseData {
   language: string;
   detectedRole: string;
   navigationAction?: ElaNavigationAction | null;
+  confirmationAction?: ElaConfirmationAction | null;
   suggestions?: string[];
   actionResult?: {
     toolName: string;
@@ -88,6 +100,75 @@ export async function sendElaChatMessage(
   }
 
   return resData.data;
+}
+
+export async function confirmElaAction(payload: {
+  actionId: string;
+  toolName: string;
+  params: Record<string, unknown>;
+  confirmed: boolean;
+  language?: string;
+}): Promise<ElaChatResponseData> {
+  const token = tokenStorage.get();
+  const url = `${API_BASE_URL.replace(/\/+$/, '')}/ela/confirm`;
+
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+    Accept: 'application/json',
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+  };
+
+  const response = await fetch(url, {
+    method: 'POST',
+    headers,
+    body: JSON.stringify(payload),
+  });
+
+  const resData: ApiResponse<ElaChatResponseData> = await response.json().catch(() => ({
+    success: false,
+    message: `Server returned error ${response.status}`,
+  }));
+
+  if (!response.ok || !resData.success || !resData.data) {
+    throw new Error(resData.message || resData.error || 'Failed to confirm action.');
+  }
+
+  return resData.data;
+}
+
+export async function sendElaFeedback(payload: {
+  rating: 'POSITIVE' | 'NEGATIVE';
+  feedbackText?: string;
+  correctedIntent?: string;
+}): Promise<{ feedbackId: string }> {
+  const token = tokenStorage.get();
+  const url = `${API_BASE_URL.replace(/\/+$/, '')}/ela/feedback`;
+
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+    Accept: 'application/json',
+    ...(token ? { Authorization: `Bearer ${token}` } : {}),
+  };
+
+  const response = await fetch(url, {
+    method: 'POST',
+    headers,
+    body: JSON.stringify(payload),
+  });
+
+  const resData = await response.json();
+  return resData.data || { feedbackId: 'saved' };
+}
+
+export async function getElaMLModels(): Promise<Record<string, unknown>[]> {
+  try {
+    const url = `${API_BASE_URL.replace(/\/+$/, '')}/ela/ml/models`;
+    const res = await fetch(url);
+    const data = await res.json();
+    return data.data?.models || [];
+  } catch {
+    return [];
+  }
 }
 
 export async function getElaHealth(): Promise<{ isAvailable: boolean; providerName: string }> {

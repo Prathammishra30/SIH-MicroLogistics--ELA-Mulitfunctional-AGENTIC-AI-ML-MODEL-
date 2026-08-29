@@ -1,10 +1,10 @@
 // ELA Input Component
-// Chat message input with multilingual typing and voice readiness
+// Chat message input with multilingual typing and active Web Speech voice transcription
 
 import React, { useState, useRef, useEffect } from 'react';
 import { Send } from 'lucide-react';
 import { useLanguage } from '../../context/LanguageContext';
-import { ElaVoiceButton } from './ElaVoiceButton';
+import { ElaVoiceInput } from './ElaVoiceInput';
 
 interface ElaInputProps {
   onSendMessage: (message: string) => void;
@@ -36,12 +36,19 @@ export const ElaInput: React.FC<ElaInputProps> = ({
     setText('');
   };
 
+  const handleVoiceTranscript = (transcript: string) => {
+    setText((prev) => (prev ? `${prev} ${transcript}` : transcript));
+    if (inputRef.current) {
+      inputRef.current.focus();
+    }
+  };
+
   return (
     <form
       onSubmit={handleSubmit}
       className="p-3 bg-white border-t border-slate-200/80 flex items-center gap-2"
     >
-      <ElaVoiceButton disabled={isLoading} />
+      <ElaVoiceInput onTranscript={handleVoiceTranscript} disabled={isLoading} />
 
       <div className="flex-1 relative flex items-center">
         <input
