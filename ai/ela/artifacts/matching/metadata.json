@@ -1,0 +1,21 @@
+{
+  "model_name": "VehicleMatchingModel",
+  "model_version": "v1.2-match-multiobjective",
+  "implementation_type": "MULTI_OBJECTIVE_DECISION_MODEL",
+  "algorithm": "MultiObjectiveUtilityRanker",
+  "dataset_type": "SYNTHETIC",
+  "dataset_version": "calibrated_booking_preferences_v1",
+  "samples_total": 100,
+  "test_metrics": {
+    "mae": 0.02,
+    "rmse": 0.04,
+    "r_squared": 0.96,
+    "mape": null,
+    "sample_count": 20,
+    "evaluated_at": "2026-08-30T01:40:41.303468"
+  },
+  "artifact_path": "ai/ela/artifacts\\matching\\matching_model.joblib",
+  "artifact_hash": "94df0fe517169ad31019c5eaa491a38b3a27a6e60d2d215cd0d54227ae8b0233",
+  "status": "trained",
+  "trained_at": "2026-08-30T01:40:41.305857"
+}

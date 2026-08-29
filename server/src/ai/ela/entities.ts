@@ -45,6 +45,8 @@ export class EntityExtractor {
     आलू: 'Potatoes',
     गहू: 'Wheat',
     गेहूं: 'Wheat',
+    गेहूँ: 'Wheat',
+    गेहू: 'Wheat',
     तांदूळ: 'Rice',
     चावल: 'Rice',
     द्राक्षे: 'Grapes',

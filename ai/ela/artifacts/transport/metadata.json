@@ -1,0 +1,21 @@
+{
+  "model_name": "TransportCostModel",
+  "model_version": "v1.2-tariff-hybrid",
+  "implementation_type": "HYBRID_MODEL",
+  "algorithm": "HybridTariffMatrixAndLearnedElasticity",
+  "dataset_type": "SYNTHETIC",
+  "dataset_version": "calibrated_tariff_matrix_v1",
+  "samples_total": 200,
+  "test_metrics": {
+    "mae": 1105.08,
+    "rmse": 1515.76,
+    "r_squared": 0.417,
+    "mape": 19.63,
+    "sample_count": 30,
+    "evaluated_at": "2026-08-30T01:40:41.297842"
+  },
+  "artifact_path": "ai/ela/artifacts\\transport\\transport_model.joblib",
+  "artifact_hash": "ccd63b1a0ed2560fafda1cbfd070c5eca635c90186b534f0d63469fbdac8b218",
+  "status": "trained",
+  "trained_at": "2026-08-30T01:40:41.302289"
+}

@@ -1,16 +1,69 @@
 // ELA API Controller
 // Handles chat, message actions, telemetry feedback, and ML model observability
+// Bridges to standalone Python ELA Service while retaining Node as authoritative application authority
 
 import type { Request, Response } from 'express';
 import { ElaAgent } from '../ai/ela/agent.js';
 import { FeedbackCollector } from '../ai/learning/feedbackCollector.js';
 import { MLGateway } from '../ai/ml/mlGateway.js';
-import { ROUTE_REGISTRY } from '../ai/tools/navigation.tools.js';
 import { sendSuccess, sendError } from '../utils/response.js';
 import { verifyJwtToken, getCurrentUser } from '../modules/auth/auth.service.js';
 import { prisma } from '../config/prisma.js';
+import { ConversationMemory } from '../ai/memory/conversationMemory.js';
+import { ActionExecutor } from '../ai/ela/executor.js';
 import type { AuthUser } from '../modules/auth/auth.types.js';
-import type { ElaChatRequest } from '../ai/ela.types.js';
+import type { ElaChatRequest, ElaChatResponse } from '../ai/ela.types.js';
+
+const PYTHON_ELA_URL = process.env.PYTHON_ELA_URL || 'http://127.0.0.1:8000';
+
+export async function forwardChatToPythonELA(
+  chatRequest: ElaChatRequest,
+  authUser: AuthUser | null
+): Promise<ElaChatResponse | null> {
+  try {
+    const payload = {
+      message: chatRequest.message,
+      context: chatRequest.context || {},
+      user: authUser
+        ? {
+            id: authUser.id,
+            name: authUser.name,
+            role: authUser.role,
+          }
+        : null,
+    };
+
+    const controller = new AbortController();
+    const timeout = setTimeout(() => controller.abort(), 2500);
+
+    const res = await fetch(`${PYTHON_ELA_URL}/v1/ela/chat`, {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify(payload),
+      signal: controller.signal,
+    });
+    clearTimeout(timeout);
+
+    if (res.ok) {
+      const data = (await res.json()) as Record<string, unknown>;
+      return {
+        message: String(data.message || ''),
+        intent: data.intent as ElaChatResponse['intent'],
+        detectedRole: data.detected_role as ElaChatResponse['detectedRole'],
+        language: data.language as ElaChatResponse['language'],
+        actionResult: data.action_result as ElaChatResponse['actionResult'],
+        navigationAction: data.navigation_action as ElaChatResponse['navigationAction'],
+        confirmationAction: data.confirmation_action as ElaChatResponse['confirmationAction'],
+        mlPrediction: data.ml_prediction as ElaChatResponse['mlPrediction'],
+        suggestions: (data.suggestions as string[]) || [],
+        timestamp: String(data.timestamp || new Date().toISOString()),
+      };
+    }
+    return null;
+  } catch {
+    return null;
+  }
+}
 
 export async function resolveOptionalUser(req: Request): Promise<AuthUser | null> {
   const authHeader = req.headers.authorization;
@@ -50,8 +103,16 @@ export async function handleChatMessage(req: Request, res: Response): Promise<vo
     }
 
     const authUser = await resolveOptionalUser(req);
-    const response = await ElaAgent.processMessage(chatRequest, authUser);
 
+    // Try Python ELA Service first
+    const pythonResponse = await forwardChatToPythonELA(chatRequest, authUser);
+    if (pythonResponse) {
+      sendSuccess(res, 'ELA response generated successfully via Python Intelligence Service.', pythonResponse);
+      return;
+    }
+
+    // Fallback to local TypeScript Core if Python service is not running
+    const response = await ElaAgent.processMessage(chatRequest, authUser);
     sendSuccess(res, 'ELA response generated successfully.', response);
   } catch (error) {
     const msg = error instanceof Error ? error.message : 'Internal ELA processing error';
@@ -73,59 +134,101 @@ export async function handleConfirmAction(req: Request, res: Response): Promise<
       authUser
     );
 
-    sendSuccess(res, 'Action confirmation processed.', response);
+    sendSuccess(res, 'Action processed successfully.', response);
   } catch (error) {
-    const msg = error instanceof Error ? error.message : 'Action execution error';
-    sendError(res, `Failed to confirm action: ${msg}`, 500);
+    const msg = error instanceof Error ? error.message : 'Action confirmation failed';
+    sendError(res, `Failed to execute action: ${msg}`, 500);
   }
 }
 
-export async function handleFeedback(req: Request, res: Response): Promise<void> {
+export async function handleInternalToolExecution(req: Request, res: Response): Promise<void> {
   try {
-    const { rating, feedbackText, correctedIntent } = req.body;
-    const authUser = await resolveOptionalUser(req);
+    const { toolName, params, userId, role } = req.body;
+    const authUser = userId ? await getCurrentUser(userId) : null;
+    const effectiveRole = authUser?.role || role || 'GUEST';
 
-    const record = FeedbackCollector.recordUserFeedback({
-      userId: authUser?.id,
-      role: authUser?.role || 'GUEST',
+    const result = await ActionExecutor.executeWithVerification(toolName, params || {}, {
+      language: 'en',
+      role: effectiveRole,
+      authenticatedUser: authUser,
+      currentPage: '/',
+      confirmed: true,
+    });
+
+    sendSuccess(res, 'Internal tool execution completed.', result);
+  } catch (error) {
+    const msg = error instanceof Error ? error.message : 'Internal tool execution failed';
+    sendError(res, `Internal tool failed: ${msg}`, 500);
+  }
+}
+
+export function handleFeedback(req: Request, res: Response): void {
+  try {
+    const { rating, feedbackText, correctedIntent, role, userId } = req.body;
+    const rec = FeedbackCollector.recordUserFeedback({
+      userId,
+      role: role || 'GUEST',
       rating: rating === 'NEGATIVE' ? 'NEGATIVE' : 'POSITIVE',
-      feedbackText,
+      feedbackText: feedbackText || '',
       correctedIntent,
     });
 
-    sendSuccess(res, 'Feedback recorded successfully.', { feedbackId: record.id });
+    sendSuccess(res, 'Feedback recorded into self-learning telemetry dataset.', {
+      feedbackId: rec.id,
+      recordedAt: rec.timestamp,
+    });
   } catch (error) {
-    const msg = error instanceof Error ? error.message : 'Failed to record feedback';
-    sendError(res, msg, 500);
+    const msg = error instanceof Error ? error.message : 'Feedback recording failed';
+    sendError(res, `Failed to record feedback: ${msg}`, 500);
   }
 }
 
-export async function handleGetMLModels(_req: Request, res: Response): Promise<void> {
+export function handleGetMLModels(_req: Request, res: Response): void {
   const mlGateway = MLGateway.getInstance();
   const versions = mlGateway.getModelVersions();
-  sendSuccess(res, 'Active ML Models retrieved.', { models: versions });
+  sendSuccess(res, 'Active ML model versions retrieved.', {
+    models: versions,
+    activePredictorCount: versions.length,
+  });
 }
 
 export async function handleGetRecommendations(req: Request, res: Response): Promise<void> {
-  const authUser = await resolveOptionalUser(req);
-  const mlGateway = MLGateway.getInstance();
-
-  if (authUser?.role === 'TRANSPORTER') {
-    const recs = await mlGateway.recommendationEngine.getTransporterLoadRecommendations();
-    sendSuccess(res, 'Transporter load recommendations.', { recommendations: recs });
-  } else {
-    const recs = await mlGateway.recommendationEngine.getFarmerCropRecommendations();
-    sendSuccess(res, 'Farmer crop recommendations.', { recommendations: recs });
+  try {
+    const mlGateway = MLGateway.getInstance();
+    const location = (req.query.location as string) || 'pune';
+    const crops = await mlGateway.recommendationEngine.getFarmerCropRecommendations(location);
+    sendSuccess(res, 'Crop and market recommendations generated.', {
+      location,
+      recommendedCrops: crops,
+    });
+  } catch (error) {
+    const msg = error instanceof Error ? error.message : 'Recommendation failed';
+    sendError(res, `Failed to get recommendations: ${msg}`, 500);
   }
+}
+
+export function handleGetSessionState(req: Request, res: Response): void {
+  const sessionId = String(req.params.id || '');
+  const session = ConversationMemory.getSession(sessionId);
+  sendSuccess(res, 'Session conversation state retrieved.', { session });
+}
+
+export function handleGetTasks(req: Request, res: Response): void {
+  const sessionId = String(req.params.id || '');
+  const session = ConversationMemory.getSession(sessionId);
+  sendSuccess(res, 'Session tasks retrieved.', {
+    activeGoal: session.activeGoal,
+    subtasks: session.activeGoal?.subtasks || [],
+  });
 }
 
 export function handleHealthCheck(_req: Request, res: Response): void {
   const mlGateway = MLGateway.getInstance();
   sendSuccess(res, 'ELA AI Assistant is operational.', {
-    agentEngine: 'ELA Enterprise Agent Core (Phase 3)',
-    models: mlGateway.getModelVersions().map((m) => `${m.modelName} (${m.version})`),
-    supportedLanguages: ['en', 'hi', 'mr', 'ta', 'te', 'bn', 'kn'],
-    registeredDestinationsCount: Object.keys(ROUTE_REGISTRY).length,
+    status: 'ONLINE',
+    version: '4.0.0-enterprise',
+    pythonService: `${PYTHON_ELA_URL}/v1/ela/health`,
+    registeredModels: mlGateway.getModelVersions().map((m) => m.modelName),
     timestamp: new Date().toISOString(),
   });
 }

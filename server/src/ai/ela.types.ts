@@ -19,6 +19,7 @@ export type ElaIntent =
   | 'NAVIGATE_HOME'
   | 'LOGIN_GUIDANCE'
   | 'REGISTER_GUIDANCE'
+  | 'ROLE_DECLARATION'
   | 'SWITCH_LANGUAGE'
   | 'EXPLAIN_PLATFORM'
   | 'GENERAL_HELP'
@@ -131,6 +132,8 @@ export interface ElaChatResponse {
     data?: unknown;
     error?: string;
   } | null;
+  mlPrediction?: unknown;
+  trace?: unknown;
   timestamp: string;
 }
 

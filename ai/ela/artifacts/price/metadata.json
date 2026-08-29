@@ -1,0 +1,21 @@
+{
+  "model_name": "PricePredictionModel",
+  "model_version": "v1.2-hedonic-spot",
+  "implementation_type": "TRAINED_MACHINE_LEARNING_MODEL",
+  "algorithm": "HedonicMultiAttributeRegression",
+  "dataset_type": "SYNTHETIC",
+  "dataset_version": "calibrated_hedonic_spot_v1",
+  "samples_total": 200,
+  "test_metrics": {
+    "mae": 6.04,
+    "rmse": 6.72,
+    "r_squared": -0.01,
+    "mape": 15.94,
+    "sample_count": 30,
+    "evaluated_at": "2026-08-30T01:40:41.257632"
+  },
+  "artifact_path": "ai/ela/artifacts\\price\\price_model.joblib",
+  "artifact_hash": "f85514af3befcc47a0d4fd4c373caccdc6fc69c29ae4cafdee6aa2ac70d397db",
+  "status": "trained",
+  "trained_at": "2026-08-30T01:40:41.259717"
+}

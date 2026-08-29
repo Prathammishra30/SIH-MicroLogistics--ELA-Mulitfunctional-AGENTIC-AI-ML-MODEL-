@@ -1,19 +1,24 @@
-// ELA Chat Window Component (Phase 2 Agentic Action & Confirmation UI)
+// ELA Chat Window Component (Phase 4 Universal Project-Level Architecture)
 // AgriRoute / RuralFlow Universal Multilingual Logistics Intelligence Assistant
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
-import { Bot, Sparkles, Trash2, X, RefreshCw } from 'lucide-react';
+import { Sparkles, X, RefreshCw, Bot } from 'lucide-react';
 import { useSharedContext } from '../../context/SharedContext';
 import { useLanguage } from '../../context/LanguageContext';
-import { useLocation } from 'react-router-dom';
+import { useLocation, useNavigate } from 'react-router-dom';
+import type { UserRole } from '../../services/api';
 import type {
   ElaMessage as ElaMessageType,
   ElaConfirmationAction,
 } from '../../services/elaApi';
 import { sendElaChatMessage, confirmElaAction } from '../../services/elaApi';
+import { useEla } from '../../context/ElaContext';
 import { ElaMessage } from './ElaMessage';
 import { ElaInput } from './ElaInput';
-import { ElaSuggestions } from './ElaSuggestions';
+import { ElaSuggestions, getDefaultSuggestions } from './ElaSuggestions';
+import { ElaContextBadge } from './ElaContextBadge';
+import { ElaAgentStatus, type AgentLifecycleStage } from './ElaAgentStatus';
+import { ElaVoiceVisualizer } from './ElaVoiceVisualizer';
 
 interface ElaChatProps {
   onClose: () => void;
@@ -22,42 +27,62 @@ interface ElaChatProps {
 export const ElaChat: React.FC<ElaChatProps> = ({ onClose }) => {
   const { state, loadUserBusinessData } = useSharedContext();
   const { language, t } = useLanguage();
+  const { isListening, isSpeaking, startVoiceInput, stopVoiceInput, speakResponse, stopSpeaking } = useEla();
   const location = useLocation();
+  const navigate = useNavigate();
   const messagesEndRef = useRef<HTMLDivElement>(null);
 
-  const currentUserRole = state.auth.user?.role || 'GUEST';
-  const currentUserName = state.auth.user?.name || '';
+  // Authenticated context vs public landing context separation
+  const isInsideDashboard = location.pathname.startsWith('/dashboards/');
+  const authenticatedRole = state.auth.isAuthenticated && state.auth.user?.role ? state.auth.user.role : null;
+  const currentUserName = isInsideDashboard && state.auth.user?.name ? state.auth.user.name : '';
+
+  // Initial role is ONLY set from auth when inside an authenticated dashboard
+  const initialRole: UserRole | 'GUEST' = isInsideDashboard && authenticatedRole ? authenticatedRole : 'GUEST';
+  const [conversationalRole, setConversationalRole] = useState<UserRole | 'GUEST'>(initialRole);
+  const [agentStage, setAgentStage] = useState<AgentLifecycleStage>('IDLE');
+  const [agentStatusMsg, setAgentStatusMsg] = useState<string>('');
 
   const getInitialWelcomeMessage = useCallback((): ElaMessageType => {
     let welcomeText: string;
-    if (currentUserRole === 'FARMER') {
+
+    if (conversationalRole === 'FARMER' && isInsideDashboard) {
       welcomeText =
         language === 'mr'
-          ? `नमस्कार ${currentUserName || 'शेतकरी मित्र'}! मी ईला (ELA), तुमची अ‍ॅग्रीरूट लॉजिस्टिक्स सहाय्यक. मी पिके नोंदवणे, वाहतूक मागवणे किंवा डिलिव्हरी ट्रॅक करण्यात मदत करू शकते.`
+          ? `नमस्कार ${currentUserName || 'शेतकरी मित्र'}! मी ELA, तुमची अ‍ॅग्रीरूट लॉजिस्टिक्स सहाय्यक. मी पिके नोंदवणे, वाहतूक मागवणे किंवा डिलिव्हरी ट्रॅक करण्यात मदत करू शकते.`
           : language === 'hi'
-          ? `नमस्ते ${currentUserName || 'किसान भाई'}! मैं ईला (ELA) हूँ। अपनी फसल जोड़ने, गाड़ी बुक करने या डिलीवरी देखने के लिए मुझसे पूछें।`
+          ? `नमस्ते ${currentUserName || 'किसान भाई'}! मैं ELA हूँ। अपनी फसल जोड़ने, गाड़ी बुक करने या डिलीवरी देखने के लिए मुझसे पूछें।`
           : `Hello ${currentUserName || 'Farmer'}! I'm ELA, your AgriRoute logistics assistant. I can help you list crops, request transport, or track deliveries.`;
-    } else if (currentUserRole === 'BUYER') {
+    } else if (conversationalRole === 'BUYER' && isInsideDashboard) {
       welcomeText =
         language === 'mr'
-          ? `नमस्कार ${currentUserName || 'व्यापारी मित्र'}! मी ईला (ELA). थेट शेतमाल शोधण्यासाठी किंवा खरेदी मागणी (Procurement) नोंदवण्यासाठी मी सज्ज आहे.`
+          ? `नमस्कार ${currentUserName || 'व्यापारी मित्र'}! मी ELA. थेट शेतमाल शोधण्यासाठी किंवा खरेदी मागणी (Procurement) नोंदवण्यासाठी मी सज्ज आहे.`
           : language === 'hi'
-          ? `नमस्ते ${currentUserName || 'व्यापारी जी'}! मैं ईला (ELA) हूँ। किसानों से ताज़ा उपज खरीदने या खरीद मांग पोस्ट करने के लिए मुझसे कहें।`
+          ? `नमस्ते ${currentUserName || 'व्यापारी जी'}! मैं ELA हूँ। किसानों से ताज़ा उपज खरीदने या खरीद मांग पोस्ट करने के लिए मुझसे कहें।`
           : `Hello ${currentUserName || 'Buyer'}! I'm ELA. I can assist you with discovering farm fresh produce, posting bulk procurement demands, and tracking orders.`;
-    } else if (currentUserRole === 'TRANSPORTER') {
+    } else if (conversationalRole === 'TRANSPORTER' && isInsideDashboard) {
       welcomeText =
         language === 'mr'
-          ? `नमस्कार ${currentUserName || 'वाहतूकदार मित्र'}! मी ईला (ELA). उपलब्ध फेऱ्या शोधणे, वाहने व्यवस्थापित करणे किंवा कमाई तपासण्यात मी मदत करू शकेन.`
+          ? `नमस्कार ${currentUserName || 'वाहतूकदार मित्र'}! मी ELA. उपलब्ध फेऱ्या शोधणे, वाहने व्यवस्थापित करणे किंवा कमाई तपासण्यात मी मदत करू शकेन.`
           : language === 'hi'
-          ? `नमस्ते ${currentUserName || 'ट्रांसपोर्टर जी'}! मैं ईला (ELA) हूँ। उपलब्ध ट्रिप्स खोजने, गाड़ी प्रबंधन या कमाई देखने में मैं आपकी सहायता करूँगी।`
+          ? `नमस्ते ${currentUserName || 'ट्रांसपोर्टर जी'}! मैं ELA हूँ। उपलब्ध ट्रिप्स खोजने, गाड़ी प्रबंधन या कमाई देखने में मैं आपकी सहायता करूँगी।`
           : `Hello ${currentUserName || 'Transporter'}! I'm ELA. I can help you find available loads, manage vehicles, track trips, and view earnings.`;
     } else {
+      // Universal Landing Welcome Message across all 7 Indian languages
       welcomeText =
         language === 'mr'
-          ? 'नमस्कार! मी ईला (ELA), अ‍ॅग्रीरूट लॉजिस्टिक्स सहाय्यक. शेतकरी, खरेदीदार किंवा वाहतूकदार पोर्टलमध्ये प्रवेश करण्यासाठी मला सांगा.'
+          ? 'नमस्कार! मी ELA — तुमची अ‍ॅग्रीरूट AI सहाय्यक. मी तुम्हाला शेतकरी, खरेदीदार किंवा वाहतूकदार पोर्टलमध्ये प्रवेश करण्यास, अ‍ॅग्रीरूट कसे कार्य करते ते समजून घेण्यास किंवा कार्ये पूर्ण करण्यास मदत करू शकते.'
           : language === 'hi'
-          ? 'नमस्ते! मैं ईला (ELA) हूँ। किसान, खरीदार या ट्रांसपोर्टर पोर्टल में लॉगिन, रजिस्ट्रेशन या मार्गदर्शन के लिए मुझसे पूछें।'
-          : "Hello! I'm ELA, AgriRoute's universal logistics intelligence assistant. How can I help you navigate or get started today?";
+          ? 'नमस्ते! मैं ELA हूँ — आपकी एग्रीरूट Universal Intelligence Assistant। मैं आपको किसान, खरीदार या ट्रांसपोर्टर पोर्टल में प्रवेश करने, एग्रीरूट कैसे काम करता है यह समझने, या काम पूरे करने में मदद कर सकती हूँ।'
+          : language === 'ta'
+          ? 'வணக்கம்! நான் ELA, உங்கள் அக்ரிரூட் AI உதவியாளர். விவசாயி, வாங்குபவர் அல்லது டிரான்ஸ்போர்ட்டர் போர்ட்டலை அணுகவும், அக்ரிரூட் எவ்வாறு செயல்படுகிறது என்பதைப் புரிந்து கொள்ளவும் நான் உதவ முடியும்.'
+          : language === 'te'
+          ? 'నమస్కారం! నేను ELA, మీ అగ్రిరూట్ AI సహాయకురాలిని. రైతు, కొనుగోలుదారు లేదా రవాణాదారు పోర్టల్‌ను యాక్సెస్ చేయడానికి, అగ్రిరూట్ ఎలా పనిచేస్తుందో అర్థం చేసుకోవడానికి నేను సహాయం చేయగలను.'
+          : language === 'bn'
+          ? 'নমস্কার! আমি ELA, আপনার অ্যাগ্রিরুট AI সহকারী। আমি আপনাকে কৃষক, ক্রেতা বা পরিবহনকারী পোর্টালে প্রবেশ করতে, অ্যাগ্রিরুট কীভাবে কাজ করে তা বুঝতে সাহায্য করতে পারি।'
+          : language === 'kn'
+          ? 'ನಮಸ್ಕಾರ! ನಾನು ELA, ನಿಮ್ಮ ಅಗ್ರಿರೌಟ್ AI ಸಹಾಯಕ. ರೈತ, ಖರೀದಿದಾರ ಅಥವಾ ಸಾರಿಗೆದಾರ ಪೋರ್ಟಲ್ ಅನ್ನು ಪ್ರವೇಶಿಸಲು, ಅಗ್ರಿರೌಟ್ ಹೇಗೆ ಕಾರ್ಯನಿರ್ವಹಿಸುತ್ತದೆ ಎಂಬುದನ್ನು ಅರ್ಥಮಾಡಿಕೊಳ್ಳಲು ನಾನು ನಿಮಗೆ ಸಹಾಯ ಮಾಡಬಲ್ಲೆ.'
+          : "Hello! I'm ELA, your AgriRoute Universal Intelligence Assistant. मैं Farmer, Buyer या Transporter portal में आपकी मदद कर सकती हूँ. How can I help you today?";
     }
 
     return {
@@ -65,13 +90,17 @@ export const ElaChat: React.FC<ElaChatProps> = ({ onClose }) => {
       role: 'assistant',
       content: welcomeText,
       timestamp: new Date().toISOString(),
-      suggestions: getDefaultSuggestions(currentUserRole, language),
+      suggestions: getDefaultSuggestions(conversationalRole, language),
     };
-  }, [currentUserRole, currentUserName, language]);
+  }, [conversationalRole, isInsideDashboard, currentUserName, language]);
+
+  const storageKey = isInsideDashboard && state.auth.user
+    ? `ruralflow_ela_chat_${state.auth.user.id}_${state.auth.user.role}`
+    : 'ruralflow_ela_chat_universal';
 
   const [messages, setMessages] = useState<ElaMessageType[]>(() => {
     try {
-      const saved = sessionStorage.getItem(`ruralflow_ela_chat_${currentUserRole}`);
+      const saved = sessionStorage.getItem(storageKey);
       if (saved) {
         return JSON.parse(saved);
       }
@@ -83,7 +112,7 @@ export const ElaChat: React.FC<ElaChatProps> = ({ onClose }) => {
 
   const [isLoading, setIsLoading] = useState(false);
   const [currentSuggestions, setCurrentSuggestions] = useState<string[]>(() =>
-    getDefaultSuggestions(currentUserRole, language)
+    getDefaultSuggestions(conversationalRole, language)
   );
 
   // Auto-scroll to bottom of conversation
@@ -93,19 +122,16 @@ export const ElaChat: React.FC<ElaChatProps> = ({ onClose }) => {
 
   useEffect(() => {
     scrollToBottom();
-  }, [messages, isLoading]);
+  }, [messages, isLoading, agentStage]);
 
-  // Persist conversation per role in sessionStorage
+  // Persist conversation in sessionStorage
   useEffect(() => {
     try {
-      sessionStorage.setItem(
-        `ruralflow_ela_chat_${currentUserRole}`,
-        JSON.stringify(messages)
-      );
+      sessionStorage.setItem(storageKey, JSON.stringify(messages));
     } catch {
       // Storage unavailable
     }
-  }, [messages, currentUserRole]);
+  }, [messages, storageKey]);
 
   const handleSendMessage = async (text: string) => {
     const trimmed = text.trim();
@@ -118,7 +144,7 @@ export const ElaChat: React.FC<ElaChatProps> = ({ onClose }) => {
         role: 'assistant',
         content:
           t('ela.sensitiveCredentialShield') ||
-          'Please enter your password or OTP directly into the secure form. For your protection, ELA never handles, stores, or transmits passwords or verification codes.',
+          'Please enter your password or OTP directly into the secure login form. For your protection, ELA never processes, stores, or transmits authentication secrets.',
         timestamp: new Date().toISOString(),
       };
       setMessages((prev) => [
@@ -138,6 +164,8 @@ export const ElaChat: React.FC<ElaChatProps> = ({ onClose }) => {
 
     setMessages((prev) => [...prev, userMsg]);
     setIsLoading(true);
+    setAgentStage('UNDERSTANDING');
+    setAgentStatusMsg('Understanding semantic intent & entities...');
 
     try {
       const historyPayload = messages
@@ -148,12 +176,31 @@ export const ElaChat: React.FC<ElaChatProps> = ({ onClose }) => {
           content: m.content,
         }));
 
+      // Lifecycle progression
+      setTimeout(() => {
+        setAgentStage('PLANNING');
+        setAgentStatusMsg('Planning tasks & checking resources...');
+      }, 300);
+
       const response = await sendElaChatMessage(trimmed, historyPayload, {
-        role: currentUserRole,
+        role: conversationalRole,
         language,
         currentPage: location.pathname,
         userName: currentUserName,
       });
+
+      // Dynamically update conversational role if detected from natural language
+      if (response.detectedRole && response.detectedRole !== 'GUEST') {
+        const detected = response.detectedRole as UserRole;
+        setConversationalRole(detected);
+      }
+
+      if (response.confirmationAction) {
+        setAgentStage('WAITING_FOR_CONFIRMATION');
+        setAgentStatusMsg('Action staged — awaiting confirmation...');
+      } else {
+        setAgentStage('COMPLETED');
+      }
 
       const assistantMsg: ElaMessageType = {
         id: `ela-${Date.now()}`,
@@ -168,8 +215,24 @@ export const ElaChat: React.FC<ElaChatProps> = ({ onClose }) => {
       setMessages((prev) => [...prev, assistantMsg]);
       if (response.suggestions && response.suggestions.length > 0) {
         setCurrentSuggestions(response.suggestions);
+      } else if (response.detectedRole) {
+        setCurrentSuggestions(getDefaultSuggestions(response.detectedRole as UserRole | 'GUEST', language));
+      }
+
+      // If navigation action present (e.g. login routing)
+      if (response.navigationAction?.route) {
+        setTimeout(() => {
+          navigate(response.navigationAction!.route);
+        }, 1200);
+      }
+
+      // Voice synthesis response if user used voice or TTS active
+      if (isSpeaking) {
+        speakResponse(response.message);
       }
     } catch (error) {
+      setAgentStage('ERROR');
+      setAgentStatusMsg('Failed to process message.');
       const errorMsg: ElaMessageType = {
         id: `err-${Date.now()}`,
         role: 'assistant',
@@ -183,10 +246,32 @@ export const ElaChat: React.FC<ElaChatProps> = ({ onClose }) => {
       setMessages((prev) => [...prev, errorMsg]);
     } finally {
       setIsLoading(false);
+      setTimeout(() => {
+        if (agentStage !== 'WAITING_FOR_CONFIRMATION') {
+          setAgentStage('IDLE');
+        }
+      }, 2000);
+    }
+  };
+
+  const handleVoiceToggle = () => {
+    if (isListening) {
+      stopVoiceInput();
+      setAgentStage('IDLE');
+    } else {
+      setAgentStage('LISTENING');
+      setAgentStatusMsg('Listening to your voice...');
+      startVoiceInput((transcript) => {
+        setAgentStage('TRANSCRIBING');
+        setAgentStatusMsg('Transcribing voice input...');
+        handleSendMessage(transcript);
+      });
     }
   };
 
   const handleConfirmAction = async (action: ElaConfirmationAction) => {
+    setAgentStage('EXECUTING');
+    setAgentStatusMsg('Executing authorized transaction on application backend...');
     try {
       const result = await confirmElaAction({
         actionId: action.actionId,
@@ -195,6 +280,9 @@ export const ElaChat: React.FC<ElaChatProps> = ({ onClose }) => {
         confirmed: true,
         language,
       });
+
+      setAgentStage('VERIFYING');
+      setAgentStatusMsg('Verifying database state & goal completion...');
 
       const confirmMsg: ElaMessageType = {
         id: `confirm-res-${Date.now()}`,
@@ -209,7 +297,10 @@ export const ElaChat: React.FC<ElaChatProps> = ({ onClose }) => {
       if (state.auth.user) {
         await loadUserBusinessData(state.auth.user);
       }
+      setAgentStage('COMPLETED');
     } catch (err) {
+      setAgentStage('ERROR');
+      setAgentStatusMsg('Action execution failed.');
       const errorMsg: ElaMessageType = {
         id: `confirm-err-${Date.now()}`,
         role: 'assistant',
@@ -218,6 +309,8 @@ export const ElaChat: React.FC<ElaChatProps> = ({ onClose }) => {
         isError: true,
       };
       setMessages((prev) => [...prev, errorMsg]);
+    } finally {
+      setTimeout(() => setAgentStage('IDLE'), 2000);
     }
   };
 
@@ -225,143 +318,107 @@ export const ElaChat: React.FC<ElaChatProps> = ({ onClose }) => {
     const cancelMsg: ElaMessageType = {
       id: `cancel-${Date.now()}`,
       role: 'assistant',
-      content: `Action for **${action.title}** was cancelled.`,
+      content: `Cancelled ${action.title}. How else can I assist you?`,
       timestamp: new Date().toISOString(),
     };
     setMessages((prev) => [...prev, cancelMsg]);
+    setAgentStage('IDLE');
   };
 
   const handleClearChat = () => {
-    const freshWelcome = getInitialWelcomeMessage();
-    setMessages([freshWelcome]);
-    setCurrentSuggestions(freshWelcome.suggestions || []);
-    sessionStorage.removeItem(`ruralflow_ela_chat_${currentUserRole}`);
+    sessionStorage.removeItem(storageKey);
+    setConversationalRole(initialRole);
+    setMessages([getInitialWelcomeMessage()]);
+    setCurrentSuggestions(getDefaultSuggestions(initialRole, language));
+    setAgentStage('IDLE');
   };
 
   return (
-    <div className="flex flex-col h-[560px] max-h-[85vh] w-full max-w-[420px] bg-slate-50/95 backdrop-blur-md rounded-3xl shadow-2xl border border-green-200/90 overflow-hidden font-sans">
+    <div className="w-[380px] sm:w-[430px] h-[600px] max-h-[85vh] bg-slate-950/95 backdrop-blur-xl border border-slate-800 rounded-2xl shadow-2xl flex flex-col overflow-hidden font-sans">
       {/* Header */}
-      <div className="px-4 py-3.5 bg-linear-to-r from-[#1B5E20] via-[#2E7D32] to-[#388E3C] text-white flex items-center justify-between shadow-xs">
-        <div className="flex items-center gap-2.5">
-          <div className="relative w-9 h-9 rounded-xl bg-white/15 backdrop-blur-xs flex items-center justify-center border border-white/20 shadow-xs">
-            <Bot className="w-5 h-5 text-white" />
-            <span className="absolute -top-0.5 -right-0.5 flex h-2.5 w-2.5">
-              <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-emerald-400 opacity-75" />
-              <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-emerald-400 border border-[#1B5E20]" />
-            </span>
+      <div className="flex items-center justify-between px-4 py-3 bg-slate-900 border-b border-slate-800 shrink-0">
+        <div className="flex items-center gap-2">
+          <div className="flex items-center justify-center w-8 h-8 rounded-xl bg-gradient-to-tr from-emerald-600 to-teal-500 text-white shadow-md shadow-emerald-900/30">
+            <Bot className="w-5 h-5" />
           </div>
-
           <div>
-            <div className="flex items-center gap-1.5">
-              <h3 className="font-bold text-sm text-white tracking-wide">
-                {t('ela.title') || 'ELA AI Assistant'}
-              </h3>
-              <Sparkles className="w-3.5 h-3.5 text-amber-300" />
-            </div>
-            <div className="flex items-center gap-1.5 text-[11px] text-green-100 font-medium">
-              <span className="text-emerald-200">{t('ela.online') || 'Online'}</span>
-              {currentUserRole !== 'GUEST' && (
-                <>
-                  <span>•</span>
-                  <span className="capitalize font-semibold text-white">
-                    {currentUserRole.toLowerCase()}
-                  </span>
-                </>
-              )}
-            </div>
+            <h3 className="font-bold text-sm text-white flex items-center gap-1.5">
+              ELA <Sparkles className="w-3.5 h-3.5 text-amber-400 animate-pulse" />
+            </h3>
+            <span className="text-[10px] text-emerald-400 font-mono tracking-tight">
+              AgriRoute Universal AI
+            </span>
           </div>
         </div>
 
-        {/* Action Controls */}
-        <div className="flex items-center gap-1">
+        <div className="flex items-center gap-1.5">
+          <ElaVoiceVisualizer
+            isListening={isListening}
+            isSpeaking={isSpeaking}
+            onToggleListening={handleVoiceToggle}
+            onStopSpeaking={stopSpeaking}
+          />
+
           <button
             type="button"
             onClick={handleClearChat}
-            title={t('ela.clear') || 'Clear Chat'}
-            className="p-1.5 text-white/80 hover:text-white hover:bg-white/10 rounded-lg transition-colors cursor-pointer"
+            className="p-1.5 text-slate-400 hover:text-slate-200 hover:bg-slate-800 rounded-lg transition-colors cursor-pointer"
+            title="Reset conversation"
           >
-            <Trash2 className="w-4 h-4" />
+            <RefreshCw className="w-3.5 h-3.5" />
           </button>
+
           <button
             type="button"
             onClick={onClose}
-            aria-label="Close"
-            className="p-1.5 text-white/80 hover:text-white hover:bg-white/10 rounded-lg transition-colors cursor-pointer"
+            className="p-1.5 text-slate-400 hover:text-white hover:bg-slate-800 rounded-lg transition-colors cursor-pointer"
+            title="Close"
           >
             <X className="w-4 h-4" />
           </button>
         </div>
       </div>
 
-      {/* Messages Scroll Area */}
-      <div className="flex-1 overflow-y-auto px-3.5 py-2 scroll-smooth">
+      {/* Role & Context State Badge */}
+      <ElaContextBadge role={conversationalRole} isAuthenticated={Boolean(state.auth.isAuthenticated && isInsideDashboard)} />
+
+      {/* Real Agent Lifecycle Status Banner */}
+      {agentStage !== 'IDLE' && (
+        <div className="px-3 py-1.5 bg-slate-900/90 border-b border-slate-800">
+          <ElaAgentStatus stage={agentStage} customMessage={agentStatusMsg} />
+        </div>
+      )}
+
+      {/* Message Stream */}
+      <div className="flex-1 p-3.5 overflow-y-auto space-y-3 bg-slate-950/60">
         {messages.map((msg) => (
           <ElaMessage
             key={msg.id}
             message={msg}
-            onNavigate={onClose}
             onConfirmAction={handleConfirmAction}
             onCancelAction={handleCancelAction}
           />
         ))}
-
-        {/* Thinking State */}
-        {isLoading && (
-          <div className="flex items-center gap-2.5 my-3">
-            <div className="w-7 h-7 rounded-xl bg-linear-to-br from-[#2E7D32] to-[#1B5E20] text-white flex items-center justify-center shrink-0 shadow-2xs">
-              <RefreshCw className="w-3.5 h-3.5 animate-spin" />
-            </div>
-            <div className="px-4 py-2.5 rounded-2xl bg-white border border-slate-200 text-xs text-slate-500 rounded-tl-xs flex items-center gap-1.5 shadow-xs">
-              <span>{t('ela.thinking') || 'ELA is thinking'}</span>
-              <span className="flex gap-1 items-center ml-1">
-                <span className="w-1.5 h-1.5 bg-[#2E7D32] rounded-full animate-bounce [animation-delay:-0.3s]" />
-                <span className="w-1.5 h-1.5 bg-[#2E7D32] rounded-full animate-bounce [animation-delay:-0.15s]" />
-                <span className="w-1.5 h-1.5 bg-[#2E7D32] rounded-full animate-bounce" />
-              </span>
-            </div>
-          </div>
-        )}
         <div ref={messagesEndRef} />
       </div>
 
-      {/* Quick Suggestions */}
-      {currentSuggestions.length > 0 && !isLoading && (
+      {/* Contextual Suggestions Carousel */}
+      <div className="shrink-0 bg-slate-900/60 border-t border-slate-800/80">
         <ElaSuggestions
           suggestions={currentSuggestions}
           onSelectSuggestion={handleSendMessage}
-          disabled={isLoading}
+          disabled={isLoading || isListening}
         />
-      )}
+      </div>
 
-      {/* Input Field */}
-      <ElaInput
-        onSendMessage={handleSendMessage}
-        isLoading={isLoading}
-        autoFocus={true}
-      />
+      {/* Input Box */}
+      <div className="p-3 bg-slate-900/90 border-t border-slate-800 shrink-0">
+        <ElaInput
+          onSendMessage={handleSendMessage}
+          isLoading={isLoading || isListening}
+          autoFocus={false}
+        />
+      </div>
     </div>
   );
 };
-
-function getDefaultSuggestions(role: string, lang: string): string[] {
-  if (role === 'FARMER') {
-    if (lang === 'mr') return ['माझी उत्पादने', 'वाहतूक मागणी', 'बाजार मागणी', 'माझी डिलिव्हरी'];
-    if (lang === 'hi') return ['मेरे उत्पाद', 'गाड़ी बुक करें', 'मंडी मांग', 'मेरी डिलीवरी'];
-    return ['My Products', 'Logistics Request', 'Market Demand', 'My Deliveries'];
-  }
-  if (role === 'BUYER') {
-    if (lang === 'mr') return ['खरेदी मागणी नोंदवा', 'शेतमाल शोधा', 'माझ्या ऑर्डर्स'];
-    if (lang === 'hi') return ['खरीद मांग पोस्ट करें', 'उपज देखें', 'मेरे ऑर्डर्स'];
-    return ['Post Procurement', 'Produce Catalog', 'My Orders'];
-  }
-  if (role === 'TRANSPORTER') {
-    if (lang === 'mr') return ['उपलब्ध फेऱ्या', 'माझी वाहने', 'सक्रिय फेऱ्या', 'माझी कमाई'];
-    if (lang === 'hi') return ['उपलब्ध ट्रिप्स', 'मेरी गाड़ियां', 'सक्रिय फेऱ्या', 'मेरी कमाई'];
-    return ['Available Trips', 'My Vehicles', 'Active Trips', 'My Earnings'];
-  }
-
-  // Guest / Common
-  if (lang === 'mr') return ['शेतकरी लॉगिन', 'व्यापारी लॉगिन', 'वाहतूकदार लॉगिन', 'मुख्य पृष्ठ'];
-  if (lang === 'hi') return ['किसान लॉगिन', 'व्यापारी लॉगिन', 'ट्रांसपोर्टर लॉगिन', 'मुख्य पृष्ठ'];
-  return ['Farmer Login', 'Buyer Login', 'Transporter Login', 'Home Page'];
-}

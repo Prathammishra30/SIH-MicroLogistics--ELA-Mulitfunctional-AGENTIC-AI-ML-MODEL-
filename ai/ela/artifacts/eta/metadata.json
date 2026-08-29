@@ -1,0 +1,21 @@
+{
+  "model_name": "ETAPredictionModel",
+  "model_version": "v1.2-transit-hybrid",
+  "implementation_type": "HYBRID_MODEL",
+  "algorithm": "HybridKinematicsAndLearnedResidual",
+  "dataset_type": "SYNTHETIC",
+  "dataset_version": "calibrated_transit_kinematics_v1",
+  "samples_total": 200,
+  "test_metrics": {
+    "mae": 21.87,
+    "rmse": 27.3,
+    "r_squared": 0.906,
+    "mape": 7.64,
+    "sample_count": 30,
+    "evaluated_at": "2026-08-30T01:40:41.276553"
+  },
+  "artifact_path": "ai/ela/artifacts\\eta\\eta_model.joblib",
+  "artifact_hash": "729ff53ab913a03bcdd72e6213139cc2cc63cba2f31c12870f6b731e0b5a050d",
+  "status": "trained",
+  "trained_at": "2026-08-30T01:40:41.282359"
+}

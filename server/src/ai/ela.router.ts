@@ -1,5 +1,5 @@
-// ELA Router & API Endpoints (Phase 3 Enterprise Architecture)
-// Routes chat requests, consequential confirmations, self-learning feedback, and ML models
+// ELA Router & API Endpoints (Phase 4 Enterprise Architecture)
+// Routes chat requests, consequential confirmations, session state inspection, task tracking, self-learning feedback, and ML models
 
 import { Router } from 'express';
 import {
@@ -8,7 +8,10 @@ import {
   handleFeedback,
   handleGetMLModels,
   handleGetRecommendations,
+  handleGetSessionState,
+  handleGetTasks,
   handleHealthCheck,
+  handleInternalToolExecution,
 } from '../controllers/ela.controller.js';
 import { ROUTE_REGISTRY } from './tools/navigation.tools.js';
 import { sendSuccess } from '../utils/response.js';
@@ -19,9 +22,16 @@ export const elaRoutes = Router();
 elaRoutes.post('/chat', handleChatMessage);
 elaRoutes.post('/message', handleChatMessage);
 
+// Internal Node tool bridge for Python ELA
+elaRoutes.post('/internal/tool', handleInternalToolExecution);
+
 // Consequential action confirmation endpoints
 elaRoutes.post('/confirm', handleConfirmAction);
 elaRoutes.post('/action/confirm', handleConfirmAction);
+
+// Session state & task inspection endpoints
+elaRoutes.get('/session/:id', handleGetSessionState);
+elaRoutes.get('/tasks/:id', handleGetTasks);
 
 // Controlled self-learning telemetry feedback endpoint
 elaRoutes.post('/feedback', handleFeedback);

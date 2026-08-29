@@ -1,0 +1,28 @@
+{
+  "model_name": "DemandPredictionModel",
+  "model_version": "v1.2-demand-ridge",
+  "implementation_type": "TRAINED_MACHINE_LEARNING_MODEL",
+  "algorithm": "RidgeRegression + SeasonalDecomposition",
+  "dataset_type": "SYNTHETIC",
+  "dataset_version": "calibrated_agri_mandi_distribution_v1",
+  "samples_total": 200,
+  "train_samples": 140,
+  "test_samples": 30,
+  "test_metrics": {
+    "mae": 235.47,
+    "rmse": 308.71,
+    "r_squared": 0.422,
+    "mape": 11.46,
+    "sample_count": 30,
+    "evaluated_at": "2026-08-30T01:40:41.245654"
+  },
+  "baseline_comparison": {
+    "baseline_mae": 345.11,
+    "ridge_mae": 235.47,
+    "mae_reduction_pct": 31.77
+  },
+  "artifact_path": "ai/ela/artifacts\\demand\\demand_model.joblib",
+  "artifact_hash": "6b65b34026ac974c2d102d130d636cc9c219d70c795ffefd9de0412e3959c62c",
+  "status": "trained",
+  "trained_at": "2026-08-30T01:40:41.249226"
+}

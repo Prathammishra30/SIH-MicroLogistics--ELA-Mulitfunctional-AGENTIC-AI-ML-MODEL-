@@ -1,8 +1,64 @@
-// ELA Suggestions Component
+/* eslint-disable react-refresh/only-export-components */
+// ELA Suggestions Component & Helper
 // Quick contextual prompt suggestions for Farmers, Buyers, and Transporters
 
 import React from 'react';
 import { Sparkles } from 'lucide-react';
+import type { UserRole } from '../../services/api';
+
+export function getDefaultSuggestions(role: UserRole | 'GUEST', lang: string): string[] {
+  if (role === 'FARMER') {
+    if (lang === 'mr') {
+      return ['पिके नोंदवा', 'बाजार मागणी', 'वाहतूक मागवा', 'माझी पिके', 'टोमॅटो भाव'];
+    }
+    if (lang === 'hi') {
+      return ['फसल जोड़ें', 'मंडी मांग देखें', 'गाड़ी बुक करें', 'मेरी फसलें', 'टमाटर का भाव'];
+    }
+    return ['Add Produce', 'Market Demand', 'Request Transport', 'My Products', 'Price Prediction'];
+  }
+
+  if (role === 'BUYER') {
+    if (lang === 'mr') {
+      return ['खरेदी मागणी नोंदवा', 'शेतमाल शोधा', 'माझ्या ऑर्डर्स', 'डिलिव्हरी तपासा'];
+    }
+    if (lang === 'hi') {
+      return ['खरीद मांग पोस्ट करें', 'फसल खोजें', 'मेरे ऑर्डर', 'डिलीवरी ट्रैक करें'];
+    }
+    return ['Post Procurement', 'Find Produce', 'My Orders', 'Track Delivery'];
+  }
+
+  if (role === 'TRANSPORTER') {
+    if (lang === 'mr') {
+      return ['उपलब्ध फेऱ्या', 'माझी वाहने', 'चालू ट्रिप्स', 'माझी कमाई'];
+    }
+    if (lang === 'hi') {
+      return ['उपलब्ध ट्रिप्स', 'मेरी गाड़ियां', 'चालू फेरियां', 'मेरी कमाई'];
+    }
+    return ['Find Loads', 'My Vehicles', 'Active Trips', 'My Earnings'];
+  }
+
+  // Universal Public Landing Suggestions across all 7 Indian languages
+  if (lang === 'hi') {
+    return ['लॉगिन में मदद', 'मैं किसान हूँ', 'मैं खरीदार हूँ', 'मैं ट्रांसपोर्टर हूँ', 'एग्रीरूट कैसे काम करता है?'];
+  }
+  if (lang === 'mr') {
+    return ['लॉगिन मदत', 'मी शेतकरी आहे', 'मी खरेदीदार आहे', 'मी वाहतूकदार आहे', 'अ‍ॅग्रीरूट कसे कार्य करते?'];
+  }
+  if (lang === 'ta') {
+    return ['உள்நுழைய உதவுங்கள்', 'நான் விவசாயி', 'நான் வாங்குபவர்', 'நான் டிரான்ஸ்போர்ட்டர்', 'அக்ரிரூட் எவ்வாறு செயல்படுகிறது?'];
+  }
+  if (lang === 'te') {
+    return ['లాగిన్ సహాయం', 'నేను రైతును', 'నేను కొనుగోలుదారుని', 'నేను రవాణాదారుని', 'అగ్రిరూట్ ఎలా పనిచేస్తుంది?'];
+  }
+  if (lang === 'bn') {
+    return ['লগইন সাহায্য', 'আমি কৃষক', 'আমি ক্রেতা', 'আমি পরিবহনকারী', 'অ্যাগ্রিরুট কীভাবে কাজ করে?'];
+  }
+  if (lang === 'kn') {
+    return ['ಲಾಗಿನ್ ಸಹಾಯ', 'ನಾನು ರೈತ', 'ನಾನು ಖರೀದಿದಾರ', 'ನಾನು ಸಾರಿಗೆದಾರ', 'ಅಗ್ರಿರೌಟ್ ಹೇಗೆ ಕಾರ್ಯನಿರ್ವಹಿಸುತ್ತದೆ?'];
+  }
+
+  return ['Help me login', "I'm a Farmer", "I'm a Buyer", "I'm a Transporter", 'How does AgriRoute work?'];
+}
 
 interface ElaSuggestionsProps {
   suggestions: string[];

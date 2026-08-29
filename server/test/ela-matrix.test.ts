@@ -1,6 +1,6 @@
 // ELA Multilingual & Agentic Integration Test Matrix (Phase 3 Enterprise Architecture)
 // Validates multilingual understanding, canonical intents, entity extraction, 3-layer memory,
-// goal decomposition, ML predictors (Demand, Price, ETA, Match, Recs), self-learning, and security.
+// goal decomposition, ML predictors (Demand, Price, ETA, Match, Recs), self-learning, universal landing, and dynamic role switching.
 
 import { ElaAgent } from '../src/ai/ela/agent.js';
 import { EntityExtractor } from '../src/ai/ela/entities.js';
@@ -181,7 +181,7 @@ const testCases: TestCase[] = [
   },
   // 16. Guest - Farmer Natural Language Declaration & Direct Auth Routing
   {
-    name: 'Guest - Farmer Natural Language Declaration',
+    name: 'Guest - Farmer Natural Language Declaration with Login',
     message: 'Main farmer hoon mujhe login karna hai',
     language: 'en',
     user: undefined,
@@ -570,6 +570,136 @@ async function runTests() {
     }
   } catch (err) {
     console.error('  ❌ [FAIL] Action confirmation execution threw:', err);
+    failed++;
+  }
+
+  // ----------------------------------------------------
+  // TEST SUITE 9: Universal Landing & Dynamic Role Activation
+  // ----------------------------------------------------
+  console.log('\n▶ [SUITE 9] Universal Landing & Dynamic Role Switching Matrix');
+
+  // Test 9A: Fresh Landing Page Query (Unauthenticated Universal)
+  const landingRes = await ElaAgent.processMessage({
+    message: 'Hello, what can you do?',
+    context: { language: 'en', role: 'GUEST', currentPage: '/' },
+  });
+  if (
+    landingRes.detectedRole === 'GUEST' &&
+    !landingRes.message.toLowerCase().includes('sunil') &&
+    landingRes.suggestions &&
+    landingRes.suggestions.includes('Choose Portal')
+  ) {
+    console.log('  ✅ [PASS] Universal Landing: Starts in neutral universal context without transporter bias.');
+    passed++;
+  } else {
+    console.error('  ❌ [FAIL] Universal Landing failed:', landingRes);
+    failed++;
+  }
+
+  // Test 9B: Natural Language Farmer Declaration
+  const farmerDeclRes = await ElaAgent.processMessage({
+    message: 'Main farmer hoon.',
+    context: { language: 'en', role: 'GUEST', currentPage: '/' },
+  });
+  if (
+    farmerDeclRes.detectedRole === 'FARMER' &&
+    farmerDeclRes.intent === 'ROLE_DECLARATION' &&
+    farmerDeclRes.message.toLowerCase().includes('farmer') &&
+    farmerDeclRes.suggestions?.includes('My Products')
+  ) {
+    console.log('  ✅ [PASS] Farmer Declaration: Dynamically switches context to Farmer + Farmer suggestions.');
+    passed++;
+  } else {
+    console.error('  ❌ [FAIL] Farmer Declaration failed:', farmerDeclRes);
+    failed++;
+  }
+
+  // Test 9C: Natural Language Buyer Declaration
+  const buyerDeclRes = await ElaAgent.processMessage({
+    message: 'Main buyer hoon.',
+    context: { language: 'en', role: 'GUEST', currentPage: '/' },
+  });
+  if (
+    buyerDeclRes.detectedRole === 'BUYER' &&
+    buyerDeclRes.intent === 'ROLE_DECLARATION' &&
+    buyerDeclRes.message.toLowerCase().includes('buyer') &&
+    buyerDeclRes.suggestions?.includes('Post Procurement')
+  ) {
+    console.log('  ✅ [PASS] Buyer Declaration: Dynamically switches context to Buyer + Buyer suggestions.');
+    passed++;
+  } else {
+    console.error('  ❌ [FAIL] Buyer Declaration failed:', buyerDeclRes);
+    failed++;
+  }
+
+  // Test 9D: Natural Language Transporter Declaration
+  const transDeclRes = await ElaAgent.processMessage({
+    message: 'Main transporter hoon.',
+    context: { language: 'en', role: 'GUEST', currentPage: '/' },
+  });
+  if (
+    transDeclRes.detectedRole === 'TRANSPORTER' &&
+    transDeclRes.intent === 'ROLE_DECLARATION' &&
+    transDeclRes.message.toLowerCase().includes('transporter') &&
+    transDeclRes.suggestions?.includes('Available Trips')
+  ) {
+    console.log('  ✅ [PASS] Transporter Declaration: Dynamically switches context to Transporter + Transporter suggestions.');
+    passed++;
+  } else {
+    console.error('  ❌ [FAIL] Transporter Declaration failed:', transDeclRes);
+    failed++;
+  }
+
+  // Test 9E: Conversational Role Switching (Farmer -> Buyer)
+  const switchRes = await ElaAgent.processMessage({
+    message: "Actually, I'm a buyer now.",
+    context: { language: 'en', role: 'FARMER', currentPage: '/' },
+  });
+  if (
+    switchRes.detectedRole === 'BUYER' &&
+    switchRes.intent === 'ROLE_DECLARATION' &&
+    switchRes.suggestions?.includes('Post Procurement')
+  ) {
+    console.log('  ✅ [PASS] Dynamic Role Switching: Successfully switched from Farmer to Buyer in mid-conversation.');
+    passed++;
+  } else {
+    console.error('  ❌ [FAIL] Role Switching failed:', switchRes);
+    failed++;
+  }
+
+  // Test 9F: Natural Language Buyer Login Routing
+  const buyerLoginRes = await ElaAgent.processMessage({
+    message: 'Main buyer hoon, mujhe login karna hai.',
+    context: { language: 'en', role: 'GUEST', currentPage: '/' },
+  });
+  if (
+    buyerLoginRes.detectedRole === 'BUYER' &&
+    buyerLoginRes.intent === 'LOGIN_GUIDANCE' &&
+    buyerLoginRes.navigationAction?.destination === 'login_buyer' &&
+    buyerLoginRes.navigationAction?.route === '/auth/buyer'
+  ) {
+    console.log('  ✅ [PASS] Buyer Login Routing: Correctly navigates to /auth/buyer.');
+    passed++;
+  } else {
+    console.error('  ❌ [FAIL] Buyer Login Routing failed:', buyerLoginRes);
+    failed++;
+  }
+
+  // Test 9G: Natural Language Transporter Login Routing
+  const transLoginRes = await ElaAgent.processMessage({
+    message: 'Main transporter hoon, mujhe login karna hai.',
+    context: { language: 'en', role: 'GUEST', currentPage: '/' },
+  });
+  if (
+    transLoginRes.detectedRole === 'TRANSPORTER' &&
+    transLoginRes.intent === 'LOGIN_GUIDANCE' &&
+    transLoginRes.navigationAction?.destination === 'login_transporter' &&
+    transLoginRes.navigationAction?.route === '/auth/transporter'
+  ) {
+    console.log('  ✅ [PASS] Transporter Login Routing: Correctly navigates to /auth/transporter.');
+    passed++;
+  } else {
+    console.error('  ❌ [FAIL] Transporter Login Routing failed:', transLoginRes);
     failed++;
   }
 
