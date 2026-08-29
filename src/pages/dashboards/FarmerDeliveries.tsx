@@ -2,8 +2,10 @@ import React, { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { Truck, ArrowLeft, Search, Clock, MapPin, Plus } from 'lucide-react';
 import { useSharedContext } from '../../context/SharedContext';
+import { useLanguage } from "../../context/LanguageContext";
 
 export const FarmerDeliveries: React.FC = () => {
+    const { t } = useLanguage();
   const navigate = useNavigate();
   const { state } = useSharedContext();
   const [searchQuery, setSearchQuery] = useState('');
@@ -24,16 +26,15 @@ export const FarmerDeliveries: React.FC = () => {
           <button
             onClick={() => navigate('/farmer/dashboard')}
             className="p-2 rounded-xl bg-gray-50 border border-gray-200 hover:bg-gray-100 text-gray-600 hover:text-gray-900 transition-colors cursor-pointer"
-            title="Back to dashboard"
+            title={t('farmer.back_to_dashboard')}
           >
             <ArrowLeft className="w-4 h-4" />
           </button>
           <div>
             <h1 className="text-xl sm:text-2xl font-bold text-gray-900 flex items-center gap-2">
               <Truck className="w-5 h-5 text-amber-700" />
-              Active Shipments & Deliveries
-            </h1>
-            <p className="text-xs text-gray-500">Track and manage your agricultural logistics dispatches.</p>
+              {t('farmer.active_shipments_deliveries')}</h1>
+            <p className="text-xs text-gray-500">{t('farmer.track_and_manage_your_agricult')}</p>
           </div>
         </div>
 
@@ -42,7 +43,7 @@ export const FarmerDeliveries: React.FC = () => {
           className="px-4 py-2 rounded-xl bg-[#2E7D32] hover:bg-[#256628] text-white text-xs font-semibold shadow-2xs flex items-center gap-1.5 transition-colors cursor-pointer"
         >
           <Plus className="w-4 h-4" />
-          <span>New Transport Request</span>
+          <span>{t('farmer.new_transport_request')}</span>
         </button>
       </header>
 
@@ -51,7 +52,7 @@ export const FarmerDeliveries: React.FC = () => {
         <Search className="w-4 h-4 text-gray-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
         <input
           type="text"
-          placeholder="Search by shipment ID, product, or destination..."
+          placeholder={t('farmer.search_by_shipment_id_product_')}
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           className="w-full bg-white border border-gray-300 focus:border-green-600 focus:ring-2 focus:ring-green-100 rounded-xl py-2.5 pl-10 pr-4 text-xs text-gray-900 placeholder:text-gray-400 outline-none transition-all"
@@ -70,7 +71,7 @@ export const FarmerDeliveries: React.FC = () => {
               <div className="flex items-start justify-between">
                 <div>
                   <span className="text-[10px] font-bold uppercase tracking-wider text-gray-400 mb-0.5 block font-mono">
-                    SHIPMENT #{req.id}
+                    {t('farmer.shipment_')}{req.id}
                   </span>
                   <h3 className="text-base font-bold text-gray-900 group-hover:text-[#2E7D32] transition-colors">
                     {req.productName} ({req.quantity || 'Load'})
@@ -95,14 +96,12 @@ export const FarmerDeliveries: React.FC = () => {
             <div className="grid grid-cols-2 gap-3 py-3 border-y border-gray-100 text-xs">
               <div className="space-y-0.5">
                 <span className="text-gray-400 text-[10px] font-semibold uppercase flex items-center gap-1">
-                  <MapPin className="w-3 h-3 text-amber-700" /> Destination
-                </span>
+                  <MapPin className="w-3 h-3 text-amber-700" /> {t('farmer.destination_2')}</span>
                 <p className="text-gray-900 font-medium truncate">{req.destination}</p>
               </div>
               <div className="space-y-0.5">
                 <span className="text-gray-400 text-[10px] font-semibold uppercase flex items-center gap-1">
-                  <Clock className="w-3 h-3 text-blue-600" /> ETA
-                </span>
+                  <Clock className="w-3 h-3 text-blue-600" /> {t('farmer.eta')}</span>
                 <p className="text-gray-900 font-medium truncate">{req.eta || 'Calculating...'}</p>
               </div>
             </div>
@@ -119,8 +118,7 @@ export const FarmerDeliveries: React.FC = () => {
               </div>
 
               <span className="text-xs font-semibold text-[#2E7D32] group-hover:underline">
-                View Tracking →
-              </span>
+                {t('farmer.view_tracking_')}</span>
             </div>
           </div>
         ))}
@@ -128,7 +126,7 @@ export const FarmerDeliveries: React.FC = () => {
         {filteredDeliveries.length === 0 && (
           <div className="col-span-full py-16 text-center border border-dashed border-gray-200 rounded-2xl bg-white space-y-2">
             <Truck className="w-8 h-8 text-gray-400 mx-auto" />
-            <p className="text-gray-600 text-xs font-medium">No active crop shipments found.</p>
+            <p className="text-gray-600 text-xs font-medium">{t('farmer.no_active_crop_shipments_found')}</p>
           </div>
         )}
       </div>

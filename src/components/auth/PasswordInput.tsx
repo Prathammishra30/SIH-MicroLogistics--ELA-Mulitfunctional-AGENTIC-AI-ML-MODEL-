@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { Lock, Eye, EyeOff, AlertCircle } from 'lucide-react';
+import { useLanguage } from "../../context/LanguageContext";
 
 interface PasswordInputProps {
   value: string;
@@ -18,6 +19,7 @@ export const PasswordInput: React.FC<PasswordInputProps> = ({
   placeholder = '••••••••',
   disabled = false,
 }) => {
+    const { t } = useLanguage();
   const [showPassword, setShowPassword] = useState(false);
 
   return (
@@ -26,7 +28,7 @@ export const PasswordInput: React.FC<PasswordInputProps> = ({
         <label className="text-xs font-semibold text-gray-700 uppercase tracking-wider">
           {label}
         </label>
-        <span className="text-[11px] text-gray-500">Min 6 characters</span>
+        <span className="text-[11px] text-gray-500">{t('auth.common.min_6_characters')}</span>
       </div>
 
       <div className="relative flex items-center">

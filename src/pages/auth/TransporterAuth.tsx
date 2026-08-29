@@ -145,18 +145,19 @@ export const TransporterAuth: React.FC = () => {
       supportingText={t('auth.transporter.subtitle') || "Reduce empty miles by finding local return loads, managing routes, and tracking payments seamlessly."}
       benefits={[
         {
-          title: 'Fill empty return trips',
-          desc: 'Get notified for on-route farm pickups matching your truck capacity.',
+          title: t('auth.transporter.benefit1.title') || 'Fill empty return trips',
+          desc: t('auth.transporter.benefit1.desc') || 'Get notified for on-route farm pickups matching your truck capacity.',
         },
         {
-          title: 'Direct transporter payout',
-          desc: 'Transparent trip fares deposited directly into your verified bank account.',
+          title: t('auth.transporter.benefit2.title') || 'Direct transporter payout',
+          desc: t('auth.transporter.benefit2.desc') || 'Transparent trip fares deposited directly into your verified bank account.',
         },
         {
-          title: 'Manage your vehicle fleet',
-          desc: 'Register vehicles, track maintenance, and accept capacity-matched trips.',
+          title: t('auth.transporter.benefit3.title') || 'Manage your vehicle fleet',
+          desc: t('auth.transporter.benefit3.desc') || 'Register vehicles, track maintenance, and accept capacity-matched trips.',
         },
       ]}
+      roleAccessText={t('auth.security.transporter_access') || 'Transporter Access'}
       accentColorHex="#C2410C"
       accentBorderClass="border-amber-200"
       accentBgClass="bg-amber-50"
@@ -196,7 +197,7 @@ export const TransporterAuth: React.FC = () => {
                 }`}
               >
                 <Mail className="w-3.5 h-3.5" />
-                <span>Email & Password</span>
+                <span>{t('auth.email_password')}</span>
               </button>
 
               <button
@@ -209,7 +210,7 @@ export const TransporterAuth: React.FC = () => {
                 }`}
               >
                 <Phone className="w-3.5 h-3.5" />
-                <span>Mobile OTP</span>
+                <span>{t('auth.mobile_otp')}</span>
               </button>
             </div>
 
@@ -234,8 +235,7 @@ export const TransporterAuth: React.FC = () => {
                 <div className="space-y-3.5">
                   <div>
                     <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1">
-                      Transporter Email ID
-                    </label>
+                      {t('auth.transporter_email_id')}</label>
                     <input
                       type="email"
                       required
@@ -245,7 +245,7 @@ export const TransporterAuth: React.FC = () => {
                         if (emailError) setEmailError('');
                       }}
                       disabled={isSubmitting}
-                      placeholder="transporter@ruralflow.in"
+                      placeholder={t('auth.transporterruralflowin')}
                       className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-gray-300 text-gray-900 placeholder-gray-400 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-amber-100 focus:border-amber-600"
                     />
                     {emailError && (
@@ -267,10 +267,10 @@ export const TransporterAuth: React.FC = () => {
                 className="w-full py-3 px-4 rounded-xl font-semibold text-xs sm:text-sm text-white bg-amber-700 hover:bg-amber-800 transition-colors shadow-2xs flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
               >
                 {isSubmitting ? (
-                  <span>Signing In...</span>
+                  <span>{t('auth.signing_in')}</span>
                 ) : (
                   <>
-                    <span>Continue to Transporter Dashboard</span>
+                    <span>{t('auth.continue_to_transporter_dashbo')}</span>
                     <ArrowRight className="w-4 h-4" />
                   </>
                 )}
@@ -278,14 +278,13 @@ export const TransporterAuth: React.FC = () => {
             </form>
 
             <div className="pt-2 text-center text-xs text-gray-600">
-              <span>New transport partner? </span>
+              <span>{t('auth.new_transport_partner')}</span>
               <button
                 type="button"
                 onClick={() => setStep('register')}
                 className="text-amber-800 hover:underline font-bold cursor-pointer"
               >
-                Register as Transporter
-              </button>
+                {t('auth.register_as_transporter')}</button>
             </div>
           </motion.div>
         )}
@@ -323,11 +322,9 @@ export const TransporterAuth: React.FC = () => {
           >
             <div className="space-y-1">
               <h2 className="text-xl sm:text-2xl font-bold text-gray-900 tracking-tight">
-                Transporter Registration
-              </h2>
+                {t('auth.transporter_registration')}</h2>
               <p className="text-xs text-gray-600">
-                Register as a rural fleet partner to accept trips.
-              </p>
+                {t('auth.register_as_a_rural_fleet_part')}</p>
             </div>
 
             {regError && (
@@ -339,14 +336,13 @@ export const TransporterAuth: React.FC = () => {
             <form onSubmit={handleRegisterSubmit} className="space-y-3">
               <div>
                 <label className="block text-xs font-semibold text-gray-700 mb-1">
-                  Full Name / Fleet Owner Name *
-                </label>
+                  {t('auth.full_name_fleet_owner_name_')}</label>
                 <input
                   type="text"
                   required
                   value={regForm.fullName}
                   onChange={(e) => setRegForm({ ...regForm, fullName: e.target.value })}
-                  placeholder="e.g. Sunil Deshmukh"
+                  placeholder={t('auth.eg_sunil_deshmukh')}
                   className="w-full px-3 py-2 rounded-lg bg-white border border-gray-300 text-gray-900 text-xs focus:border-amber-600 focus:outline-none"
                 />
               </div>
@@ -354,22 +350,20 @@ export const TransporterAuth: React.FC = () => {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="block text-xs font-semibold text-gray-700 mb-1">
-                    Email Address *
-                  </label>
+                    {t('auth.email_address_')}</label>
                   <input
                     type="email"
                     required
                     value={regForm.email}
                     onChange={(e) => setRegForm({ ...regForm, email: e.target.value })}
-                    placeholder="sunil@logistics.in"
+                    placeholder={t('auth.sunillogisticsin')}
                     className="w-full px-3 py-2 rounded-lg bg-white border border-gray-300 text-gray-900 text-xs focus:border-amber-600 focus:outline-none"
                   />
                 </div>
 
                 <div>
                   <label className="block text-xs font-semibold text-gray-700 mb-1">
-                    Password (min 8 chars) *
-                  </label>
+                    {t('auth.password_min_8_chars_')}</label>
                   <input
                     type="password"
                     required
@@ -384,29 +378,27 @@ export const TransporterAuth: React.FC = () => {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="block text-xs font-semibold text-gray-700 mb-1">
-                    Primary Vehicle Type
-                  </label>
+                    {t('auth.primary_vehicle_type')}</label>
                   <select
                     value={regForm.vehicleType}
                     onChange={(e) => setRegForm({ ...regForm, vehicleType: e.target.value })}
                     className="w-full px-3 py-2 rounded-lg bg-white border border-gray-300 text-gray-900 text-xs focus:border-amber-600 focus:outline-none"
                   >
-                    <option value="Bolero Pickup (1.5 - 2.5 MT)">Bolero Pickup (1.5 - 2.5 MT)</option>
-                    <option value="Tata Ace (Mini Truck 750 kg)">Tata Ace (Mini Truck 750 kg)</option>
-                    <option value="Medium Goods Carrier (3.5 MT)">Medium Goods Carrier (3.5 MT)</option>
-                    <option value="Three Wheeler Cargo (500 kg)">Three Wheeler Cargo (500 kg)</option>
+                    <option value="Bolero Pickup (1.5 - 2.5 MT)">{t('auth.bolero_pickup_15_25_mt')}</option>
+                    <option value="Tata Ace (Mini Truck 750 kg)">{t('auth.tata_ace_mini_truck_750_kg')}</option>
+                    <option value="Medium Goods Carrier (3.5 MT)">{t('auth.medium_goods_carrier_35_mt')}</option>
+                    <option value="Three Wheeler Cargo (500 kg)">{t('auth.three_wheeler_cargo_500_kg')}</option>
                   </select>
                 </div>
 
                 <div>
                   <label className="block text-xs font-semibold text-gray-700 mb-1">
-                    Operating Hub / Region
-                  </label>
+                    {t('auth.operating_hub_region')}</label>
                   <input
                     type="text"
                     value={regForm.operatingRegion}
                     onChange={(e) => setRegForm({ ...regForm, operatingRegion: e.target.value })}
-                    placeholder="e.g. Pune - Satara"
+                    placeholder={t('auth.eg_pune_satara')}
                     className="w-full px-3 py-2 rounded-lg bg-white border border-gray-300 text-gray-900 text-xs focus:border-amber-600 focus:outline-none"
                   />
                 </div>
@@ -417,19 +409,18 @@ export const TransporterAuth: React.FC = () => {
                 disabled={isSubmitting}
                 className="w-full py-2.5 px-4 rounded-xl font-semibold text-xs sm:text-sm text-white bg-amber-700 hover:bg-amber-800 transition-colors shadow-2xs flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 mt-2"
               >
-                {isSubmitting ? 'Registering...' : 'Register as Transporter'}
+                {isSubmitting ? (t('auth.registering') || 'Registering...') : (t('auth.complete_transporter_registration') || 'Register as Transporter')}
               </button>
             </form>
 
             <div className="pt-2 text-center text-xs text-gray-600">
-              <span>Already registered? </span>
+              <span>{t('auth.already_registered')}</span>
               <button
                 type="button"
                 onClick={() => setStep('login')}
                 className="text-amber-800 hover:underline font-bold cursor-pointer"
               >
-                Sign In
-              </button>
+                {t('auth.sign_in')}</button>
             </div>
           </motion.div>
         )}
@@ -437,7 +428,7 @@ export const TransporterAuth: React.FC = () => {
         {/* 4. SUCCESS STEP */}
         {step === 'success' && (
           <VerificationSuccess
-            roleTitle="Transporter Fleet Partner"
+            roleTitle={t('auth.transporter.partner_title') || "Transporter Fleet Partner"}
             dashboardRoute="/transporter/dashboard"
             accentColor="#C2410C"
           />

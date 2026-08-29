@@ -156,18 +156,19 @@ export const FarmerAuth: React.FC = () => {
       supportingText={t('auth.farmer.subtitle') || "Connect your produce with demand and move it efficiently through smarter rural logistics."}
       benefits={[
         {
-          title: 'Discover nearby demand',
-          desc: 'Access live procurement orders from commercial buyers and APMCs.',
+          title: t('auth.farmer.benefit1.title') || 'Discover nearby demand',
+          desc: t('auth.farmer.benefit1.desc') || 'Access live procurement orders from commercial buyers and APMCs.',
         },
         {
-          title: 'Find efficient logistics',
-          desc: 'Book shared capacity in rural mini-trucks to cut transport costs.',
+          title: t('auth.farmer.benefit2.title') || 'Find efficient logistics',
+          desc: t('auth.farmer.benefit2.desc') || 'Book shared capacity in rural mini-trucks to cut transport costs.',
         },
         {
-          title: 'Track your deliveries',
-          desc: 'Receive real-time dispatch updates and direct payment settlement.',
+          title: t('auth.farmer.benefit3.title') || 'Track your deliveries',
+          desc: t('auth.farmer.benefit3.desc') || 'Receive real-time dispatch updates and direct payment settlement.',
         },
       ]}
+      roleAccessText={t('auth.security.farmer_access') || 'Farmer Access'}
       accentColorHex="#2E7D32"
       accentBorderClass="border-green-200"
       accentBgClass="bg-[#E8F5E9]"
@@ -207,7 +208,7 @@ export const FarmerAuth: React.FC = () => {
                 }`}
               >
                 <Mail className="w-3.5 h-3.5" />
-                <span>Email & Password</span>
+                <span>{t('auth.email_password')}</span>
               </button>
 
               <button
@@ -220,7 +221,7 @@ export const FarmerAuth: React.FC = () => {
                 }`}
               >
                 <Phone className="w-3.5 h-3.5" />
-                <span>Mobile OTP</span>
+                <span>{t('auth.mobile_otp')}</span>
               </button>
             </div>
 
@@ -246,8 +247,7 @@ export const FarmerAuth: React.FC = () => {
                 <div className="space-y-3.5">
                   <div>
                     <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1">
-                      Farmer Email ID
-                    </label>
+                      {t('auth.farmer_email_id')}</label>
                     <input
                       type="email"
                       required
@@ -257,7 +257,7 @@ export const FarmerAuth: React.FC = () => {
                         if (emailError) setEmailError('');
                       }}
                       disabled={isSubmitting}
-                      placeholder="farmer@ruralflow.in"
+                      placeholder={t('auth.farmerruralflowin')}
                       className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-gray-300 text-gray-900 placeholder-gray-400 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-green-100 focus:border-green-600"
                     />
                     {emailError && (
@@ -279,10 +279,10 @@ export const FarmerAuth: React.FC = () => {
                 className="w-full py-3 px-4 rounded-xl font-semibold text-xs sm:text-sm text-white bg-[#2E7D32] hover:bg-[#256628] transition-colors shadow-2xs flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
               >
                 {isSubmitting ? (
-                  <span>Signing In...</span>
+                  <span>{t('auth.signing_in')}</span>
                 ) : (
                   <>
-                    <span>Continue to Farmer Dashboard</span>
+                    <span>{t('auth.continue_to_farmer_dashboard')}</span>
                     <ArrowRight className="w-4 h-4" />
                   </>
                 )}
@@ -291,14 +291,13 @@ export const FarmerAuth: React.FC = () => {
 
             {/* Switch to Register */}
             <div className="pt-2 text-center text-xs text-gray-600">
-              <span>New producer on RuralFlow? </span>
+              <span>{t('auth.new_producer_on_ruralflow')}</span>
               <button
                 type="button"
                 onClick={() => setStep('register')}
                 className="text-[#2E7D32] hover:underline font-bold cursor-pointer"
               >
-                Register as Farmer
-              </button>
+                {t('auth.register_as_farmer')}</button>
             </div>
           </motion.div>
         )}
@@ -336,11 +335,9 @@ export const FarmerAuth: React.FC = () => {
           >
             <div className="space-y-1">
               <h2 className="text-xl sm:text-2xl font-bold text-gray-900 tracking-tight">
-                Farmer Registration
-              </h2>
+                {t('auth.farmer_registration')}</h2>
               <p className="text-xs text-gray-600">
-                Create your producer profile to list crops and request transport.
-              </p>
+                {t('auth.create_your_producer_profile_t')}</p>
             </div>
 
             {regError && (
@@ -353,27 +350,25 @@ export const FarmerAuth: React.FC = () => {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="block text-xs font-semibold text-gray-700 mb-1">
-                    Full Name *
-                  </label>
+                    {t('auth.full_name_')}</label>
                   <input
                     type="text"
                     required
                     value={formData.fullName}
                     onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
-                    placeholder="e.g. Ramesh Patil"
+                    placeholder={t('auth.eg_ramesh_patil')}
                     className="w-full px-3 py-2 rounded-lg bg-white border border-gray-300 text-gray-900 text-xs focus:border-green-600 focus:outline-none"
                   />
                 </div>
 
                 <div>
                   <label className="block text-xs font-semibold text-gray-700 mb-1">
-                    Farm / Enterprise Name
-                  </label>
+                    {t('auth.farm_enterprise_name')}</label>
                   <input
                     type="text"
                     value={formData.farmName}
                     onChange={(e) => setFormData({ ...formData, farmName: e.target.value })}
-                    placeholder="e.g. Patil Organic Farms"
+                    placeholder={t('auth.eg_patil_organic_farms')}
                     className="w-full px-3 py-2 rounded-lg bg-white border border-gray-300 text-gray-900 text-xs focus:border-green-600 focus:outline-none"
                   />
                 </div>
@@ -382,22 +377,20 @@ export const FarmerAuth: React.FC = () => {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="block text-xs font-semibold text-gray-700 mb-1">
-                    Email Address *
-                  </label>
+                    {t('auth.email_address_')}</label>
                   <input
                     type="email"
                     required
                     value={formData.email}
                     onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                    placeholder="ramesh@gmail.com"
+                    placeholder={t('auth.rameshgmailcom')}
                     className="w-full px-3 py-2 rounded-lg bg-white border border-gray-300 text-gray-900 text-xs focus:border-green-600 focus:outline-none"
                   />
                 </div>
 
                 <div>
                   <label className="block text-xs font-semibold text-gray-700 mb-1">
-                    Password (min 8 chars) *
-                  </label>
+                    {t('auth.password_min_8_chars_')}</label>
                   <input
                     type="password"
                     required
@@ -412,47 +405,44 @@ export const FarmerAuth: React.FC = () => {
               <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
                 <div>
                   <label className="block text-xs font-semibold text-gray-700 mb-1">
-                    Village / Town *
-                  </label>
+                    {t('auth.village_town_')}</label>
                   <input
                     type="text"
                     required
                     value={formData.village}
                     onChange={(e) => setFormData({ ...formData, village: e.target.value })}
-                    placeholder="e.g. Baramati"
+                    placeholder={t('auth.eg_baramati')}
                     className="w-full px-3 py-2 rounded-lg bg-white border border-gray-300 text-gray-900 text-xs focus:border-green-600 focus:outline-none"
                   />
                 </div>
 
                 <div>
                   <label className="block text-xs font-semibold text-gray-700 mb-1">
-                    District *
-                  </label>
+                    {t('auth.district_')}</label>
                   <input
                     type="text"
                     required
                     value={formData.district}
                     onChange={(e) => setFormData({ ...formData, district: e.target.value })}
-                    placeholder="e.g. Pune"
+                    placeholder={t('auth.eg_pune')}
                     className="w-full px-3 py-2 rounded-lg bg-white border border-gray-300 text-gray-900 text-xs focus:border-green-600 focus:outline-none"
                   />
                 </div>
 
                 <div>
                   <label className="block text-xs font-semibold text-gray-700 mb-1">
-                    State
-                  </label>
+                    {t('auth.state')}</label>
                   <select
                     value={formData.state}
                     onChange={(e) => setFormData({ ...formData, state: e.target.value })}
                     className="w-full px-3 py-2 rounded-lg bg-white border border-gray-300 text-gray-900 text-xs focus:border-green-600 focus:outline-none"
                   >
-                    <option value="Maharashtra">Maharashtra</option>
-                    <option value="Gujarat">Gujarat</option>
-                    <option value="Karnataka">Karnataka</option>
-                    <option value="Madhya Pradesh">Madhya Pradesh</option>
-                    <option value="Punjab">Punjab</option>
-                    <option value="Uttar Pradesh">Uttar Pradesh</option>
+                    <option value="Maharashtra">{t('auth.maharashtra')}</option>
+                    <option value="Gujarat">{t('auth.gujarat')}</option>
+                    <option value="Karnataka">{t('auth.karnataka')}</option>
+                    <option value="Madhya Pradesh">{t('auth.madhya_pradesh')}</option>
+                    <option value="Punjab">{t('auth.punjab')}</option>
+                    <option value="Uttar Pradesh">{t('auth.uttar_pradesh')}</option>
                   </select>
                 </div>
               </div>
@@ -462,19 +452,18 @@ export const FarmerAuth: React.FC = () => {
                 disabled={isSubmitting}
                 className="w-full py-2.5 px-4 rounded-xl font-semibold text-xs sm:text-sm text-white bg-[#2E7D32] hover:bg-[#256628] transition-colors shadow-2xs flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 mt-2"
               >
-                {isSubmitting ? 'Creating Account...' : 'Complete Registration'}
+                {isSubmitting ? (t('auth.creating_account') || 'Creating Account...') : (t('auth.complete_registration') || 'Complete Registration')}
               </button>
             </form>
 
             <div className="pt-2 text-center text-xs text-gray-600">
-              <span>Already registered? </span>
+              <span>{t('auth.already_registered')}</span>
               <button
                 type="button"
                 onClick={() => setStep('login')}
                 className="text-[#2E7D32] hover:underline font-bold cursor-pointer"
               >
-                Sign In
-              </button>
+                {t('auth.sign_in')}</button>
             </div>
           </motion.div>
         )}
@@ -482,7 +471,7 @@ export const FarmerAuth: React.FC = () => {
         {/* 4. SUCCESS STEP */}
         {step === 'success' && (
           <VerificationSuccess
-            roleTitle="Farmer Partner"
+            roleTitle={t('auth.farmer.partner_title') || "Farmer Partner"}
             dashboardRoute="/farmer/dashboard"
             accentColor="#2E7D32"
           />

@@ -33,6 +33,7 @@ import { SharedProvider } from './context/SharedContext';
 import { Notifications } from './components/dashboards/Notifications';
 import { ProtectedRoute } from './components/auth/ProtectedRoute';
 import { LanguageProvider } from './context/LanguageContext';
+import { ElaAssistant } from './components/ela/ElaAssistant';
 import type { ModalType } from './types';
 
 export function App() {
@@ -123,6 +124,9 @@ export function App() {
 
           {/* Global Notifications */}
           <Notifications />
+
+          {/* ELA Multilingual Agentic Assistant */}
+          <ElaAssistant />
         </div>
         </SharedProvider>
       </LanguageProvider>
@@ -131,3 +135,4 @@ export function App() {
 }
 
 export default App;
+

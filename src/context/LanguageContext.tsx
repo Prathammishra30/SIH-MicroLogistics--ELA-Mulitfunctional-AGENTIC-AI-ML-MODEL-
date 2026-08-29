@@ -14,7 +14,8 @@ const LanguageContext = createContext<LanguageContextType | undefined>(undefined
 export const LanguageProvider: React.FC<{ children: ReactNode }> = ({ children }) => {
   const [language, setLanguageState] = useState<Language>(() => {
     const saved = localStorage.getItem('ruralflow_language') as Language;
-    if (saved === 'en' || saved === 'hi') {
+    const supported: Language[] = ['en', 'hi', 'mr', 'ta', 'te', 'bn', 'kn'];
+    if (saved && supported.includes(saved)) {
       return saved;
     }
     return 'en';
@@ -27,7 +28,12 @@ export const LanguageProvider: React.FC<{ children: ReactNode }> = ({ children }
 
   const t = (key: string): string => {
     const dict = translations[language] as Record<string, string>;
-    return dict[key] || key;
+    const value = dict?.[key];
+    if (value !== undefined && value !== '') {
+      return value;
+    }
+    const enDict = translations['en'] as Record<string, string>;
+    return enDict?.[key] ?? '';
   };
 
   return (

@@ -1,5 +1,6 @@
 import React from 'react';
 import { Phone, CheckCircle2, AlertCircle } from 'lucide-react';
+import { useLanguage } from "../../context/LanguageContext";
 
 interface PhoneInputProps {
   value: string;
@@ -18,6 +19,7 @@ export const PhoneInput: React.FC<PhoneInputProps> = ({
   placeholder = '98765 43210',
   disabled = false,
 }) => {
+    const { t } = useLanguage();
   const handleChange = (e: React.ChangeEvent<HTMLInputElement>) => {
     const cleaned = e.target.value.replace(/\D/g, '').slice(0, 10);
     onChange(cleaned);
@@ -33,8 +35,7 @@ export const PhoneInput: React.FC<PhoneInputProps> = ({
         </label>
         {isValid && !error && (
           <span className="text-[11px] font-medium text-[#2E7D32] flex items-center gap-1">
-            <CheckCircle2 className="w-3 h-3" /> Valid mobile number
-          </span>
+            <CheckCircle2 className="w-3 h-3" /> {t('auth.common.valid_mobile_number')}</span>
         )}
       </div>
 

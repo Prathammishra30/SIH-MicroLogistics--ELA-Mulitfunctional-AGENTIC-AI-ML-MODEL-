@@ -2,8 +2,10 @@ import React from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowLeft, Truck, MapPin } from 'lucide-react';
 import { useSharedContext } from '../../context/SharedContext';
+import { useLanguage } from "../../context/LanguageContext";
 
 export const TransporterActiveTrips: React.FC = () => {
+    const { t } = useLanguage();
   const navigate = useNavigate();
   const { state } = useSharedContext();
   const activeTrips = state.logisticsRequests.filter(
@@ -18,16 +20,15 @@ export const TransporterActiveTrips: React.FC = () => {
         <button
           onClick={() => navigate('/transporter/dashboard')}
           className="p-2 rounded-xl bg-gray-50 border border-gray-200 hover:bg-gray-100 text-gray-600 hover:text-gray-900 transition-colors cursor-pointer"
-          title="Back to dashboard"
+          title={t('farmer.back_to_dashboard')}
         >
           <ArrowLeft className="w-4 h-4" />
         </button>
         <div>
           <h1 className="text-xl font-bold text-gray-900 flex items-center gap-2">
             <Truck className="w-5 h-5 text-amber-700" />
-            Active Dispatched Trips
-          </h1>
-          <p className="text-xs text-gray-500">Live active crop shipments currently in transit or awaiting pickup.</p>
+            {t('transporter.active_dispatched_trips')}</h1>
+          <p className="text-xs text-gray-500">{t('transporter.live_active_crop_shipments_cur')}</p>
         </div>
       </header>
 
@@ -52,20 +53,19 @@ export const TransporterActiveTrips: React.FC = () => {
               <div className="space-y-1.5 text-xs text-gray-600">
                 <div className="flex items-center gap-1.5 text-gray-700">
                   <MapPin className="w-3.5 h-3.5 text-green-700 shrink-0" />
-                  <span className="truncate">From: {trip.pickupLocation || 'Farm Gate'}</span>
+                  <span className="truncate">{t('transporter.from')}{trip.pickupLocation || 'Farm Gate'}</span>
                 </div>
                 <div className="flex items-center gap-1.5 text-gray-700">
                   <MapPin className="w-3.5 h-3.5 text-amber-700 shrink-0" />
-                  <span className="truncate">To: {trip.destination}</span>
+                  <span className="truncate">{t('transporter.to')}{trip.destination}</span>
                 </div>
               </div>
             </div>
 
             <div className="pt-3 border-t border-gray-100 flex items-center justify-between">
-              <span className="text-xs text-gray-500">Vehicle: {trip.vehicle || 'Assigned'}</span>
+              <span className="text-xs text-gray-500">{t('transporter.vehicle')}{trip.vehicle || 'Assigned'}</span>
               <span className="text-xs font-semibold text-amber-800">
-                Update Status →
-              </span>
+                {t('transporter.update_status_')}</span>
             </div>
           </div>
         ))}
@@ -73,7 +73,7 @@ export const TransporterActiveTrips: React.FC = () => {
         {activeTrips.length === 0 && (
           <div className="col-span-full py-16 text-center border border-dashed border-gray-200 rounded-2xl bg-white space-y-2">
             <Truck className="w-8 h-8 text-gray-400 mx-auto" />
-            <p className="text-gray-600 text-xs font-medium">No active trips currently in transit.</p>
+            <p className="text-gray-600 text-xs font-medium">{t('transporter.no_active_trips_currently_in_t')}</p>
           </div>
         )}
       </div>

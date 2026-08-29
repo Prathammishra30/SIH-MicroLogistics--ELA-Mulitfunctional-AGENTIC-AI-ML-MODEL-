@@ -50,13 +50,13 @@ export const Modals: React.FC<ModalsProps> = ({ activeModal, onClose }) => {
                     <Route className="w-5 h-5" />
                   </div>
                   <div>
-                    <h3 className="text-xl font-bold text-gray-900 tracking-tight">How RuralFlow Works</h3>
+                    <h3 className="text-xl font-bold text-gray-900 tracking-tight">How AgriRoute Works</h3>
                     <p className="text-xs text-[#2E7D32] font-semibold">Rural Micro-Logistics Engine</p>
                   </div>
                 </div>
 
                 <p className="text-sm text-gray-600 leading-relaxed">
-                  RuralFlow solves the rural freight disconnect by uniting farmers, local vehicle transporters, and buyers into an automated, shared-load distribution network.
+                  AgriRoute solves the rural freight disconnect by uniting farmers, local vehicle transporters, and buyers into an automated, shared-load distribution network.
                 </p>
 
                 <div className="grid gap-3 pt-1">
@@ -116,17 +116,17 @@ export const Modals: React.FC<ModalsProps> = ({ activeModal, onClose }) => {
                     <HelpCircle className="w-5 h-5" />
                   </div>
                   <div>
-                    <h3 className="text-xl font-bold text-gray-900 tracking-tight">About RuralFlow</h3>
+                    <h3 className="text-xl font-bold text-gray-900 tracking-tight">About AgriRoute</h3>
                     <p className="text-xs text-gray-500 font-medium">Smart India Hackathon Initiative</p>
                   </div>
                 </div>
 
                 <div className="space-y-3 text-xs sm:text-sm text-gray-600 leading-relaxed">
                   <p>
-                    RuralFlow was engineered to modernize India's fragmented rural agricultural supply chain. Smallholder farmers often struggle with high last-mile freight costs and lack direct access to wholesale buyers.
+                    AgriRoute was engineered to modernize India's fragmented rural agricultural supply chain. Smallholder farmers often struggle with high last-mile freight costs and lack direct access to wholesale buyers.
                   </p>
                   <p>
-                    By introducing vehicle capacity matching, transparent regional market pricing, and multi-user authentication, RuralFlow connects rural producers directly with the broader commercial economy.
+                    By introducing vehicle capacity matching, transparent regional market pricing, and multi-user authentication, AgriRoute connects rural producers directly with the broader commercial economy.
                   </p>
                 </div>
 

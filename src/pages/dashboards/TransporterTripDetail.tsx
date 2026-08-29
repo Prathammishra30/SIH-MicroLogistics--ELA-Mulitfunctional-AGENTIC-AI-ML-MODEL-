@@ -3,6 +3,7 @@ import { useParams, useNavigate } from 'react-router-dom';
 import { ArrowLeft, CheckCircle2, Truck, AlertTriangle, Loader2, MapPin } from 'lucide-react';
 import { useSharedContext } from '../../context/SharedContext';
 import { transporterApi } from '../../services/api';
+import { useLanguage } from "../../context/LanguageContext";
 
 /**
  * Parses a capacity string like "700 kg", "2.5 MT" into kg for comparison.
@@ -21,6 +22,7 @@ function parseCapacityToKg(capacity: string): number {
 }
 
 export const TransporterTripDetail: React.FC = () => {
+    const { t } = useLanguage();
   const { id } = useParams();
   const navigate = useNavigate();
   const { state, dispatch } = useSharedContext();
@@ -41,13 +43,12 @@ export const TransporterTripDetail: React.FC = () => {
   if (!trip) {
     return (
       <div className="min-h-[50vh] flex flex-col items-center justify-center space-y-4">
-        <h2 className="text-xl font-bold text-gray-900">Trip Record Not Found</h2>
+        <h2 className="text-xl font-bold text-gray-900">{t('transporter.trip_record_not_found')}</h2>
         <button
           onClick={() => navigate('/transporter/trips')}
           className="px-4 py-2 rounded-xl bg-amber-700 hover:bg-amber-800 text-white text-xs font-semibold shadow-2xs transition-colors cursor-pointer"
         >
-          Back to Available Trips
-        </button>
+          {t('transporter.back_to_available_trips')}</button>
       </div>
     );
   }
@@ -118,11 +119,10 @@ export const TransporterTripDetail: React.FC = () => {
         </button>
         <div>
           <h1 className="text-xl font-bold text-gray-900 tracking-tight">
-            Trip Acceptance Details • #{trip.id}
+            {t('transporter.trip_acceptance_details_')}{trip.id}
           </h1>
           <p className="text-xs text-gray-500">
-            Review freight specifications, route distances, and assign an eligible fleet vehicle.
-          </p>
+            {t('transporter.review_freight_specifications_')}</p>
         </div>
       </header>
 
@@ -131,7 +131,7 @@ export const TransporterTripDetail: React.FC = () => {
         <div className="flex justify-between items-start border-b border-gray-100 pb-3">
           <div>
             <h2 className="text-base font-bold text-gray-900">{trip.productName}</h2>
-            <p className="text-gray-500 text-xs mt-0.5">Shipment Reference: <span className="font-mono font-bold text-gray-700">{trip.id}</span></p>
+            <p className="text-gray-500 text-xs mt-0.5">{t('transporter.shipment_reference')}<span className="font-mono font-bold text-gray-700">{trip.id}</span></p>
           </div>
           <span className="px-2.5 py-0.5 bg-amber-50 text-amber-800 border border-amber-200 rounded-full text-xs font-semibold">
             {trip.status}
@@ -141,25 +141,23 @@ export const TransporterTripDetail: React.FC = () => {
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
           <div className="p-3.5 bg-gray-50 rounded-xl border border-gray-200/80 space-y-1">
             <span className="text-gray-400 font-semibold uppercase text-[10px] flex items-center gap-1">
-              <MapPin className="w-3 h-3 text-green-700" /> Farm Pickup
-            </span>
+              <MapPin className="w-3 h-3 text-green-700" /> {t('transporter.farm_pickup')}</span>
             <p className="text-gray-900 font-medium">{trip.pickupLocation || 'Farm Gate'}</p>
           </div>
 
           <div className="p-3.5 bg-gray-50 rounded-xl border border-gray-200/80 space-y-1">
             <span className="text-gray-400 font-semibold uppercase text-[10px] flex items-center gap-1">
-              <MapPin className="w-3 h-3 text-amber-700" /> Mandi Drop Point
-            </span>
+              <MapPin className="w-3 h-3 text-amber-700" /> {t('transporter.mandi_drop_point')}</span>
             <p className="text-gray-900 font-medium">{trip.destination}</p>
           </div>
 
           <div className="p-3.5 bg-gray-50 rounded-xl border border-gray-200/80 space-y-1">
-            <span className="text-gray-400 font-semibold uppercase text-[10px]">Required Load Payload</span>
+            <span className="text-gray-400 font-semibold uppercase text-[10px]">{t('transporter.required_load_payload')}</span>
             <p className="text-gray-900 font-bold font-mono text-sm">{trip.quantity || '1.5 MT'}</p>
           </div>
 
           <div className="p-3.5 bg-gray-50 rounded-xl border border-gray-200/80 space-y-1">
-            <span className="text-gray-400 font-semibold uppercase text-[10px]">Estimated Freight Payout</span>
+            <span className="text-gray-400 font-semibold uppercase text-[10px]">{t('transporter.estimated_freight_payout')}</span>
             <p className="text-[#2E7D32] font-bold font-mono text-sm">{trip.estimatedEarnings || '₹1,850'}</p>
           </div>
         </div>
@@ -169,24 +167,22 @@ export const TransporterTripDetail: React.FC = () => {
       <div className="bg-white border border-gray-200 p-6 rounded-2xl shadow-2xs space-y-4">
         <h3 className="text-sm font-bold text-gray-900 flex items-center gap-2">
           <Truck className="w-4 h-4 text-amber-700" />
-          Assign Fleet Vehicle
-        </h3>
+          {t('transporter.assign_fleet_vehicle')}</h3>
 
         {state.vehicles.length === 0 ? (
           <div className="flex items-center justify-between p-4 bg-amber-50 border border-amber-200 rounded-xl text-xs">
             <div className="flex items-center gap-2 text-amber-800">
               <AlertTriangle className="w-4 h-4" />
               <div>
-                <p className="font-bold">No Registered Vehicles</p>
-                <p className="text-[11px] text-amber-700">Please register a vehicle in your fleet before accepting trips.</p>
+                <p className="font-bold">{t('transporter.no_registered_vehicles')}</p>
+                <p className="text-[11px] text-amber-700">{t('transporter.please_register_a_vehicle_in_y')}</p>
               </div>
             </div>
             <button
               onClick={() => navigate('/transporter/vehicles')}
               className="px-3 py-1.5 rounded-lg bg-amber-700 text-white font-semibold hover:bg-amber-800 transition-colors shadow-2xs cursor-pointer"
             >
-              + Add Vehicle
-            </button>
+              {t('transporter._add_vehicle')}</button>
           </div>
         ) : (
           <div className="space-y-3">
@@ -195,16 +191,16 @@ export const TransporterTripDetail: React.FC = () => {
               onChange={(e) => setSelectedVehicleId(e.target.value)}
               className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-gray-300 text-gray-900 text-xs focus:border-amber-600 focus:ring-2 focus:ring-amber-100 outline-none"
             >
-              <option value="">Select a vehicle from your fleet...</option>
+              <option value="">{t('transporter.select_a_vehicle_from_your_fle')}</option>
               {availableVehicles.map((v) => (
                 <option key={v.id} value={v.id}>
-                  {v.type} — {v.registration} (Rated: {v.capacity})
+                  {v.type} — {v.registration} {t('transporter.rated')}{v.capacity})
                 </option>
               ))}
             </select>
 
             {availableVehicles.length === 0 && (
-              <p className="text-xs text-amber-800">All registered fleet vehicles are currently busy on other active trips.</p>
+              <p className="text-xs text-amber-800">{t('transporter.all_registered_fleet_vehicles_')}</p>
             )}
 
             {selectedVehicle && (
@@ -214,20 +210,19 @@ export const TransporterTripDetail: React.FC = () => {
                     <CheckCircle2 className="w-4 h-4" />
                     <div>
                       <p className="font-bold">{selectedVehicle.type} ({selectedVehicle.registration})</p>
-                      <p className="text-[11px] text-green-700">Rated: {selectedVehicle.capacity} • Compatible with required load</p>
+                      <p className="text-[11px] text-green-700">{t('transporter.rated_11')}{selectedVehicle.capacity} {t('transporter._compatible_with_required_load')}</p>
                     </div>
                   </div>
                   <span className="text-[10px] font-bold bg-white text-[#2E7D32] px-2 py-0.5 rounded border border-green-200">
-                    Capacity Validated
-                  </span>
+                    {t('transporter.capacity_validated')}</span>
                 </div>
               ) : (
                 <div className="flex items-center gap-2 p-3.5 bg-red-50 border border-red-200 rounded-xl text-xs text-red-700">
                   <AlertTriangle className="w-4 h-4 shrink-0" />
                   <div>
-                    <p className="font-bold">Capacity Exceeded</p>
+                    <p className="font-bold">{t('transporter.capacity_exceeded')}</p>
                     <p className="text-[11px]">
-                      Vehicle capacity ({selectedVehicle.capacity}) cannot carry the requested payload of {trip.quantity}.
+                      {t('transporter.vehicle_capacity_')}{selectedVehicle.capacity}{t('transporter._cannot_carry_the_requested_pa')}{trip.quantity}.
                     </p>
                   </div>
                 </div>

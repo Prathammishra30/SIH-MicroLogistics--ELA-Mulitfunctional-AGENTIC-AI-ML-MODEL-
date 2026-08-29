@@ -3,8 +3,10 @@ import { useNavigate } from 'react-router-dom';
 import { TrendingUp, ArrowLeft, MapPin, Search, X, Truck, Store } from 'lucide-react';
 import { useSharedContext } from '../../context/SharedContext';
 import type { MarketOpportunity } from '../../data/mockData';
+import { useLanguage } from "../../context/LanguageContext";
 
 export const FarmerMarkets: React.FC = () => {
+    const { t } = useLanguage();
   const navigate = useNavigate();
   const { state, dispatch } = useSharedContext();
   const [searchQuery, setSearchQuery] = useState('');
@@ -84,18 +86,16 @@ export const FarmerMarkets: React.FC = () => {
           <button
             onClick={() => navigate('/farmer/dashboard')}
             className="p-2 rounded-xl bg-gray-50 border border-gray-200 hover:bg-gray-100 text-gray-600 hover:text-gray-900 transition-colors cursor-pointer"
-            title="Back to dashboard"
+            title={t('farmer.back_to_dashboard')}
           >
             <ArrowLeft className="w-4 h-4" />
           </button>
           <div>
             <h1 className="text-xl sm:text-2xl font-bold text-gray-900 flex items-center gap-2">
               <TrendingUp className="w-5 h-5 text-blue-700" />
-              Market Demand & Opportunities
-            </h1>
+              {t('farmer.market_demand_opportunities')}</h1>
             <p className="text-xs text-gray-500">
-              Discover verified buyer procurement requirements and regional mandi price rates.
-            </p>
+              {t('farmer.discover_verified_buyer_procur')}</p>
           </div>
         </div>
       </header>
@@ -105,7 +105,7 @@ export const FarmerMarkets: React.FC = () => {
         <Search className="w-4 h-4 text-gray-400 absolute left-3.5 top-1/2 -translate-y-1/2" />
         <input
           type="text"
-          placeholder="Search by crop name or buyer location..."
+          placeholder={t('farmer.search_by_crop_name_or_buyer_l')}
           value={searchQuery}
           onChange={(e) => setSearchQuery(e.target.value)}
           className="w-full bg-white border border-gray-300 focus:border-green-600 focus:ring-2 focus:ring-green-100 rounded-xl py-2.5 pl-10 pr-4 text-xs text-gray-900 placeholder:text-gray-400 outline-none transition-all"
@@ -143,12 +143,12 @@ export const FarmerMarkets: React.FC = () => {
 
             <div className="pt-3 border-t border-gray-100 space-y-2">
               <div className="flex items-center justify-between text-xs">
-                <span className="text-gray-500">Target Rate:</span>
+                <span className="text-gray-500">{t('farmer.target_rate')}</span>
                 <strong className="text-gray-900 font-bold">{market.price}</strong>
               </div>
 
               <div className="flex items-center justify-between text-xs">
-                <span className="text-gray-500">Required Qty:</span>
+                <span className="text-gray-500">{t('farmer.required_qty')}</span>
                 <strong className="text-gray-900 font-mono">{market.quantityRequired}</strong>
               </div>
 
@@ -156,7 +156,7 @@ export const FarmerMarkets: React.FC = () => {
                 type="button"
                 className="w-full py-2 px-3 rounded-xl bg-gray-50 hover:bg-gray-100 border border-gray-200 text-gray-700 text-xs font-semibold transition-colors flex items-center justify-center gap-1.5 cursor-pointer mt-1"
               >
-                <span>View Details & Fulfill</span>
+                <span>{t('farmer.view_details_fulfill')}</span>
               </button>
             </div>
           </div>
@@ -165,7 +165,7 @@ export const FarmerMarkets: React.FC = () => {
         {filteredMarkets.length === 0 && (
           <div className="col-span-full py-12 text-center border border-dashed border-gray-200 rounded-2xl bg-white">
             <Store className="w-8 h-8 text-gray-400 mx-auto mb-2" />
-            <p className="text-gray-600 text-xs font-medium">No market demand items found matching your search query.</p>
+            <p className="text-gray-600 text-xs font-medium">{t('farmer.no_market_demand_items_found_m')}</p>
           </div>
         )}
       </div>
@@ -191,15 +191,15 @@ export const FarmerMarkets: React.FC = () => {
 
             <div className="space-y-2.5 p-4 rounded-xl bg-gray-50 border border-gray-200 text-xs">
               <div className="flex items-center justify-between">
-                <span className="text-gray-500">Target Offering:</span>
+                <span className="text-gray-500">{t('farmer.target_offering')}</span>
                 <strong className="text-gray-900 font-bold">{selectedMarket.price}</strong>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-gray-500">Volume Required:</span>
+                <span className="text-gray-500">{t('farmer.volume_required')}</span>
                 <strong className="text-gray-900 font-mono">{selectedMarket.quantityRequired}</strong>
               </div>
               <div className="flex items-center justify-between">
-                <span className="text-gray-500">Procuring Buyer:</span>
+                <span className="text-gray-500">{t('farmer.procuring_buyer')}</span>
                 <span className="text-gray-900 font-medium text-right max-w-[200px] truncate">{selectedMarket.buyer}</span>
               </div>
             </div>
@@ -209,14 +209,13 @@ export const FarmerMarkets: React.FC = () => {
                 onClick={() => setSelectedMarket(null)}
                 className="flex-1 py-2.5 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-semibold transition-colors cursor-pointer"
               >
-                Close
-              </button>
+                {t('farmer.close')}</button>
               <button
                 onClick={handleFulfillDemand}
                 className="flex-1 py-2.5 rounded-xl bg-[#2E7D32] hover:bg-[#256628] text-white text-xs font-semibold shadow-2xs transition-colors flex items-center justify-center gap-1.5 cursor-pointer"
               >
                 <Truck className="w-3.5 h-3.5" />
-                <span>Supply & Book Transport</span>
+                <span>{t('farmer.supply_book_transport')}</span>
               </button>
             </div>
           </div>

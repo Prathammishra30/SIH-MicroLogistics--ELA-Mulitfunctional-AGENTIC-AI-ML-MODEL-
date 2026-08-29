@@ -4,8 +4,10 @@ import { ArrowLeft, Save, Loader2, PackagePlus } from 'lucide-react';
 import { useSharedContext } from '../../context/SharedContext';
 import { farmerApi } from '../../services/api';
 import type { Product } from '../../data/mockData';
+import { useLanguage } from "../../context/LanguageContext";
 
 export const FarmerAddProduct: React.FC = () => {
+    const { t } = useLanguage();
   const navigate = useNavigate();
   const { dispatch } = useSharedContext();
   const [isSubmitting, setIsSubmitting] = useState(false);
@@ -79,9 +81,8 @@ export const FarmerAddProduct: React.FC = () => {
         <div>
           <h1 className="text-xl font-bold text-gray-900 flex items-center gap-2">
             <PackagePlus className="w-5 h-5 text-[#2E7D32]" />
-            Add New Produce
-          </h1>
-          <p className="text-xs text-gray-500">List your harvest batch to make it discoverable for buyers.</p>
+            {t('farmer.add_new_produce')}</h1>
+          <p className="text-xs text-gray-500">{t('farmer.list_your_harvest_batch_to_mak')}</p>
         </div>
       </header>
 
@@ -95,15 +96,14 @@ export const FarmerAddProduct: React.FC = () => {
         <div className="space-y-4">
           <div>
             <label className="block text-xs font-semibold text-gray-700 mb-1">
-              Produce / Crop Name *
-            </label>
+              {t('farmer.produce_crop_name_')}</label>
             <input
               type="text"
               name="name"
               required
               value={formData.name}
               onChange={handleChange}
-              placeholder="e.g. Alphonso Mangoes, Organic Tomatoes, Basmati Rice"
+              placeholder={t('farmer.eg_alphonso_mangoes_organic_to')}
               className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-gray-300 text-gray-900 text-xs focus:border-green-600 focus:ring-2 focus:ring-green-100 outline-none"
             />
           </div>
@@ -111,36 +111,34 @@ export const FarmerAddProduct: React.FC = () => {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-xs font-semibold text-gray-700 mb-1">
-                Category
-              </label>
+                {t('farmer.category')}</label>
               <select
                 name="category"
                 value={formData.category}
                 onChange={handleChange}
                 className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-gray-300 text-gray-900 text-xs focus:border-green-600 focus:ring-2 focus:ring-green-100 outline-none"
               >
-                <option value="Vegetables">Vegetables</option>
-                <option value="Fruits">Fruits</option>
-                <option value="Grains & Cereals">Grains & Cereals</option>
-                <option value="Pulses & Legumes">Pulses & Legumes</option>
-                <option value="Spices & Herbs">Spices & Herbs</option>
-                <option value="Dairy & Farm Goods">Dairy & Farm Goods</option>
+                <option value="Vegetables">{t('farmer.vegetables')}</option>
+                <option value="Fruits">{t('farmer.fruits')}</option>
+                <option value="Grains & Cereals">{t('farmer.grains_cereals')}</option>
+                <option value="Pulses & Legumes">{t('farmer.pulses_legumes')}</option>
+                <option value="Spices & Herbs">{t('farmer.spices_herbs')}</option>
+                <option value="Dairy & Farm Goods">{t('farmer.dairy_farm_goods')}</option>
               </select>
             </div>
 
             <div>
               <label className="block text-xs font-semibold text-gray-700 mb-1">
-                Quality Grade
-              </label>
+                {t('farmer.quality_grade')}</label>
               <select
                 name="grade"
                 value={formData.grade}
                 onChange={handleChange}
                 className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-gray-300 text-gray-900 text-xs focus:border-green-600 focus:ring-2 focus:ring-green-100 outline-none"
               >
-                <option value="Premium">Grade A (Premium Export Quality)</option>
-                <option value="Standard">Grade B (Standard Market Quality)</option>
-                <option value="Commercial">Grade C (Processing / Mandi Grade)</option>
+                <option value="Premium">{t('farmer.grade_a_premium_export_quality')}</option>
+                <option value="Standard">{t('farmer.grade_b_standard_market_qualit')}</option>
+                <option value="Commercial">{t('farmer.grade_c_processing_mandi_grade')}</option>
               </select>
             </div>
           </div>
@@ -148,23 +146,21 @@ export const FarmerAddProduct: React.FC = () => {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-xs font-semibold text-gray-700 mb-1">
-                Total Quantity Available *
-              </label>
+                {t('farmer.total_quantity_available_')}</label>
               <input
                 type="text"
                 name="quantity"
                 required
                 value={formData.quantity}
                 onChange={handleChange}
-                placeholder="e.g. 500 kg, 2 MT, 50 Crates"
+                placeholder={t('farmer.eg_500_kg_2_mt_50_crates')}
                 className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-gray-300 text-gray-900 text-xs focus:border-green-600 focus:ring-2 focus:ring-green-100 outline-none"
               />
             </div>
 
             <div>
               <label className="block text-xs font-semibold text-gray-700 mb-1">
-                Harvest / Ready Date *
-              </label>
+                {t('farmer.harvest_ready_date_')}</label>
               <input
                 type="date"
                 name="harvestDate"
@@ -183,8 +179,7 @@ export const FarmerAddProduct: React.FC = () => {
             onClick={() => navigate('/farmer/products')}
             className="px-4 py-2.5 rounded-xl bg-gray-100 hover:bg-gray-200 text-gray-700 text-xs font-semibold transition-colors cursor-pointer"
           >
-            Cancel
-          </button>
+            {t('farmer.cancel')}</button>
           <button
             type="submit"
             disabled={isSubmitting}
@@ -193,12 +188,12 @@ export const FarmerAddProduct: React.FC = () => {
             {isSubmitting ? (
               <>
                 <Loader2 className="w-4 h-4 animate-spin" />
-                <span>Publishing Listing...</span>
+                <span>{t('farmer.publishing_listing')}</span>
               </>
             ) : (
               <>
                 <Save className="w-4 h-4" />
-                <span>Publish Produce Listing</span>
+                <span>{t('farmer.publish_produce_listing')}</span>
               </>
             )}
           </button>

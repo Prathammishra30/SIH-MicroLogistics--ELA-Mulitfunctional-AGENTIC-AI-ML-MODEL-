@@ -1,6 +1,6 @@
-# RuralFlow - Smart Micro-Logistics Platform
+# AgriRoute — Intelligence Platform
 
-RuralFlow is an integrated agricultural micro-logistics platform designed to connect **Farmers**, **Commercial Buyers**, and **Rural Transporters** in a synchronized ecosystem.
+AgriRoute is an integrated agricultural intelligence and micro-logistics platform designed to connect **Farmers**, **Commercial Buyers**, and **Rural Transporters** in a synchronized ecosystem.
 
 ---
 

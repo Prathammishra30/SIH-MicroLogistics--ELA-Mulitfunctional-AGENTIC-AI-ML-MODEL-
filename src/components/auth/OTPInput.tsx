@@ -1,5 +1,6 @@
 import React, { useRef, useState, useEffect } from 'react';
 import { AlertCircle, RotateCcw, KeyRound, Sparkles } from 'lucide-react';
+import { useLanguage } from "../../context/LanguageContext";
 
 interface OTPInputProps {
   phoneNumber: string;
@@ -20,6 +21,7 @@ export const OTPInput: React.FC<OTPInputProps> = ({
   onEditPhone,
   accentColor = '#2E7D32',
 }) => {
+    const { t } = useLanguage();
   const [digits, setDigits] = useState<string[]>(['', '', '', '', '', '']);
   const [countdown, setCountdown] = useState<number>(30);
   const inputRefs = useRef<(HTMLInputElement | null)[]>([]);
@@ -107,8 +109,7 @@ export const OTPInput: React.FC<OTPInputProps> = ({
       {/* Phone Destination Info */}
       <div className="space-y-1">
         <p className="text-xs text-gray-500">
-          We sent a 6-digit verification code to
-        </p>
+          {t('auth.common.we_sent_a_6digit_verification_')}</p>
         <div className="flex items-center justify-center gap-2">
           <strong className="text-sm font-bold text-gray-900 tracking-wide font-mono">
             {formattedPhone}
@@ -118,15 +119,14 @@ export const OTPInput: React.FC<OTPInputProps> = ({
             onClick={onEditPhone}
             className="text-xs font-semibold text-[#2E7D32] hover:underline cursor-pointer"
           >
-            Change
-          </button>
+            {t('auth.common.change')}</button>
         </div>
       </div>
 
       {/* Demo helper pill */}
       <div className="inline-flex items-center gap-1.5 px-3 py-1 rounded-full bg-amber-50 border border-amber-200 text-amber-800 text-xs font-medium">
         <Sparkles className="w-3.5 h-3.5 text-amber-600" />
-        <span>Demo code: <strong className="font-mono text-amber-900">123456</strong></span>
+        <span>{t('auth.common.demo_code')}<strong className="font-mono text-amber-900">123456</strong></span>
       </div>
 
       {/* 6-box input container */}
@@ -183,22 +183,22 @@ export const OTPInput: React.FC<OTPInputProps> = ({
         {isVerifying ? (
           <>
             <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
-            <span>Verifying Code...</span>
+            <span>{t('auth.common.verifying_code')}</span>
           </>
         ) : (
           <>
             <KeyRound className="w-4 h-4" />
-            <span>Verify & Continue →</span>
+            <span>{t('auth.common.verify_continue_')}</span>
           </>
         )}
       </button>
 
       {/* Resend OTP Row with Countdown */}
       <div className="flex items-center justify-between text-xs text-gray-500 pt-2 px-1">
-        <span>Didn't receive the code?</span>
+        <span>{t('auth.common.didnt_receive_the_code')}</span>
         {countdown > 0 ? (
           <span className="font-mono text-gray-600 font-medium">
-            Resend in {countdown}s
+            {t('auth.common.resend_in')}{countdown}s
           </span>
         ) : (
           <button
@@ -207,8 +207,7 @@ export const OTPInput: React.FC<OTPInputProps> = ({
             className="flex items-center gap-1 text-[#2E7D32] hover:text-[#256628] font-semibold transition-colors cursor-pointer"
           >
             <RotateCcw className="w-3 h-3" />
-            Resend OTP
-          </button>
+            {t('auth.common.resend_otp')}</button>
         )}
       </div>
     </div>

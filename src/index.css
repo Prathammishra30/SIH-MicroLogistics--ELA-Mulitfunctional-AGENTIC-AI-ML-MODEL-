@@ -5,7 +5,7 @@
     --font-sans: 'Plus Jakarta Sans', 'Noto Sans', 'Noto Sans Devanagari', 'Noto Sans Tamil', 'Noto Sans Telugu', 'Noto Sans Bengali', 'Noto Sans Kannada', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
     --font-mono: 'JetBrains Mono', monospace;
     
-    /* RuralFlow Natural Agricultural Palette */
+    /* AgriRoute Natural Agricultural Palette */
     --color-primary: #2E7D32;
     --color-primary-hover: #256628;
     --color-primary-light: #EAF5E8;
@@ -60,14 +60,16 @@
 }
 
 /* Practical Product Cards & Panels */
-.rf-card {
+.rf-card,
+.ar-card {
   background-color: #FFFFFF;
   border: 1px solid #E5E8E2;
   border-radius: 1rem;
   box-shadow: 0 1px 3px 0 rgba(0, 0, 0, 0.03), 0 1px 2px -1px rgba(0, 0, 0, 0.03);
 }
 
-.rf-card-subtle {
+.rf-card-subtle,
+.ar-card-subtle {
   background-color: #F8FAF8;
   border: 1px solid #EAECE6;
   border-radius: 0.875rem;
@@ -77,4 +79,16 @@
 :focus-visible {
   outline: 2px solid #2E7D32;
   outline-offset: 2px;
+}
+
+/* Reduced motion accessibility support */
+@media (prefers-reduced-motion: reduce) {
+  *,
+  ::before,
+  ::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
 }

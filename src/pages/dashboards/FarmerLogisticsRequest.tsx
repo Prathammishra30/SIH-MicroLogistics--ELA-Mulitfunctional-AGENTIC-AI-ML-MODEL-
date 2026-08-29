@@ -4,8 +4,10 @@ import { Truck, ArrowLeft, Loader2, Search, CheckCircle, MapPin, Calendar, Packa
 import { useSharedContext } from '../../context/SharedContext';
 import type { LogisticsRequest, MarketOpportunity } from '../../data/mockData';
 import { farmerApi } from '../../services/api';
+import { useLanguage } from "../../context/LanguageContext";
 
 export const FarmerLogisticsRequest: React.FC = () => {
+    const { t } = useLanguage();
   const navigate = useNavigate();
   const location = useLocation();
   const { state, dispatch } = useSharedContext();
@@ -138,9 +140,8 @@ export const FarmerLogisticsRequest: React.FC = () => {
         <div>
           <h1 className="text-xl font-bold text-gray-900 flex items-center gap-2">
             <Truck className="w-5 h-5 text-amber-700" />
-            Book Rural Logistics
-          </h1>
-          <p className="text-xs text-gray-500">Request shared vehicle capacity for your harvested farm produce.</p>
+            {t('farmer.book_rural_logistics')}</h1>
+          <p className="text-xs text-gray-500">{t('farmer.request_shared_vehicle_capacit')}</p>
         </div>
       </header>
 
@@ -150,8 +151,7 @@ export const FarmerLogisticsRequest: React.FC = () => {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-xs font-semibold text-gray-700 mb-1">
-                Produce / Cargo Item *
-              </label>
+                {t('farmer.produce_cargo_item_')}</label>
               <div className="relative">
                 <Package className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
                 <input
@@ -159,7 +159,7 @@ export const FarmerLogisticsRequest: React.FC = () => {
                   required
                   value={formData.product}
                   onChange={(e) => setFormData({ ...formData, product: e.target.value })}
-                  placeholder="e.g. Tomatoes, Onions, Mangoes"
+                  placeholder={t('farmer.eg_tomatoes_onions_mangoes')}
                   className="w-full pl-9 pr-3 py-2.5 rounded-xl bg-white border border-gray-300 text-gray-900 text-xs focus:border-green-600 focus:ring-2 focus:ring-green-100 outline-none"
                 />
               </div>
@@ -167,14 +167,13 @@ export const FarmerLogisticsRequest: React.FC = () => {
 
             <div>
               <label className="block text-xs font-semibold text-gray-700 mb-1">
-                Quantity to Move *
-              </label>
+                {t('farmer.quantity_to_move_')}</label>
               <input
                 type="text"
                 required
                 value={formData.quantity}
                 onChange={(e) => setFormData({ ...formData, quantity: e.target.value })}
-                placeholder="e.g. 500 kg, 1.2 MT"
+                placeholder={t('farmer.eg_500_kg_12_mt')}
                 className="w-full px-3 py-2.5 rounded-xl bg-white border border-gray-300 text-gray-900 text-xs focus:border-green-600 focus:ring-2 focus:ring-green-100 outline-none"
               />
             </div>
@@ -183,8 +182,7 @@ export const FarmerLogisticsRequest: React.FC = () => {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-xs font-semibold text-gray-700 mb-1">
-                Farm Pickup Location *
-              </label>
+                {t('farmer.farm_pickup_location_')}</label>
               <div className="relative">
                 <MapPin className="w-4 h-4 text-green-700 absolute left-3 top-1/2 -translate-y-1/2" />
                 <input
@@ -192,7 +190,7 @@ export const FarmerLogisticsRequest: React.FC = () => {
                   required
                   value={formData.pickupLocation}
                   onChange={(e) => setFormData({ ...formData, pickupLocation: e.target.value })}
-                  placeholder="e.g. Village Baramati Farm Gate"
+                  placeholder={t('farmer.eg_village_baramati_farm_gate')}
                   className="w-full pl-9 pr-3 py-2.5 rounded-xl bg-white border border-gray-300 text-gray-900 text-xs focus:border-green-600 focus:ring-2 focus:ring-green-100 outline-none"
                 />
               </div>
@@ -200,8 +198,7 @@ export const FarmerLogisticsRequest: React.FC = () => {
 
             <div>
               <label className="block text-xs font-semibold text-gray-700 mb-1">
-                Drop / Mandi Destination *
-              </label>
+                {t('farmer.drop_mandi_destination_')}</label>
               <div className="relative">
                 <MapPin className="w-4 h-4 text-amber-700 absolute left-3 top-1/2 -translate-y-1/2" />
                 <input
@@ -209,7 +206,7 @@ export const FarmerLogisticsRequest: React.FC = () => {
                   required
                   value={formData.destination}
                   onChange={(e) => setFormData({ ...formData, destination: e.target.value })}
-                  placeholder="e.g. Pune APMC Market Yard"
+                  placeholder={t('farmer.eg_pune_apmc_market_yard')}
                   className="w-full pl-9 pr-3 py-2.5 rounded-xl bg-white border border-gray-300 text-gray-900 text-xs focus:border-green-600 focus:ring-2 focus:ring-green-100 outline-none"
                 />
               </div>
@@ -219,8 +216,7 @@ export const FarmerLogisticsRequest: React.FC = () => {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-xs font-semibold text-gray-700 mb-1">
-                Ready Pickup Date
-              </label>
+                {t('farmer.ready_pickup_date')}</label>
               <div className="relative">
                 <Calendar className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
                 <input
@@ -234,17 +230,16 @@ export const FarmerLogisticsRequest: React.FC = () => {
 
             <div>
               <label className="block text-xs font-semibold text-gray-700 mb-1">
-                Recommended Vehicle Category
-              </label>
+                {t('farmer.recommended_vehicle_category')}</label>
               <select
                 value={formData.vehicleRequirement}
                 onChange={(e) => setFormData({ ...formData, vehicleRequirement: e.target.value })}
                 className="w-full px-3 py-2.5 rounded-xl bg-white border border-gray-300 text-gray-900 text-xs focus:border-green-600 focus:ring-2 focus:ring-green-100 outline-none"
               >
-                <option value="Mini Truck / Bolero Pickup">Mini Truck / Bolero Pickup (1.5 - 2.5 MT)</option>
-                <option value="Tata Ace (750 kg)">Tata Ace (750 kg)</option>
-                <option value="Medium Goods Carrier (3.5 MT)">Medium Goods Carrier (3.5 MT)</option>
-                <option value="Three Wheeler Cargo (500 kg)">Three Wheeler Cargo (500 kg)</option>
+                <option value="Mini Truck / Bolero Pickup">{t('farmer.mini_truck_bolero_pickup_15_25')}</option>
+                <option value="Tata Ace (750 kg)">{t('farmer.tata_ace_750_kg')}</option>
+                <option value="Medium Goods Carrier (3.5 MT)">{t('auth.medium_goods_carrier_35_mt')}</option>
+                <option value="Three Wheeler Cargo (500 kg)">{t('auth.three_wheeler_cargo_500_kg')}</option>
               </select>
             </div>
           </div>
@@ -258,12 +253,12 @@ export const FarmerLogisticsRequest: React.FC = () => {
           {isSearching ? (
             <>
               <Loader2 className="w-4 h-4 animate-spin" />
-              <span>Scanning Active Transporter Fleet...</span>
+              <span>{t('farmer.scanning_active_transporter_fl')}</span>
             </>
           ) : (
             <>
               <Search className="w-4 h-4" />
-              <span>Find Nearby Vehicle Matches</span>
+              <span>{t('farmer.find_nearby_vehicle_matches')}</span>
             </>
           )}
         </button>
@@ -274,21 +269,21 @@ export const FarmerLogisticsRequest: React.FC = () => {
         <div className="p-6 rounded-2xl bg-white border border-green-200 shadow-2xs space-y-4">
           <div className="flex items-center gap-2 text-[#2E7D32]">
             <CheckCircle className="w-5 h-5" />
-            <h3 className="text-sm font-bold text-gray-900">Nearby Return Vehicle Capacity Found</h3>
+            <h3 className="text-sm font-bold text-gray-900">{t('farmer.nearby_return_vehicle_capacity')}</h3>
           </div>
 
           <div className="p-4 rounded-xl bg-[#E8F5E9]/50 border border-green-200 space-y-2 text-xs">
             <div className="flex items-center justify-between">
-              <span className="text-gray-600">Available Vehicle:</span>
-              <strong className="text-gray-900">Mahindra Bolero Maxi Truck (MH-12-PQ-8890)</strong>
+              <span className="text-gray-600">{t('farmer.available_vehicle')}</span>
+              <strong className="text-gray-900">{t('farmer.mahindra_bolero_maxi_truck_mh1')}</strong>
             </div>
             <div className="flex items-center justify-between">
-              <span className="text-gray-600">Route Match:</span>
-              <span className="text-gray-900 font-medium">Baramati → Pune Highway</span>
+              <span className="text-gray-600">{t('farmer.route_match')}</span>
+              <span className="text-gray-900 font-medium">{t('farmer.baramati_pune_highway')}</span>
             </div>
             <div className="flex items-center justify-between">
-              <span className="text-gray-600">Estimated Transport Fare:</span>
-              <strong className="text-[#2E7D32] text-sm font-mono">₹1,850 (Shared Rate)</strong>
+              <span className="text-gray-600">{t('farmer.estimated_transport_fare')}</span>
+              <strong className="text-[#2E7D32] text-sm font-mono">{t('farmer.1850_shared_rate')}</strong>
             </div>
           </div>
 
@@ -301,12 +296,12 @@ export const FarmerLogisticsRequest: React.FC = () => {
             {isSubmitting ? (
               <>
                 <Loader2 className="w-4 h-4 animate-spin" />
-                <span>Broadcasting to Fleet...</span>
+                <span>{t('farmer.broadcasting_to_fleet')}</span>
               </>
             ) : (
               <>
                 <Truck className="w-4 h-4" />
-                <span>Confirm & Broadcast Logistics Request</span>
+                <span>{t('farmer.confirm_broadcast_logistics_re')}</span>
               </>
             )}
           </button>

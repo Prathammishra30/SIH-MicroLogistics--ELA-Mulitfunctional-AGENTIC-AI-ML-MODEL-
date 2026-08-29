@@ -147,18 +147,19 @@ export const BuyerAuth: React.FC = () => {
       supportingText={t('auth.buyer.subtitle') || "Bypass intermediaries, track shipments in real-time, and guarantee steady supply chains."}
       benefits={[
         {
-          title: 'Direct farm sourcing',
-          desc: 'Connect with verified regional farmer clusters with transparent harvest timelines.',
+          title: t('auth.buyer.benefit1.title') || 'Direct farm sourcing',
+          desc: t('auth.buyer.benefit1.desc') || 'Connect with verified regional farmer clusters with transparent harvest timelines.',
         },
         {
-          title: 'Broadcast procurement demand',
-          desc: 'Post required quantities and target pricing to discover matching farm produce.',
+          title: t('auth.buyer.benefit2.title') || 'Broadcast procurement demand',
+          desc: t('auth.buyer.benefit2.desc') || 'Post required quantities and target pricing to discover matching farm produce.',
         },
         {
-          title: 'Verified shipment tracking',
-          desc: 'Monitor incoming freight from rural farm-gate pickups to your warehouse.',
+          title: t('auth.buyer.benefit3.title') || 'Verified shipment tracking',
+          desc: t('auth.buyer.benefit3.desc') || 'Monitor incoming freight from rural farm-gate pickups to your warehouse.',
         },
       ]}
+      roleAccessText={t('auth.security.buyer_access') || 'Buyer Access'}
       accentColorHex="#1D4ED8"
       accentBorderClass="border-blue-200"
       accentBgClass="bg-blue-50"
@@ -198,7 +199,7 @@ export const BuyerAuth: React.FC = () => {
                 }`}
               >
                 <Mail className="w-3.5 h-3.5" />
-                <span>Email & Password</span>
+                <span>{t('auth.email_password')}</span>
               </button>
 
               <button
@@ -211,7 +212,7 @@ export const BuyerAuth: React.FC = () => {
                 }`}
               >
                 <Phone className="w-3.5 h-3.5" />
-                <span>Mobile OTP</span>
+                <span>{t('auth.mobile_otp')}</span>
               </button>
             </div>
 
@@ -236,8 +237,7 @@ export const BuyerAuth: React.FC = () => {
                 <div className="space-y-3.5">
                   <div>
                     <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wider mb-1">
-                      Business Email ID
-                    </label>
+                      {t('auth.business_email_id')}</label>
                     <input
                       type="email"
                       required
@@ -247,7 +247,7 @@ export const BuyerAuth: React.FC = () => {
                         if (emailError) setEmailError('');
                       }}
                       disabled={isSubmitting}
-                      placeholder="buyer@ruralflow.in"
+                      placeholder={t('auth.buyerruralflowin')}
                       className="w-full px-3.5 py-2.5 rounded-xl bg-white border border-gray-300 text-gray-900 placeholder-gray-400 text-sm font-medium focus:outline-none focus:ring-2 focus:ring-blue-100 focus:border-blue-600"
                     />
                     {emailError && (
@@ -269,10 +269,10 @@ export const BuyerAuth: React.FC = () => {
                 className="w-full py-3 px-4 rounded-xl font-semibold text-xs sm:text-sm text-white bg-blue-700 hover:bg-blue-800 transition-colors shadow-2xs flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50"
               >
                 {isSubmitting ? (
-                  <span>Signing In...</span>
+                  <span>{t('auth.signing_in')}</span>
                 ) : (
                   <>
-                    <span>Continue to Buyer Dashboard</span>
+                    <span>{t('auth.continue_to_buyer_dashboard')}</span>
                     <ArrowRight className="w-4 h-4" />
                   </>
                 )}
@@ -280,14 +280,13 @@ export const BuyerAuth: React.FC = () => {
             </form>
 
             <div className="pt-2 text-center text-xs text-gray-600">
-              <span>New commercial buyer? </span>
+              <span>{t('auth.new_commercial_buyer')}</span>
               <button
                 type="button"
                 onClick={() => setStep('register')}
                 className="text-blue-700 hover:underline font-bold cursor-pointer"
               >
-                Register as Buyer
-              </button>
+                {t('auth.register_as_buyer')}</button>
             </div>
           </motion.div>
         )}
@@ -325,11 +324,9 @@ export const BuyerAuth: React.FC = () => {
           >
             <div className="space-y-1">
               <h2 className="text-xl sm:text-2xl font-bold text-gray-900 tracking-tight">
-                Buyer Registration
-              </h2>
+                {t('auth.buyer_registration')}</h2>
               <p className="text-xs text-gray-600">
-                Register your business to post procurement demands and source farm produce.
-              </p>
+                {t('auth.register_your_business_to_post')}</p>
             </div>
 
             {regError && (
@@ -342,27 +339,25 @@ export const BuyerAuth: React.FC = () => {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="block text-xs font-semibold text-gray-700 mb-1">
-                    Company / Firm Name *
-                  </label>
+                    {t('auth.company_firm_name_')}</label>
                   <input
                     type="text"
                     required
                     value={regForm.businessName}
                     onChange={(e) => setRegForm({ ...regForm, businessName: e.target.value })}
-                    placeholder="e.g. Mahavir Agro Traders"
+                    placeholder={t('auth.eg_mahavir_agro_traders')}
                     className="w-full px-3 py-2 rounded-lg bg-white border border-gray-300 text-gray-900 text-xs focus:border-blue-600 focus:outline-none"
                   />
                 </div>
 
                 <div>
                   <label className="block text-xs font-semibold text-gray-700 mb-1">
-                    Contact Person
-                  </label>
+                    {t('auth.contact_person')}</label>
                   <input
                     type="text"
                     value={regForm.contactPerson}
                     onChange={(e) => setRegForm({ ...regForm, contactPerson: e.target.value })}
-                    placeholder="e.g. Suresh Jain"
+                    placeholder={t('auth.eg_suresh_jain')}
                     className="w-full px-3 py-2 rounded-lg bg-white border border-gray-300 text-gray-900 text-xs focus:border-blue-600 focus:outline-none"
                   />
                 </div>
@@ -371,22 +366,20 @@ export const BuyerAuth: React.FC = () => {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="block text-xs font-semibold text-gray-700 mb-1">
-                    Business Email *
-                  </label>
+                    {t('auth.business_email_')}</label>
                   <input
                     type="email"
                     required
                     value={regForm.email}
                     onChange={(e) => setRegForm({ ...regForm, email: e.target.value })}
-                    placeholder="suresh@mahaviragro.com"
+                    placeholder={t('auth.sureshmahaviragrocom')}
                     className="w-full px-3 py-2 rounded-lg bg-white border border-gray-300 text-gray-900 text-xs focus:border-blue-600 focus:outline-none"
                   />
                 </div>
 
                 <div>
                   <label className="block text-xs font-semibold text-gray-700 mb-1">
-                    Password (min 8 chars) *
-                  </label>
+                    {t('auth.password_min_8_chars_')}</label>
                   <input
                     type="password"
                     required
@@ -401,29 +394,27 @@ export const BuyerAuth: React.FC = () => {
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
                 <div>
                   <label className="block text-xs font-semibold text-gray-700 mb-1">
-                    Business Category
-                  </label>
+                    {t('auth.business_category')}</label>
                   <select
                     value={regForm.businessType}
                     onChange={(e) => setRegForm({ ...regForm, businessType: e.target.value })}
                     className="w-full px-3 py-2 rounded-lg bg-white border border-gray-300 text-gray-900 text-xs focus:border-blue-600 focus:outline-none"
                   >
-                    <option value="Retailer & Distributor">Retailer & Distributor</option>
-                    <option value="Wholesale Mandi Trader">Wholesale Mandi Trader</option>
-                    <option value="Food Processing Enterprise">Food Processing Enterprise</option>
-                    <option value="Export Merchant">Export Merchant</option>
+                    <option value="Retailer & Distributor">{t('auth.retailer_distributor')}</option>
+                    <option value="Wholesale Mandi Trader">{t('auth.wholesale_mandi_trader')}</option>
+                    <option value="Food Processing Enterprise">{t('auth.food_processing_enterprise')}</option>
+                    <option value="Export Merchant">{t('auth.export_merchant')}</option>
                   </select>
                 </div>
 
                 <div>
                   <label className="block text-xs font-semibold text-gray-700 mb-1">
-                    Delivery Hub / Location
-                  </label>
+                    {t('auth.delivery_hub_location')}</label>
                   <input
                     type="text"
                     value={regForm.location}
                     onChange={(e) => setRegForm({ ...regForm, location: e.target.value })}
-                    placeholder="e.g. Navi Mumbai APMC"
+                    placeholder={t('auth.eg_navi_mumbai_apmc')}
                     className="w-full px-3 py-2 rounded-lg bg-white border border-gray-300 text-gray-900 text-xs focus:border-blue-600 focus:outline-none"
                   />
                 </div>
@@ -434,19 +425,18 @@ export const BuyerAuth: React.FC = () => {
                 disabled={isSubmitting}
                 className="w-full py-2.5 px-4 rounded-xl font-semibold text-xs sm:text-sm text-white bg-blue-700 hover:bg-blue-800 transition-colors shadow-2xs flex items-center justify-center gap-2 cursor-pointer disabled:opacity-50 mt-2"
               >
-                {isSubmitting ? 'Registering...' : 'Complete Buyer Registration'}
+                {isSubmitting ? (t('auth.registering') || 'Registering...') : (t('auth.complete_buyer_registration') || 'Complete Buyer Registration')}
               </button>
             </form>
 
             <div className="pt-2 text-center text-xs text-gray-600">
-              <span>Already registered? </span>
+              <span>{t('auth.already_registered')}</span>
               <button
                 type="button"
                 onClick={() => setStep('login')}
                 className="text-blue-700 hover:underline font-bold cursor-pointer"
               >
-                Sign In
-              </button>
+                {t('auth.sign_in')}</button>
             </div>
           </motion.div>
         )}
@@ -454,7 +444,7 @@ export const BuyerAuth: React.FC = () => {
         {/* 4. SUCCESS STEP */}
         {step === 'success' && (
           <VerificationSuccess
-            roleTitle="Commercial Buyer"
+            roleTitle={t('auth.buyer.partner_title') || "Commercial Buyer"}
             dashboardRoute="/buyer/dashboard"
             accentColor="#1D4ED8"
           />

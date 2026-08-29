@@ -4,8 +4,10 @@ import { ArrowLeft, ShoppingCart, Search, CheckCircle, Store, MapPin, Calendar, 
 import { useSharedContext } from '../../context/SharedContext';
 import type { ProcurementRequest } from '../../data/mockData';
 import { buyerApi } from '../../services/api';
+import { useLanguage } from "../../context/LanguageContext";
 
 export const BuyerProcurementForm: React.FC = () => {
+    const { t } = useLanguage();
   const navigate = useNavigate();
   const location = useLocation();
   const prefill = location.state as { product?: string; quantity?: string; destination?: string } | undefined;
@@ -102,11 +104,9 @@ export const BuyerProcurementForm: React.FC = () => {
         <div>
           <h1 className="text-xl font-bold text-gray-900 flex items-center gap-2">
             <Store className="w-5 h-5 text-blue-700" />
-            Post Bulk Crop Procurement
-          </h1>
+            {t('buyer.post_bulk_crop_procurement')}</h1>
           <p className="text-xs text-gray-500">
-            Broadcast wholesale crop requirements to direct regional farmer clusters.
-          </p>
+            {t('buyer.broadcast_wholesale_crop_requi')}</p>
         </div>
       </header>
 
@@ -116,8 +116,7 @@ export const BuyerProcurementForm: React.FC = () => {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-xs font-semibold text-gray-700 mb-1">
-                Produce / Commodity Needed *
-              </label>
+                {t('buyer.produce_commodity_needed_')}</label>
               <div className="relative">
                 <Package className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
                 <input
@@ -125,7 +124,7 @@ export const BuyerProcurementForm: React.FC = () => {
                   required
                   value={formData.product}
                   onChange={(e) => setFormData({ ...formData, product: e.target.value })}
-                  placeholder="e.g. Organic Tomatoes, Alphonso Mangoes"
+                  placeholder={t('buyer.eg_organic_tomatoes_alphonso_m')}
                   className="w-full pl-9 pr-3 py-2.5 rounded-xl bg-white border border-gray-300 text-gray-900 text-xs focus:border-blue-600 focus:ring-2 focus:ring-blue-100 outline-none"
                 />
               </div>
@@ -133,14 +132,13 @@ export const BuyerProcurementForm: React.FC = () => {
 
             <div>
               <label className="block text-xs font-semibold text-gray-700 mb-1">
-                Target Procurement Volume *
-              </label>
+                {t('buyer.target_procurement_volume_')}</label>
               <input
                 type="text"
                 required
                 value={formData.quantity}
                 onChange={(e) => setFormData({ ...formData, quantity: e.target.value })}
-                placeholder="e.g. 5 MT, 2000 kg, 100 Crates"
+                placeholder={t('buyer.eg_5_mt_2000_kg_100_crates')}
                 className="w-full px-3 py-2.5 rounded-xl bg-white border border-gray-300 text-gray-900 text-xs focus:border-blue-600 focus:ring-2 focus:ring-blue-100 outline-none"
               />
             </div>
@@ -149,21 +147,19 @@ export const BuyerProcurementForm: React.FC = () => {
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             <div>
               <label className="block text-xs font-semibold text-gray-700 mb-1">
-                Target Offering Price / Rate
-              </label>
+                {t('buyer.target_offering_price_rate')}</label>
               <input
                 type="text"
                 value={formData.targetPrice}
                 onChange={(e) => setFormData({ ...formData, targetPrice: e.target.value })}
-                placeholder="e.g. ₹35 / kg, Market Mandi Rate"
+                placeholder={t('buyer.eg_35_kg_market_mandi_rate')}
                 className="w-full px-3 py-2.5 rounded-xl bg-white border border-gray-300 text-gray-900 text-xs focus:border-blue-600 focus:ring-2 focus:ring-blue-100 outline-none"
               />
             </div>
 
             <div>
               <label className="block text-xs font-semibold text-gray-700 mb-1">
-                Delivery Deadline / Required By
-              </label>
+                {t('buyer.delivery_deadline_required_by')}</label>
               <div className="relative">
                 <Calendar className="w-4 h-4 text-gray-400 absolute left-3 top-1/2 -translate-y-1/2" />
                 <input
@@ -178,8 +174,7 @@ export const BuyerProcurementForm: React.FC = () => {
 
           <div>
             <label className="block text-xs font-semibold text-gray-700 mb-1">
-              Delivery Warehouse / APMC Destination *
-            </label>
+              {t('buyer.delivery_warehouse_apmc_destin')}</label>
             <div className="relative">
               <MapPin className="w-4 h-4 text-blue-700 absolute left-3 top-1/2 -translate-y-1/2" />
               <input
@@ -187,7 +182,7 @@ export const BuyerProcurementForm: React.FC = () => {
                 required
                 value={formData.destination}
                 onChange={(e) => setFormData({ ...formData, destination: e.target.value })}
-                placeholder="e.g. Navi Mumbai APMC Mandi, Pune Distribution Center"
+                placeholder={t('buyer.eg_navi_mumbai_apmc_mandi_pune')}
                 className="w-full pl-9 pr-3 py-2.5 rounded-xl bg-white border border-gray-300 text-gray-900 text-xs focus:border-blue-600 focus:ring-2 focus:ring-blue-100 outline-none"
               />
             </div>
@@ -199,7 +194,7 @@ export const BuyerProcurementForm: React.FC = () => {
           className="w-full py-2.5 rounded-xl bg-blue-700 hover:bg-blue-800 text-white text-xs font-semibold shadow-2xs transition-colors flex items-center justify-center gap-2 cursor-pointer"
         >
           <Search className="w-4 h-4" />
-          <span>Scan Available Farmer Inventory & Post Demand</span>
+          <span>{t('buyer.scan_available_farmer_inventor')}</span>
         </button>
       </form>
 
@@ -209,24 +204,23 @@ export const BuyerProcurementForm: React.FC = () => {
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2 text-blue-700">
               <CheckCircle className="w-5 h-5" />
-              <h3 className="text-sm font-bold text-gray-900">Procurement Broadcast Ready</h3>
+              <h3 className="text-sm font-bold text-gray-900">{t('buyer.procurement_broadcast_ready')}</h3>
             </div>
             <span className="text-xs text-gray-500">
-              {matchedProducts.length} matching farm harvests discovered
-            </span>
+              {matchedProducts.length} {t('buyer.matching_farm_harvests_discove')}</span>
           </div>
 
           <div className="p-4 rounded-xl bg-blue-50/60 border border-blue-200 space-y-2 text-xs">
             <div className="flex items-center justify-between">
-              <span className="text-gray-600">Product:</span>
+              <span className="text-gray-600">{t('buyer.product_8')}</span>
               <strong className="text-gray-900">{formData.product} ({formData.quantity})</strong>
             </div>
             <div className="flex items-center justify-between">
-              <span className="text-gray-600">Target Rate:</span>
+              <span className="text-gray-600">{t('farmer.target_rate')}</span>
               <span className="text-blue-700 font-bold">{formData.targetPrice}</span>
             </div>
             <div className="flex items-center justify-between">
-              <span className="text-gray-600">Destination:</span>
+              <span className="text-gray-600">{t('farmer.destination')}</span>
               <span className="text-gray-900 font-medium">{formData.destination}</span>
             </div>
           </div>

@@ -4,8 +4,10 @@ import { ArrowLeft, CheckCircle2, ChevronRight } from 'lucide-react';
 import { useSharedContext } from '../../context/SharedContext';
 import type { LogisticsRequest } from '../../data/mockData';
 import { transporterApi } from '../../services/api';
+import { useLanguage } from "../../context/LanguageContext";
 
 export const TransporterActiveTripDetail: React.FC = () => {
+    const { t } = useLanguage();
   const { id } = useParams();
   const navigate = useNavigate();
   const { state, dispatch } = useSharedContext();
@@ -16,13 +18,12 @@ export const TransporterActiveTripDetail: React.FC = () => {
   if (!trip) {
     return (
       <div className="min-h-[50vh] flex flex-col items-center justify-center space-y-4">
-        <h2 className="text-xl font-bold text-gray-900">Trip Not Found</h2>
+        <h2 className="text-xl font-bold text-gray-900">{t('transporter.trip_not_found')}</h2>
         <button
           onClick={() => navigate('/transporter/active')}
           className="px-4 py-2 rounded-xl bg-amber-700 hover:bg-amber-800 text-white text-xs font-semibold shadow-2xs transition-colors cursor-pointer"
         >
-          Back to Active Deliveries
-        </button>
+          {t('transporter.back_to_active_deliveries')}</button>
       </div>
     );
   }
@@ -95,11 +96,10 @@ export const TransporterActiveTripDetail: React.FC = () => {
         </button>
         <div>
           <h1 className="text-xl font-bold text-gray-900 tracking-tight">
-            Active Trip Management • #{trip.id}
+            {t('transporter.active_trip_management_')}{trip.id}
           </h1>
           <p className="text-xs text-gray-500">
-            Progress shipment dispatch milestones in real time.
-          </p>
+            {t('transporter.progress_shipment_dispatch_mil')}</p>
         </div>
       </header>
 
@@ -108,7 +108,7 @@ export const TransporterActiveTripDetail: React.FC = () => {
         <div className="flex justify-between items-start border-b border-gray-100 pb-3">
           <div>
             <h2 className="text-base font-bold text-gray-900">{trip.productName} ({trip.quantity || 'Load'})</h2>
-            <p className="text-gray-500 text-xs mt-0.5">Assigned Vehicle: <strong className="text-gray-900">{trip.vehicle || 'Fleet Vehicle'}</strong></p>
+            <p className="text-gray-500 text-xs mt-0.5">{t('transporter.assigned_vehicle')}<strong className="text-gray-900">{trip.vehicle || 'Fleet Vehicle'}</strong></p>
           </div>
           <span className="px-2.5 py-0.5 bg-amber-50 text-amber-800 border border-amber-200 rounded-full text-xs font-semibold">
             {trip.status}
@@ -117,11 +117,11 @@ export const TransporterActiveTripDetail: React.FC = () => {
 
         <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 text-xs">
           <div className="p-3.5 bg-gray-50 rounded-xl border border-gray-200/80">
-            <span className="text-gray-400 font-semibold uppercase text-[10px] block mb-1">Pickup Location</span>
+            <span className="text-gray-400 font-semibold uppercase text-[10px] block mb-1">{t('transporter.pickup_location')}</span>
             <span className="text-gray-900 font-medium">{trip.pickupLocation || 'Farm Gate'}</span>
           </div>
           <div className="p-3.5 bg-gray-50 rounded-xl border border-gray-200/80">
-            <span className="text-gray-400 font-semibold uppercase text-[10px] block mb-1">Destination</span>
+            <span className="text-gray-400 font-semibold uppercase text-[10px] block mb-1">{t('farmer.destination_2')}</span>
             <span className="text-gray-900 font-medium">{trip.destination}</span>
           </div>
         </div>
@@ -129,7 +129,7 @@ export const TransporterActiveTripDetail: React.FC = () => {
 
       {/* Progress Journey Timeline */}
       <div className="bg-white border border-gray-200 p-6 rounded-2xl shadow-2xs space-y-4">
-        <h3 className="text-sm font-bold text-gray-900">Dispatch Milestone Progress</h3>
+        <h3 className="text-sm font-bold text-gray-900">{t('transporter.dispatch_milestone_progress')}</h3>
         
         <div className="space-y-4 pl-1">
           {trip.timeline.map((event, idx) => (

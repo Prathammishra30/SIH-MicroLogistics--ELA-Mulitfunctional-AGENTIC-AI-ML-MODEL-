@@ -10,13 +10,18 @@ import {
   Plus,
   Eye,
 } from 'lucide-react';
+import { motion, useReducedMotion } from 'framer-motion';
 import { useSharedContext } from '../../context/SharedContext';
 import { useLanguage } from '../../context/LanguageContext';
+import { PortalHero } from '../../components/ui/PortalHero';
+import { StatCard } from '../../components/ui/StatCard';
+import { StatusBadge } from '../../components/ui/StatusBadge';
 
 export const TransporterDashboard: React.FC = () => {
   const navigate = useNavigate();
   const { state } = useSharedContext();
   const { t } = useLanguage();
+  const shouldReduceMotion = useReducedMotion();
 
   const userName = state.auth.user?.name || 'Transporter';
 
@@ -41,193 +46,167 @@ export const TransporterDashboard: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      
-      {/* Full-width Header Banner (breaking out of container) */}
-      <div className="relative overflow-hidden flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4 bg-gray-900 p-8 sm:p-12 -mx-4 sm:-mx-6 lg:-mx-8 -mt-6 mb-20 shadow-xl min-h-[220px]">
-        {/* Landscape Hero Image Background */}
-        <div className="absolute inset-0 z-0">
-          <img src="/images/transporter-truck.jpg" className="w-full h-full object-cover object-center opacity-50 mix-blend-overlay" alt="" />
-          <div className="absolute inset-0 bg-gradient-to-r from-orange-900/90 via-orange-900/60 to-transparent"></div>
-        </div>
+      {/* Full-width Header Banner with Layered Gradient & Glowing Mesh */}
+      <PortalHero
+        role="transporter"
+        title={`${t('dashboard.transporter.title') || 'Transporter Dispatch Control'} • ${userName}`}
+        subtitle={
+          primaryVehicle
+            ? `${t('transporter.primary_fleet') || 'Primary Fleet:'} ${primaryVehicle.type} (${primaryVehicle.registration} • ${primaryVehicle.capacity})`
+            : t('dashboard.transporter.subtitle') ||
+              'Fleet operations overview, nearby farm pickup loads, and vehicle management.'
+        }
+        imageSrc="/images/truck_route.jpg"
+        imageAlt="Truck Route"
+        actions={[
+          {
+            label: t('transporter.manageFleet') || 'Manage Fleet',
+            icon: <Plus className="w-4 h-4" />,
+            onClick: () => navigate('/transporter/vehicles'),
+            primary: true,
+          },
+          {
+            label: t('dashboard.findLoads') || 'Find Loads',
+            icon: <Route className="w-4 h-4" />,
+            onClick: () => navigate('/transporter/trips'),
+            primary: false,
+          },
+        ]}
+      />
 
-        <div className="relative z-10">
-          <h1 className="text-2xl sm:text-3xl font-extrabold text-white tracking-tight drop-shadow-md">
-            {t('dashboard.transporter.title') || 'Transporter Dispatch Control'} • {userName}
-          </h1>
-          <p className="text-sm sm:text-base text-orange-50 mt-2 max-w-xl font-medium drop-shadow-sm">
-            {primaryVehicle
-              ? `Primary Fleet: ${primaryVehicle.type} (${primaryVehicle.registration} • ${primaryVehicle.capacity})`
-              : t('dashboard.transporter.subtitle') || 'Fleet operations overview, nearby farm pickup loads, and vehicle management.'}
-          </p>
-        </div>
-
-        <div className="flex items-center gap-3 relative z-10 mt-4 sm:mt-0">
-          <button
-            type="button"
-            onClick={() => navigate('/transporter/vehicles')}
-            className="px-5 py-2.5 rounded-xl bg-white text-orange-800 hover:bg-orange-50 text-sm font-bold shadow-lg flex items-center gap-2 transition-colors cursor-pointer border border-orange-100"
-          >
-            <Plus className="w-4 h-4" />
-            <span>{t('transporter.manageFleet') || 'Manage Fleet'}</span>
-          </button>
-          <button
-            type="button"
-            onClick={() => navigate('/transporter/trips')}
-            className="px-5 py-2.5 rounded-xl bg-orange-800/50 hover:bg-orange-800/70 border border-orange-500/50 text-white backdrop-blur-sm text-sm font-bold shadow-lg flex items-center gap-2 transition-colors cursor-pointer"
-          >
-            <Route className="w-4 h-4" />
-            <span>{t('dashboard.findLoads') || 'Find Loads'}</span>
-          </button>
-        </div>
+      {/* Top 4 Summary KPI Cards (Overlapping the Hero with CountUp & Glassmorphism) */}
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 -mt-36 relative z-20 mx-2 sm:mx-0">
+        <StatCard
+          label={t('dashboard.activeTrips') || 'Active Trips'}
+          value={activeTrips.length}
+          subtext={t('dashboard.currentlyEnRoute') || 'Currently en route'}
+          icon={Truck}
+          colorScheme="amber"
+          index={0}
+        />
+        <StatCard
+          label={t('dashboard.availableFleet') || 'Available Fleet'}
+          value={availableVehicles}
+          subtext={t('dashboard.readyForDispatch') || 'Ready for dispatch'}
+          icon={Car}
+          colorScheme="green"
+          index={1}
+        />
+        <StatCard
+          label={t('dashboard.nearbyRequests') || 'Nearby Requests'}
+          value={nearbyRequests.length}
+          subtext={t('dashboard.eligiblePickupLoads') || 'Eligible pickup loads'}
+          icon={Route}
+          colorScheme="blue"
+          index={2}
+        />
+        <StatCard
+          label={t('dashboard.totalRevenue') || 'Total Revenue'}
+          value={formattedEarnings}
+          subtext={t('dashboard.freightEarnings') || 'Freight payout earnings'}
+          icon={IndianRupee}
+          colorScheme="emerald"
+          index={3}
+        />
       </div>
 
-      {/* Top 4 Summary KPI Cards (Overlapping the Hero) */}
-      <div className="grid grid-cols-2 lg:grid-cols-4 gap-4 -mt-32 relative z-20 mx-2 sm:mx-0">
-        {/* Active Trips */}
-        <div className="p-5 rounded-2xl bg-white border border-gray-100 shadow-xl shadow-black/5 space-y-2 transform hover:-translate-y-1 transition-transform">
-          <div className="flex items-center justify-between text-gray-500">
-            <span className="text-xs font-bold uppercase tracking-wider">{t('dashboard.activeTrips') || 'Active Trips'}</span>
-            <div className="w-8 h-8 rounded-full bg-amber-50 flex items-center justify-center text-amber-600">
-              <Truck className="w-4 h-4" />
-            </div>
-          </div>
-          <div className="text-3xl font-black text-gray-900">{activeTrips.length}</div>
-          <span className="text-xs font-medium text-amber-600">{t('dashboard.currentlyEnRoute') || 'Currently en route'}</span>
-        </div>
-
-        {/* Available Vehicles */}
-        <div className="p-5 rounded-2xl bg-white border border-gray-100 shadow-xl shadow-black/5 space-y-2 transform hover:-translate-y-1 transition-transform">
-          <div className="flex items-center justify-between text-gray-500">
-            <span className="text-xs font-bold uppercase tracking-wider">{t('dashboard.availableFleet') || 'Available Fleet'}</span>
-            <div className="w-8 h-8 rounded-full bg-green-50 flex items-center justify-center text-green-600">
-              <Car className="w-4 h-4" />
-            </div>
-          </div>
-          <div className="text-3xl font-black text-gray-900">{availableVehicles}</div>
-          <span className="text-xs font-medium text-green-600">{t('dashboard.readyForDispatch') || 'Ready for dispatch'}</span>
-        </div>
-
-        {/* Nearby Requests */}
-        <div className="p-5 rounded-2xl bg-white border border-gray-100 shadow-xl shadow-black/5 space-y-2 transform hover:-translate-y-1 transition-transform">
-          <div className="flex items-center justify-between text-gray-500">
-            <span className="text-xs font-bold uppercase tracking-wider">{t('dashboard.nearbyRequests') || 'Nearby Requests'}</span>
-            <div className="w-8 h-8 rounded-full bg-blue-50 flex items-center justify-center text-blue-600">
-              <Route className="w-4 h-4" />
-            </div>
-          </div>
-          <div className="text-3xl font-black text-gray-900">{nearbyRequests.length}</div>
-          <span className="text-xs font-medium text-blue-600">{t('dashboard.eligiblePickupLoads') || 'Eligible pickup loads'}</span>
-        </div>
-
-        {/* Total Earnings */}
-        <div className="p-5 rounded-2xl bg-white border border-gray-100 shadow-xl shadow-black/5 space-y-2 transform hover:-translate-y-1 transition-transform">
-          <div className="flex items-center justify-between text-gray-500">
-            <span className="text-xs font-bold uppercase tracking-wider">{t('dashboard.totalRevenue') || 'Total Revenue'}</span>
-            <div className="w-8 h-8 rounded-full bg-emerald-50 flex items-center justify-center text-emerald-600">
-              <IndianRupee className="w-4 h-4" />
-            </div>
-          </div>
-          <div className="text-3xl font-black text-gray-900">{formattedEarnings}</div>
-          <span className="text-xs font-medium text-emerald-600">{t('dashboard.freightEarnings') || 'Freight payout earnings'}</span>
-        </div>
-      </div>
-
-      {/* Main Grid: Nearby Logistics Requests Table */}
-      <div className="bg-white rounded-2xl border border-gray-200 p-5 shadow-2xs space-y-4">
+      {/* Main Grid: Nearby Logistics Requests Table with Scroll Reveal */}
+      <motion.div
+        initial={{ opacity: 0, y: shouldReduceMotion ? 0 : 20 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true, margin: '-40px' }}
+        transition={{ duration: shouldReduceMotion ? 0 : 0.45 }}
+        className="bg-white rounded-3xl border border-gray-200/80 p-6 shadow-xl shadow-amber-950/5 space-y-4"
+      >
         <div className="flex items-center justify-between">
           <div>
-            <h2 className="text-base font-bold text-gray-900">Nearby Logistics Requests</h2>
+            <h2 className="text-base font-bold text-gray-900">{t('transporter.nearby_logistics_requests')}</h2>
             <p className="text-xs text-gray-500">
-              Unfulfilled farm harvest loads available for pickup and transport assignment
+              {t('transporter.unfulfilled_farm_harvest_loads')}
             </p>
           </div>
           <button
             onClick={() => navigate('/transporter/trips')}
-            className="text-xs font-semibold text-amber-800 hover:underline flex items-center gap-1 cursor-pointer"
+            className="text-xs font-semibold text-amber-800 hover:underline flex items-center gap-1 cursor-pointer transition-transform hover:translate-x-0.5"
           >
-            <span>View All Trips</span>
+            <span>{t('transporter.view_all_trips')}</span>
             <ArrowRight className="w-3.5 h-3.5" />
           </button>
         </div>
 
         {state.logisticsRequests.length === 0 ? (
-          <div className="p-8 text-center bg-gray-50 rounded-xl border border-dashed border-gray-200 space-y-2">
+          <div className="p-8 text-center bg-gray-50/70 rounded-2xl border border-dashed border-gray-200 space-y-2">
             <Truck className="w-8 h-8 text-gray-400 mx-auto" />
-            <p className="text-xs text-gray-600 font-medium">No nearby logistics requests right now.</p>
+            <p className="text-xs text-gray-600 font-medium">{t('transporter.no_nearby_logistics_requests_r')}</p>
           </div>
         ) : (
           <div className="overflow-x-auto">
             <table className="w-full text-left text-xs">
               <thead>
-                <tr className="border-b border-gray-200 text-gray-500 font-semibold uppercase tracking-wider text-[10px] bg-gray-50/50">
-                  <th className="py-2.5 px-3">Product</th>
-                  <th className="py-2.5 px-3">Quantity</th>
-                  <th className="py-2.5 px-3">Pickup Location</th>
-                  <th className="py-2.5 px-3">Destination</th>
-                  <th className="py-2.5 px-3">Required Capacity</th>
-                  <th className="py-2.5 px-3">Estimated Earnings</th>
-                  <th className="py-2.5 px-3">Status</th>
-                  <th className="py-2.5 px-3 text-right">Action</th>
+                <tr className="border-b border-gray-200/80 text-gray-500 font-semibold uppercase tracking-wider text-[10px] bg-gray-50/60">
+                  <th className="py-3 px-3.5 rounded-l-xl">{t('farmer.product')}</th>
+                  <th className="py-3 px-3">{t('farmer.quantity')}</th>
+                  <th className="py-3 px-3">{t('transporter.pickup_location')}</th>
+                  <th className="py-3 px-3">{t('farmer.destination_2')}</th>
+                  <th className="py-3 px-3">{t('transporter.required_capacity')}</th>
+                  <th className="py-3 px-3">{t('transporter.estimated_earnings')}</th>
+                  <th className="py-3 px-3">{t('farmer.status')}</th>
+                  <th className="py-3 px-3 text-right rounded-r-xl">{t('farmer.action')}</th>
                 </tr>
               </thead>
               <tbody className="divide-y divide-gray-100">
                 {state.logisticsRequests.slice(0, 6).map((req) => (
-                  <tr key={req.id} className="hover:bg-gray-50/80 transition-colors">
-                    <td className="py-3 px-3 font-semibold text-gray-900">
+                  <tr
+                    key={req.id}
+                    className="hover:bg-amber-50/40 transition-colors duration-150 group"
+                  >
+                    <td className="py-3.5 px-3.5 font-semibold text-gray-900">
                       {req.productName}
                     </td>
-                    <td className="py-3 px-3 text-gray-600">
+                    <td className="py-3.5 px-3 text-gray-600 font-mono">
                       {req.quantity || 'N/A'}
                     </td>
-                    <td className="py-3 px-3 text-gray-600">
+                    <td className="py-3.5 px-3 text-gray-600">
                       <span className="flex items-center gap-1 text-gray-900">
                         <MapPin className="w-3 h-3 text-green-700 shrink-0" />
                         <span className="truncate max-w-[120px]">{req.pickupLocation || 'Farm Gate'}</span>
                       </span>
                     </td>
-                    <td className="py-3 px-3 text-gray-600">
+                    <td className="py-3.5 px-3 text-gray-600">
                       <span className="flex items-center gap-1 text-gray-900">
                         <MapPin className="w-3 h-3 text-amber-700 shrink-0" />
                         <span className="truncate max-w-[120px]">{req.destination}</span>
                       </span>
                     </td>
-                    <td className="py-3 px-3 text-gray-600 font-mono">
+                    <td className="py-3.5 px-3 text-gray-600 font-mono">
                       {req.quantity?.includes('MT') ? req.quantity : '1.5 - 2.0 MT'}
                     </td>
-                    <td className="py-3 px-3 font-bold text-[#2E7D32] font-mono">
+                    <td className="py-3.5 px-3 font-bold text-[#2E7D32] font-mono">
                       {req.estimatedEarnings || '₹0'}
                     </td>
-                    <td className="py-3 px-3">
-                      <span
-                        className={`inline-flex items-center px-2 py-0.5 rounded text-[10px] font-bold border ${
-                          req.status === 'Delivered'
-                            ? 'bg-[#E8F5E9] text-[#2E7D32] border-green-200'
-                            : req.status === 'In Transit'
-                            ? 'bg-blue-50 text-blue-700 border-blue-200'
-                            : req.status === 'Assigned'
-                            ? 'bg-amber-50 text-amber-800 border-amber-200'
-                            : 'bg-gray-100 text-gray-700 border-gray-200'
-                        }`}
-                      >
-                        {req.status}
-                      </span>
+                    <td className="py-3.5 px-3">
+                      <StatusBadge status={req.status} />
                     </td>
-                    <td className="py-3 px-3 text-right">
+                    <td className="py-3.5 px-3 text-right">
                       {req.status === 'Searching' ? (
-                        <button
+                        <motion.button
+                          whileHover={shouldReduceMotion ? undefined : { scale: 1.05 }}
+                          whileTap={shouldReduceMotion ? undefined : { scale: 0.94 }}
                           onClick={() => navigate(`/transporter/trips/${req.id}`)}
-                          className="px-2.5 py-1 rounded-lg bg-amber-700 hover:bg-amber-800 text-white font-semibold text-[11px] transition-colors cursor-pointer shadow-2xs"
+                          className="px-3 py-1.5 rounded-xl bg-amber-700 hover:bg-amber-800 text-white font-semibold text-[11px] transition-colors cursor-pointer shadow-xs hover:shadow-amber-700/20"
                         >
-                          Accept
-                        </button>
+                          {t('transporter.accept')}
+                        </motion.button>
                       ) : (
-                        <button
+                        <motion.button
+                          whileHover={shouldReduceMotion ? undefined : { scale: 1.15 }}
+                          whileTap={shouldReduceMotion ? undefined : { scale: 0.9 }}
                           onClick={() => navigate(`/transporter/trips/${req.id}`)}
-                          className="p-1 text-gray-400 hover:text-gray-900 rounded-md hover:bg-gray-100 transition-colors cursor-pointer"
-                          title="View Details"
+                          className="p-1.5 text-gray-400 hover:text-gray-900 rounded-lg hover:bg-white transition-colors cursor-pointer shadow-2xs"
+                          title={t('transporter.view_details')}
                         >
                           <Eye className="w-4 h-4" />
-                        </button>
+                        </motion.button>
                       )}
                     </td>
                   </tr>
@@ -236,43 +215,53 @@ export const TransporterDashboard: React.FC = () => {
             </table>
           </div>
         )}
-      </div>
+      </motion.div>
 
       {/* Active Trip Progress Card if one is in progress */}
       {activeTrips.length > 0 && (
-        <div className="p-5 rounded-2xl bg-white border border-amber-200 shadow-2xs space-y-3">
+        <motion.div
+          initial={{ opacity: 0, y: shouldReduceMotion ? 0 : 20 }}
+          whileInView={{ opacity: 1, y: 0 }}
+          viewport={{ once: true }}
+          className="p-6 rounded-3xl bg-white border border-amber-200/90 shadow-xl shadow-amber-950/5 space-y-3"
+        >
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <span className="w-2 h-2 rounded-full bg-amber-600 animate-pulse" />
+              <span className="relative flex h-2.5 w-2.5">
+                <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-500 opacity-75" />
+                <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-amber-600" />
+              </span>
               <h3 className="text-sm font-bold text-gray-900">
-                Live Dispatched Trip in Progress: Shipment #{activeTrips[0].id}
+                {t('transporter.live_dispatched_trip_in_progre')}{activeTrips[0].id}
               </h3>
             </div>
             <button
               onClick={() => navigate(`/transporter/active/${activeTrips[0].id}`)}
               className="text-xs font-semibold text-amber-800 hover:underline cursor-pointer"
             >
-              Update Progress →
+              {t('transporter.update_progress_')}
             </button>
           </div>
 
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 p-3 rounded-xl bg-amber-50/60 border border-amber-200 text-xs">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-3 p-4 rounded-2xl bg-amber-50/60 border border-amber-200/70 text-xs">
             <div>
-              <span className="text-gray-500">Cargo:</span>
-              <strong className="text-gray-900 block">{activeTrips[0].productName} ({activeTrips[0].quantity})</strong>
+              <span className="text-gray-500">{t('transporter.cargo')}</span>
+              <strong className="text-gray-900 block font-medium">{activeTrips[0].productName} ({activeTrips[0].quantity})</strong>
             </div>
             <div>
-              <span className="text-gray-500">Route:</span>
+              <span className="text-gray-500">{t('transporter.route')}</span>
               <span className="text-gray-900 font-medium block truncate">
                 {activeTrips[0].pickupLocation || 'Farm'} → {activeTrips[0].destination}
               </span>
             </div>
             <div>
-              <span className="text-gray-500">Current Status:</span>
-              <span className="text-amber-800 font-bold block">{activeTrips[0].status}</span>
+              <span className="text-gray-500">{t('transporter.current_status')}</span>
+              <div className="mt-1">
+                <StatusBadge status={activeTrips[0].status} />
+              </div>
             </div>
           </div>
-        </div>
+        </motion.div>
       )}
     </div>
   );

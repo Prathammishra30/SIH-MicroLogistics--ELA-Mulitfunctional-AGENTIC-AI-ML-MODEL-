@@ -2,8 +2,10 @@ import React from 'react';
 import { useNavigate, useParams } from 'react-router-dom';
 import { ArrowLeft, Truck, CheckCircle2, Circle } from 'lucide-react';
 import { useSharedContext } from '../../context/SharedContext';
+import { useLanguage } from "../../context/LanguageContext";
 
 export const BuyerOrderDetail: React.FC = () => {
+    const { t } = useLanguage();
   const navigate = useNavigate();
   const { id } = useParams<{ id: string }>();
   const { state, dispatch } = useSharedContext();
@@ -16,13 +18,12 @@ export const BuyerOrderDetail: React.FC = () => {
   if (!order) {
     return (
       <div className="min-h-[50vh] flex flex-col items-center justify-center space-y-4">
-        <h2 className="text-xl font-bold text-gray-900">Procurement Order Not Found</h2>
+        <h2 className="text-xl font-bold text-gray-900">{t('buyer.procurement_order_not_found')}</h2>
         <button
           onClick={() => navigate('/buyer/orders')}
           className="px-4 py-2 rounded-xl bg-blue-700 hover:bg-blue-800 text-white text-xs font-semibold shadow-2xs transition-colors cursor-pointer"
         >
-          Back to Orders
-        </button>
+          {t('buyer.back_to_orders')}</button>
       </div>
     );
   }
@@ -75,7 +76,7 @@ export const BuyerOrderDetail: React.FC = () => {
         </button>
         <div>
           <h1 className="text-xl font-bold text-gray-900 flex items-center gap-2">
-            Procurement Order #{order.id}
+            {t('buyer.procurement_order_')}{order.id}
           </h1>
           <p className="text-xs text-gray-500">{order.product} — {order.quantity}</p>
         </div>
@@ -86,31 +87,30 @@ export const BuyerOrderDetail: React.FC = () => {
         {/* Left Col: Order Details */}
         <div className="p-6 rounded-2xl bg-white border border-gray-200 shadow-2xs space-y-4">
           <h2 className="text-sm font-bold text-gray-900 border-b border-gray-100 pb-2.5">
-            Procurement Specifications
-          </h2>
+            {t('buyer.procurement_specifications')}</h2>
           <div className="space-y-3 text-xs">
             <div className="flex items-center justify-between py-1 border-b border-gray-100">
-              <span className="text-gray-500">Commodity</span>
+              <span className="text-gray-500">{t('buyer.commodity')}</span>
               <span className="font-bold text-gray-900">{order.product}</span>
             </div>
             <div className="flex items-center justify-between py-1 border-b border-gray-100">
-              <span className="text-gray-500">Procurement Volume</span>
+              <span className="text-gray-500">{t('buyer.procurement_volume')}</span>
               <span className="font-bold font-mono text-gray-900">{order.quantity}</span>
             </div>
             <div className="flex items-center justify-between py-1 border-b border-gray-100">
-              <span className="text-gray-500">Target Offering Rate</span>
+              <span className="text-gray-500">{t('buyer.target_offering_rate')}</span>
               <span className="font-bold text-[#2E7D32] font-mono">{order.targetPrice}</span>
             </div>
             <div className="flex items-center justify-between py-1 border-b border-gray-100">
-              <span className="text-gray-500">Destination</span>
+              <span className="text-gray-500">{t('farmer.destination_2')}</span>
               <span className="font-medium text-gray-900">{order.destination}</span>
             </div>
             <div className="flex items-center justify-between py-1 border-b border-gray-100">
-              <span className="text-gray-500">Fulfilling Producer</span>
+              <span className="text-gray-500">{t('buyer.fulfilling_producer')}</span>
               <span className="font-semibold text-gray-900">{order.farmerName || 'Awaiting Farmer Match'}</span>
             </div>
             <div className="flex items-center justify-between py-1">
-              <span className="text-gray-500">Order Status</span>
+              <span className="text-gray-500">{t('buyer.order_status')}</span>
               <span className="px-2 py-0.5 rounded text-[10px] font-bold bg-blue-50 text-blue-700 border border-blue-200">
                 {effectiveStatus}
               </span>
@@ -122,43 +122,42 @@ export const BuyerOrderDetail: React.FC = () => {
         <div className="p-6 rounded-2xl bg-white border border-gray-200 shadow-2xs space-y-4">
           <h2 className="text-sm font-bold text-gray-900 border-b border-gray-100 pb-2.5 flex items-center gap-1.5">
             <Truck className="w-4 h-4 text-amber-700" />
-            Freight & Dispatch Info
-          </h2>
+            {t('buyer.freight_dispatch_info')}</h2>
 
           {linkedShipment ? (
             <div className="space-y-3 text-xs">
               <div className="flex items-center justify-between py-1 border-b border-gray-100">
-                <span className="text-gray-500">Shipment Ref</span>
+                <span className="text-gray-500">{t('buyer.shipment_ref')}</span>
                 <span className="font-mono font-bold text-gray-900">#{linkedShipment.id}</span>
               </div>
               <div className="flex items-center justify-between py-1 border-b border-gray-100">
-                <span className="text-gray-500">Farm Origin</span>
+                <span className="text-gray-500">{t('buyer.farm_origin')}</span>
                 <span className="font-medium text-gray-900">{linkedShipment.pickupLocation || 'Farm Gate'}</span>
               </div>
               <div className="flex items-center justify-between py-1 border-b border-gray-100">
-                <span className="text-gray-500">Driver</span>
+                <span className="text-gray-500">{t('buyer.driver')}</span>
                 <span className="font-medium text-gray-900">{linkedShipment.driver || 'Searching Transporter'}</span>
               </div>
               <div className="flex items-center justify-between py-1 border-b border-gray-100">
-                <span className="text-gray-500">Vehicle</span>
+                <span className="text-gray-500">{t('farmer.vehicle')}</span>
                 <span className="font-medium text-gray-900">{linkedShipment.vehicle || 'Vehicle Allocation Pending'}</span>
               </div>
               <div className="flex items-center justify-between py-1">
-                <span className="text-gray-500">ETA</span>
+                <span className="text-gray-500">{t('farmer.eta')}</span>
                 <span className="font-semibold text-blue-700">{linkedShipment.eta || 'En Route'}</span>
               </div>
             </div>
           ) : (
             <div className="p-6 rounded-xl bg-gray-50 border border-dashed border-gray-200 text-center text-xs text-gray-500 space-y-1">
-              <p className="font-medium text-gray-700">No transport linked yet.</p>
-              <p>Will automatically link once a regional farmer fulfills the demand.</p>
+              <p className="font-medium text-gray-700">{t('buyer.no_transport_linked_yet')}</p>
+              <p>{t('buyer.will_automatically_link_once_a')}</p>
             </div>
           )}
         </div>
 
         {/* Bottom: Timeline */}
         <div className="lg:col-span-2 p-6 rounded-2xl bg-white border border-gray-200 shadow-2xs space-y-4">
-          <h2 className="text-sm font-bold text-gray-900">Procurement Progress Timeline</h2>
+          <h2 className="text-sm font-bold text-gray-900">{t('buyer.procurement_progress_timeline')}</h2>
           <div className="relative pl-1">
             <div className="space-y-4">
               {timeline.map((step, idx) => (

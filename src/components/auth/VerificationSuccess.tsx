@@ -1,6 +1,7 @@
 import React, { useEffect } from 'react';
 import { Check, ArrowRight } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
+import { useLanguage } from "../../context/LanguageContext";
 
 interface VerificationSuccessProps {
   roleTitle: string;
@@ -13,6 +14,7 @@ export const VerificationSuccess: React.FC<VerificationSuccessProps> = ({
   dashboardRoute,
   accentColor = '#2E7D32',
 }) => {
+    const { t } = useLanguage();
   const navigate = useNavigate();
 
   useEffect(() => {
@@ -35,14 +37,12 @@ export const VerificationSuccess: React.FC<VerificationSuccessProps> = ({
       {/* Success Text */}
       <div className="space-y-1">
         <h2 className="text-xl font-bold text-gray-900 tracking-tight">
-          ✓ Verification Successful
-        </h2>
+          {t('auth.common._verification_successful')}</h2>
         <p className="text-sm text-gray-600">
-          Welcome to RuralFlow, <strong className="text-gray-900">{roleTitle}</strong>.
+          {t('auth.common.welcome_to_ruralflow')}<strong className="text-gray-900">{roleTitle}</strong>.
         </p>
         <p className="text-xs text-gray-400">
-          Redirecting to your dashboard...
-        </p>
+          {t('auth.common.redirecting_to_your_dashboard')}</p>
       </div>
 
       {/* Action */}
@@ -51,7 +51,7 @@ export const VerificationSuccess: React.FC<VerificationSuccessProps> = ({
         onClick={() => navigate(dashboardRoute)}
         className="inline-flex items-center gap-2 text-xs font-semibold text-[#2E7D32] hover:underline transition-colors pt-2 cursor-pointer"
       >
-        <span>Enter Dashboard Now</span>
+        <span>{t('auth.common.enter_dashboard_now')}</span>
         <ArrowRight className="w-3.5 h-3.5" />
       </button>
     </div>

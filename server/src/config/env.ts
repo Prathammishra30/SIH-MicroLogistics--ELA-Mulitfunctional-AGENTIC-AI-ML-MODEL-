@@ -11,6 +11,8 @@ export const config = {
   databaseUrl: process.env.DATABASE_URL || '',
   jwtSecret: process.env.JWT_SECRET || 'ruralflow-dev-secret-key-phase4b-jwt-2026',
   jwtExpiresIn: process.env.JWT_EXPIRES_IN || '7d',
+  geminiApiKey: process.env.GEMINI_API_KEY || '',
+  aiModel: process.env.AI_MODEL || 'gemini-2.0-flash',
   isProduction: process.env.NODE_ENV === 'production',
   isDevelopment: process.env.NODE_ENV !== 'production',
 } as const;

@@ -10,13 +10,16 @@ import {
   ShieldCheck,
   ArrowRight,
 } from 'lucide-react';
+import { motion, useReducedMotion } from 'framer-motion';
 import { HeroSection } from '../components/HeroSection';
 import { RoleCard } from '../components/RoleCard';
 import type { RoleCardData } from '../components/RoleCard';
 import { useLanguage } from '../context/LanguageContext';
+import { SiteFooter } from '../components/ui/SiteFooter';
 
 export const Gateway: React.FC = () => {
   const { t } = useLanguage();
+  const shouldReduceMotion = useReducedMotion();
 
   const ROLE_CARDS: RoleCardData[] = [
     {
@@ -26,7 +29,7 @@ export const Gateway: React.FC = () => {
       description: t('gateway.role.farmer.desc'),
       ctaText: t('gateway.role.farmer.cta'),
       route: '/auth/farmer',
-      imageSrc: '/images/farmer-seedling.jpg',
+      imageSrc: '/images/indian_farm.jpg',
       imageAlt: 'Caring farmer hands holding dark soil with green crop seedling',
       accentColor: {
         primary: '#2E7D32',
@@ -49,7 +52,7 @@ export const Gateway: React.FC = () => {
       description: t('gateway.role.buyer.desc'),
       ctaText: t('gateway.role.buyer.cta'),
       route: '/auth/buyer',
-      imageSrc: '/images/buyer-produce.jpg',
+      imageSrc: '/images/wholesale_market.jpg',
       imageAlt: 'Basket with colorful fresh organic vegetables and fruits',
       accentColor: {
         primary: '#2474B5',
@@ -72,7 +75,7 @@ export const Gateway: React.FC = () => {
       description: t('gateway.role.transporter.desc'),
       ctaText: t('gateway.role.transporter.cta'),
       route: '/auth/transporter',
-      imageSrc: '/images/transporter-truck.jpg',
+      imageSrc: '/images/truck_route.jpg',
       imageAlt: 'Modern freight truck driving on rural road with green hills',
       accentColor: {
         primary: '#E67E22',
@@ -163,25 +166,28 @@ export const Gateway: React.FC = () => {
 
   return (
     <main className="relative z-10 flex-1 flex flex-col justify-between pb-16 bg-[#FAFBF7]">
-      
       {/* 1. Hero Section */}
       <HeroSection />
 
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 w-full space-y-12 sm:space-y-16 pt-8 sm:pt-12">
-        
         {/* 2. Three Major Role Cards */}
         <section id="role-selection" className="w-full">
           <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-            {ROLE_CARDS.map((role) => (
-              <RoleCard key={role.id} role={role} />
+            {ROLE_CARDS.map((role, idx) => (
+              <RoleCard key={role.id} role={role} index={idx} />
             ))}
           </div>
         </section>
 
-        {/* 3. How RuralFlow Works Section */}
+        {/* 3. How AgriRoute Works Section */}
         <section id="how-it-works-section" className="w-full">
-          <div className="p-6 sm:p-10 rounded-3xl bg-white border border-[#E5E8E2] shadow-2xs">
-            
+          <motion.div
+            initial={{ opacity: 0, y: shouldReduceMotion ? 0 : 25 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: '-50px' }}
+            transition={{ duration: shouldReduceMotion ? 0 : 0.5 }}
+            className="p-6 sm:p-10 rounded-3xl bg-white border border-[#E5E8E2] shadow-sm hover:shadow-md transition-shadow duration-300"
+          >
             {/* Section Header */}
             <div className="text-center mb-8 sm:mb-12">
               <h2 className="text-xl sm:text-2xl font-bold tracking-tight text-[#17211B]">
@@ -192,21 +198,32 @@ export const Gateway: React.FC = () => {
               </div>
             </div>
 
-            {/* 5 Horizontal Steps */}
+            {/* 5 Horizontal Steps with Sequential Stagger */}
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-5 gap-6 lg:gap-4 relative">
               {HOW_IT_WORKS_STEPS.map((item, idx) => (
-                <div key={idx} className="flex flex-col items-center text-center relative group">
-                  
+                <motion.div
+                  key={idx}
+                  initial={{ opacity: 0, y: shouldReduceMotion ? 0 : 20 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true, margin: '-30px' }}
+                  transition={{
+                    duration: shouldReduceMotion ? 0 : 0.45,
+                    delay: shouldReduceMotion ? 0 : idx * 0.1,
+                    ease: [0.25, 1, 0.5, 1],
+                  }}
+                  whileHover={shouldReduceMotion ? undefined : { y: -4 }}
+                  className="flex flex-col items-center text-center relative group p-2 rounded-2xl transition-transform"
+                >
                   {/* Step Number Badge */}
                   <div
-                    className={`w-6 h-6 rounded-full flex items-center justify-center text-white text-[11px] font-bold mb-3 ${item.numColor} shadow-2xs`}
+                    className={`w-6 h-6 rounded-full flex items-center justify-center text-white text-[11px] font-bold mb-3 ${item.numColor} shadow-2xs group-hover:scale-110 transition-transform`}
                   >
                     {item.stepNum}
                   </div>
 
                   {/* Circular Icon */}
                   <div
-                    className={`w-14 h-14 rounded-full flex items-center justify-center ${item.iconBg} mb-3 shadow-2xs`}
+                    className={`w-14 h-14 rounded-full flex items-center justify-center ${item.iconBg} mb-3 shadow-2xs group-hover:scale-105 transition-transform duration-200`}
                   >
                     {item.icon}
                   </div>
@@ -227,15 +244,21 @@ export const Gateway: React.FC = () => {
                       <ArrowRight className="w-4 h-4" />
                     </div>
                   )}
-                </div>
+                </motion.div>
               ))}
             </div>
-          </div>
+          </motion.div>
         </section>
 
         {/* 4. Agricultural Benefit Strip */}
         <section className="w-full">
-          <div className="p-6 sm:p-8 rounded-3xl bg-[#EAF5E8]/60 border border-green-200/80 shadow-2xs">
+          <motion.div
+            initial={{ opacity: 0, y: shouldReduceMotion ? 0 : 25 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true, margin: '-50px' }}
+            transition={{ duration: shouldReduceMotion ? 0 : 0.5 }}
+            className="p-6 sm:p-8 rounded-3xl bg-[#EAF5E8]/60 border border-green-200/80 shadow-2xs"
+          >
             <div className="text-center mb-6">
               <span className="text-[11px] font-semibold uppercase tracking-wider text-[#2E7D32] bg-white px-3 py-1 rounded-full border border-green-200 shadow-2xs inline-block">
                 {t('gateway.benefit.badge')}
@@ -247,9 +270,17 @@ export const Gateway: React.FC = () => {
 
             <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
               {BENEFIT_POINTS.map((pt, i) => (
-                <div
+                <motion.div
                   key={i}
-                  className="p-4 rounded-2xl bg-white border border-green-100 shadow-2xs flex flex-col justify-between space-y-2"
+                  initial={{ opacity: 0, y: shouldReduceMotion ? 0 : 15 }}
+                  whileInView={{ opacity: 1, y: 0 }}
+                  viewport={{ once: true, margin: '-20px' }}
+                  transition={{
+                    duration: shouldReduceMotion ? 0 : 0.4,
+                    delay: shouldReduceMotion ? 0 : i * 0.08,
+                  }}
+                  whileHover={shouldReduceMotion ? undefined : { y: -3 }}
+                  className="p-4 rounded-2xl bg-white border border-green-100 shadow-xs hover:shadow-md transition-all flex flex-col justify-between space-y-2"
                 >
                   <div className="flex items-center gap-2.5">
                     <div className="p-2 rounded-xl bg-[#FAFBF7] border border-[#E5E8E2]">
@@ -260,31 +291,15 @@ export const Gateway: React.FC = () => {
                   <p className="text-[11px] text-[#66706A] leading-relaxed">
                     {pt.description}
                   </p>
-                </div>
+                </motion.div>
               ))}
             </div>
-          </div>
+          </motion.div>
         </section>
       </div>
 
-      {/* 5. Clean Ecosystem Footer */}
-      <footer className="mt-16 pt-8 border-t border-[#E5E8E2] max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 text-xs text-[#66706A] w-full">
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-4">
-          <div className="flex items-center gap-2">
-            <span className="font-bold text-[#17211B]">RuralFlow</span>
-            <span>•</span>
-            <span>{t('gateway.footer.1')}</span>
-            <span>•</span>
-            <span>{t('gateway.footer.2')}</span>
-          </div>
-
-          <div className="flex items-center gap-3 text-xs text-[#66706A]">
-            <span>{t('gateway.footer.3')}</span>
-            <span>•</span>
-            <span>{t('gateway.footer.4')}</span>
-          </div>
-        </div>
-      </footer>
+      {/* 5. Clean Ecosystem Footer with Center Image Row */}
+      <SiteFooter />
     </main>
   );
 };
