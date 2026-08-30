@@ -1,28 +1,58 @@
 package com.agriroute.service;
 
-import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
+import com.agriroute.domain.BuyerProfile;
+import com.agriroute.domain.ProcurementRequest;
+import com.agriroute.repository.BuyerProfileRepository;
+import com.agriroute.repository.ProcurementRequestRepository;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
+import java.util.List;
+import java.util.UUID;
 
+@Service
+@Transactional
 public class BuyerBusinessService {
-    private final Map<String, Map<String, Object>> procurementDb = new ConcurrentHashMap<>();
+    private final BuyerProfileRepository buyerProfileRepository;
+    private final ProcurementRequestRepository procurementRequestRepository;
 
-    public Map<String, Object> postProcurement(String buyerId, String cropName, double quantityKg, double maxPricePerKg, String deliveryLocation) {
-        String id = "proc-" + UUID.randomUUID().toString().substring(0, 8);
-        Map<String, Object> proc = new HashMap<>();
-        proc.put("id", id);
-        proc.put("buyerId", buyerId);
-        proc.put("cropName", cropName);
-        proc.put("quantityKg", quantityKg);
-        proc.put("maxPricePerKg", maxPricePerKg);
-        proc.put("deliveryLocation", deliveryLocation);
-        proc.put("status", "ACTIVE");
-        proc.put("createdAt", java.time.LocalDateTime.now().toString());
-
-        procurementDb.put(id, proc);
-        return proc;
+    public BuyerBusinessService(BuyerProfileRepository buyerProfileRepository,
+                                ProcurementRequestRepository procurementRequestRepository) {
+        this.buyerProfileRepository = buyerProfileRepository;
+        this.procurementRequestRepository = procurementRequestRepository;
     }
 
-    public List<Map<String, Object>> getBuyerOrders(String buyerId) {
-        return new ArrayList<>(procurementDb.values());
+    public BuyerProfile getOrCreateBuyerProfile(String userId) {
+        return buyerProfileRepository.findByUserId(userId)
+                .orElseGet(() -> {
+                    BuyerProfile profile = BuyerProfile.builder()
+                            .id(UUID.randomUUID().toString())
+                            .build();
+                    return buyerProfileRepository.save(profile);
+                });
+    }
+
+    public ProcurementRequest postProcurement(String userId, String cropName, String quantityRequired, 
+                                              String targetPrice, String deliveryLocation) {
+        BuyerProfile profile = buyerProfileRepository.findByUserId(userId)
+                .orElseThrow(() -> new IllegalArgumentException("Buyer profile not found for user: " + userId));
+
+        ProcurementRequest procurement = ProcurementRequest.builder()
+                .id(UUID.randomUUID().toString())
+                .buyer(profile)
+                .product(cropName != null ? cropName : "Produce")
+                .quantity(quantityRequired != null ? quantityRequired : "500 kg")
+                .targetPrice(targetPrice != null ? targetPrice : "₹40/kg")
+                .destination(deliveryLocation != null ? deliveryLocation : "Pune APMC Mandi")
+                .buyerName(profile.getContactPerson() != null ? profile.getContactPerson() : profile.getBusinessName())
+                .status("Open")
+                .build();
+
+        return procurementRequestRepository.save(procurement);
+    }
+
+    public List<ProcurementRequest> getBuyerOrders(String userId) {
+        BuyerProfile profile = buyerProfileRepository.findByUserId(userId)
+                .orElseThrow(() -> new IllegalArgumentException("Buyer profile not found for user: " + userId));
+        return procurementRequestRepository.findByBuyerIdOrderByCreatedAtDesc(profile.getId());
     }
 }

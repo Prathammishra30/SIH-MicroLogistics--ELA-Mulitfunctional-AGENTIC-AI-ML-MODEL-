@@ -426,13 +426,13 @@ class ElaAgentLoop:
     ) -> str:
         if conf_action:
             tool = conf_action.get("toolName")
-            if tool == 'add_product':
+            if tool == 'create_product':
                 return f"I have prepared to add **{entities.product or 'Produce'}** ({int(entities.quantity or 500)} kg) to your inventory. Please confirm."
-            elif tool == 'request_transport':
+            elif tool == 'create_logistics_request':
                 return f"I have prepared your transport request for **{entities.product or 'Produce'}** to **{entities.destination or 'Mandi'}**. Please review and confirm."
-            elif tool == 'post_procurement':
+            elif tool == 'create_procurement':
                 return f"I have prepared your procurement order for **{entities.product or 'Produce'}** ({int(entities.quantity or 500)} kg). Please confirm."
-            elif tool == 'add_vehicle':
+            elif tool == 'create_vehicle':
                 return f"I have prepared to add **{entities.vehicle_type or 'Vehicle'}** to your fleet. Please confirm."
 
         # Read tool responses

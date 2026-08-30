@@ -41,7 +41,7 @@ class GoalManager:
                     id=f"{goal_id}-step-3",
                     name="Stage Logistics Transport Request",
                     description="Stage transport request card awaiting farmer confirmation",
-                    tool_name="request_transport",
+                    tool_name="create_logistics_request",
                     is_consequential=True,
                     required_entities=['product', 'quantity', 'destination'],
                     payload={'productName': entities.product or 'Produce', 'quantity': entities.quantity or 500, 'destination': entities.destination or 'Pune Mandi'},
@@ -64,7 +64,7 @@ class GoalManager:
                     id=f"{goal_id}-step-2",
                     name="Stage Produce Batch to Inventory",
                     description="Stage confirmed addition of produce batch to farmer inventory",
-                    tool_name="add_product",
+                    tool_name="create_product",
                     is_consequential=True,
                     required_entities=['product'],
                     payload={'name': entities.product, 'quantity': entities.quantity or 500, 'grade': entities.grade or 'A'},
@@ -78,7 +78,7 @@ class GoalManager:
                     id=f"{goal_id}-step-1",
                     name="Stage Buyer Procurement Demand",
                     description="Stage procurement demand posting awaiting buyer confirmation",
-                    tool_name="post_procurement",
+                    tool_name="create_procurement",
                     is_consequential=True,
                     required_entities=['product', 'quantity'],
                     payload={'cropName': entities.product, 'quantityRequired': entities.quantity or 500, 'targetPrice': entities.price_per_unit or 40},
@@ -92,7 +92,7 @@ class GoalManager:
                     id=f"{goal_id}-step-1",
                     name="Stage Fleet Vehicle Registration",
                     description="Stage addition of vehicle awaiting transporter confirmation",
-                    tool_name="add_vehicle",
+                    tool_name="create_vehicle",
                     is_consequential=True,
                     required_entities=['vehicle_type'],
                     payload={'vehicleType': entities.vehicle_type or 'Mini Truck (750 kg)', 'vehicleRegNo': entities.vehicle_reg_no or 'MH 12 AB 9876'},
@@ -142,16 +142,16 @@ class AgentPlanner:
     # Strict RBAC tool permissions matrix
     ROLE_PERMISSIONS: Dict[str, List[UserRole]] = {
         'get_farmer_products': ['FARMER'],
-        'add_product': ['FARMER'],
-        'request_transport': ['FARMER'],
+        'create_product': ['FARMER'],
+        'create_logistics_request': ['FARMER'],
         'get_farmer_deliveries': ['FARMER'],
         'get_buyer_produce': ['BUYER'],
-        'post_procurement': ['BUYER'],
+        'create_procurement': ['BUYER'],
         'get_buyer_orders': ['BUYER'],
         'get_available_trips': ['TRANSPORTER'],
         'get_active_trips': ['TRANSPORTER'],
         'get_vehicles': ['TRANSPORTER'],
-        'add_vehicle': ['TRANSPORTER'],
+        'create_vehicle': ['TRANSPORTER'],
         'get_earnings': ['TRANSPORTER'],
         'get_market_demand': ['FARMER', 'BUYER', 'TRANSPORTER', 'GUEST'],
         'explain_platform': ['FARMER', 'BUYER', 'TRANSPORTER', 'GUEST'],
@@ -188,7 +188,7 @@ class AgentPlanner:
 
         # 3. Construct Steps
         steps: List[PlannedStep] = []
-        is_consequential = tool_name in ['add_product', 'request_transport', 'post_procurement', 'add_vehicle']
+        is_consequential = tool_name in ['create_product', 'create_logistics_request', 'create_procurement', 'create_vehicle']
 
         steps.append(
             PlannedStep(
@@ -205,17 +205,17 @@ class AgentPlanner:
     def resolve_tool_for_intent(cls, intent: ElaIntent) -> str:
         mapping = {
             'GET_FARMER_PRODUCTS': 'get_farmer_products',
-            'CREATE_PRODUCT_WORKFLOW': 'add_product',
-            'CREATE_LOGISTICS_WORKFLOW': 'request_transport',
+            'CREATE_PRODUCT_WORKFLOW': 'create_product',
+            'CREATE_LOGISTICS_WORKFLOW': 'create_logistics_request',
             'GET_FARMER_DELIVERIES': 'get_farmer_deliveries',
             'GET_MARKET_DEMAND': 'get_market_demand',
             'GET_BUYER_PRODUCE': 'get_buyer_produce',
-            'CREATE_PROCUREMENT_WORKFLOW': 'post_procurement',
+            'CREATE_PROCUREMENT_WORKFLOW': 'create_procurement',
             'GET_BUYER_ORDERS': 'get_buyer_orders',
             'GET_AVAILABLE_TRIPS': 'get_available_trips',
             'GET_ACTIVE_TRIPS': 'get_active_trips',
             'GET_VEHICLES': 'get_vehicles',
-            'CREATE_VEHICLE_WORKFLOW': 'add_vehicle',
+            'CREATE_VEHICLE_WORKFLOW': 'create_vehicle',
             'GET_EARNINGS': 'get_earnings',
         }
         return mapping.get(intent, 'general_help')

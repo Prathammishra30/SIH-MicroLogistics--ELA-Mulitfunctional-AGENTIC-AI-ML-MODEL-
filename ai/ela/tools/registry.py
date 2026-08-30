@@ -22,15 +22,15 @@ class ToolRegistry:
             risk_level='READ_ONLY',
             requires_confirmation=False,
         ),
-        'add_product': ToolMetadata(
-            name='add_product',
+        'create_product': ToolMetadata(
+            name='create_product',
             description='Add new produce batch to inventory',
             allowed_roles=['FARMER'],
             risk_level='MUTATION_STAGED',
             requires_confirmation=True,
         ),
-        'request_transport': ToolMetadata(
-            name='request_transport',
+        'create_logistics_request': ToolMetadata(
+            name='create_logistics_request',
             description='Create a logistics transport booking request',
             allowed_roles=['FARMER'],
             risk_level='MUTATION_STAGED',
@@ -57,8 +57,8 @@ class ToolRegistry:
             risk_level='READ_ONLY',
             requires_confirmation=False,
         ),
-        'post_procurement': ToolMetadata(
-            name='post_procurement',
+        'create_procurement': ToolMetadata(
+            name='create_procurement',
             description='Post a procurement request for bulk produce buying',
             allowed_roles=['BUYER'],
             risk_level='MUTATION_STAGED',
@@ -92,8 +92,8 @@ class ToolRegistry:
             risk_level='READ_ONLY',
             requires_confirmation=False,
         ),
-        'add_vehicle': ToolMetadata(
-            name='add_vehicle',
+        'create_vehicle': ToolMetadata(
+            name='create_vehicle',
             description='Register a new vehicle in transporter fleet',
             allowed_roles=['TRANSPORTER'],
             risk_level='MUTATION_STAGED',

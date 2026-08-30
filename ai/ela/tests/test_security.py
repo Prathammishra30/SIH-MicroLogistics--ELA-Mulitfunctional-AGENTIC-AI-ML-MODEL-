@@ -46,7 +46,7 @@ async def test_agent_loop_confirmation_staging():
     res = await loop.run(req)
     assert res.status == "CONFIRMATION_REQUIRED"
     assert res.confirmation_action is not None
-    assert res.confirmation_action["toolName"] == "add_product"
+    assert res.confirmation_action["toolName"] == "create_product"
 
 
 @pytest.mark.asyncio

@@ -1,46 +1,87 @@
 package com.agriroute.service;
 
+import com.agriroute.domain.LogisticsRequest;
 import com.agriroute.domain.TransporterProfile;
+import com.agriroute.domain.TransporterVehicle;
+import com.agriroute.repository.LogisticsRequestRepository;
+import com.agriroute.repository.TransporterProfileRepository;
+import com.agriroute.repository.TransporterVehicleRepository;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
-import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.List;
+import java.util.UUID;
 
+@Service
+@Transactional
 public class TransporterBusinessService {
-    private final Map<String, TransporterProfile> vehicleDb = new ConcurrentHashMap<>();
-    private final Map<String, Map<String, Object>> tripDb = new ConcurrentHashMap<>();
+    private final TransporterProfileRepository transporterProfileRepository;
+    private final TransporterVehicleRepository transporterVehicleRepository;
+    private final LogisticsRequestRepository logisticsRequestRepository;
 
-    public TransporterBusinessService() {
-        TransporterProfile v1 = new TransporterProfile("veh-1", "trans-101", "Sunil Deshmukh", "Mini Truck (750 kg)", "MH 12 AB 9876", 750.0, "Pune - Nashik", "+91 9876543210");
-        vehicleDb.put(v1.getId(), v1);
+    public TransporterBusinessService(TransporterProfileRepository transporterProfileRepository,
+                                      TransporterVehicleRepository transporterVehicleRepository,
+                                      LogisticsRequestRepository logisticsRequestRepository) {
+        this.transporterProfileRepository = transporterProfileRepository;
+        this.transporterVehicleRepository = transporterVehicleRepository;
+        this.logisticsRequestRepository = logisticsRequestRepository;
     }
 
-    public TransporterProfile registerVehicle(String userId, String fullName, String vehicleType, String vehicleRegNo, double capacity, String region, String phone) {
-        String id = "veh-" + UUID.randomUUID().toString().substring(0, 8);
-        TransporterProfile p = new TransporterProfile(id, userId, fullName, vehicleType, vehicleRegNo, capacity, region, phone);
-        vehicleDb.put(id, p);
-        return p;
+    public TransporterProfile getOrCreateTransporterProfile(String userId) {
+        return transporterProfileRepository.findByUserId(userId)
+                .orElseGet(() -> {
+                    TransporterProfile profile = TransporterProfile.builder()
+                            .id(UUID.randomUUID().toString())
+                            .build();
+                    return transporterProfileRepository.save(profile);
+                });
     }
 
-    public List<TransporterProfile> getTransporterVehicles(String userId) {
-        List<TransporterProfile> list = new ArrayList<>();
-        for (TransporterProfile v : vehicleDb.values()) {
-            if (userId == null || v.getUserId().equals(userId)) {
-                list.add(v);
-            }
+    public TransporterVehicle registerVehicle(String userId, String fullName, String vehicleType, 
+                                              String vehicleRegNo, String capacity, String operatingRegion, String phone) {
+        TransporterProfile profile = transporterProfileRepository.findByUserId(userId)
+                .orElseThrow(() -> new IllegalArgumentException("Transporter profile not found for user: " + userId));
+
+        // Update profile's operating region if provided
+        if (operatingRegion != null && !operatingRegion.isEmpty()) {
+            profile.setOperatingRegion(operatingRegion);
+            transporterProfileRepository.save(profile);
         }
-        return list;
+
+        TransporterVehicle vehicle = TransporterVehicle.builder()
+                .id(UUID.randomUUID().toString())
+                .transporter(profile)
+                .type(vehicleType != null ? vehicleType : "Mini Truck (750 kg)")
+                .registration(vehicleRegNo != null ? vehicleRegNo : "MH 12 AB 9876")
+                .capacity(capacity != null ? capacity : "750 kg")
+                .capacityKg(parseCapacityKg(capacity))
+                .status("Available")
+                .build();
+
+        return transporterVehicleRepository.save(vehicle);
     }
 
-    public List<Map<String, Object>> getAvailableTrips() {
-        List<Map<String, Object>> trips = new ArrayList<>();
-        Map<String, Object> t1 = new HashMap<>();
-        t1.put("id", "trip-1");
-        t1.put("origin", "Narayangaon Mandi");
-        t1.put("destination", "Pune Vashi APMC");
-        t1.put("cargo", "500 kg Tomatoes");
-        t1.put("payout", 3200.0);
-        t1.put("status", "AVAILABLE");
-        trips.add(t1);
-        return trips;
+    private Integer parseCapacityKg(String capacity) {
+        if (capacity == null) return 750;
+        try {
+            String numStr = capacity.replaceAll("[^0-9.]", "");
+            double val = Double.parseDouble(numStr);
+            if (capacity.toLowerCase().contains("ton") || capacity.toLowerCase().contains("mt")) {
+                return (int) (val * 1000);
+            }
+            return (int) val;
+        } catch (Exception e) {
+            return 750;
+        }
+    }
+
+    public List<TransporterVehicle> getTransporterVehicles(String userId) {
+        TransporterProfile profile = transporterProfileRepository.findByUserId(userId)
+                .orElseThrow(() -> new IllegalArgumentException("Transporter profile not found for user: " + userId));
+        return transporterVehicleRepository.findByTransporterId(profile.getId());
+    }
+
+    public List<LogisticsRequest> getAvailableTrips() {
+        return logisticsRequestRepository.findByStatusIn(java.util.List.of("Searching", "Available"));
     }
 }

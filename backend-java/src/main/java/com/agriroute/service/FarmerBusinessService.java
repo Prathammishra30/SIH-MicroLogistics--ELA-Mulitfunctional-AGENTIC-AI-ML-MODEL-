@@ -1,57 +1,94 @@
 package com.agriroute.service;
 
-import com.agriroute.domain.Product;
+import com.agriroute.domain.FarmerProfile;
 import com.agriroute.domain.LogisticsRequest;
+import com.agriroute.domain.Product;
+import com.agriroute.repository.FarmerProfileRepository;
+import com.agriroute.repository.LogisticsRequestRepository;
+import com.agriroute.repository.ProductRepository;
+import org.springframework.stereotype.Service;
+import org.springframework.transaction.annotation.Transactional;
 
-import java.util.*;
-import java.util.concurrent.ConcurrentHashMap;
+import java.util.List;
+import java.util.UUID;
 
+@Service
+@Transactional
 public class FarmerBusinessService {
-    private final Map<String, Product> productDb = new ConcurrentHashMap<>();
-    private final Map<String, LogisticsRequest> logisticsDb = new ConcurrentHashMap<>();
+    private final FarmerProfileRepository farmerProfileRepository;
+    private final LogisticsRequestRepository logisticsRequestRepository;
+    private final ProductRepository productRepository;
 
-    public FarmerBusinessService() {
-        // Seed default farmer products
-        Product p1 = new Product("prod-1", "farmer-101", "Tomatoes", "Vegetables", 500.0, "A");
-        Product p2 = new Product("prod-2", "farmer-101", "Onions", "Vegetables", 2000.0, "A");
-        productDb.put(p1.getId(), p1);
-        productDb.put(p2.getId(), p2);
+    public FarmerBusinessService(FarmerProfileRepository farmerProfileRepository,
+                                 LogisticsRequestRepository logisticsRequestRepository,
+                                 ProductRepository productRepository) {
+        this.farmerProfileRepository = farmerProfileRepository;
+        this.logisticsRequestRepository = logisticsRequestRepository;
+        this.productRepository = productRepository;
     }
 
-    public Product addProduct(String farmerId, String name, String category, double quantity, String grade) {
-        if (quantity <= 0) {
-            throw new IllegalArgumentException("Product quantity must be positive");
+    public FarmerProfile getOrCreateFarmerProfile(String userId) {
+        return farmerProfileRepository.findByUserId(userId)
+                .orElseGet(() -> {
+                    FarmerProfile profile = FarmerProfile.builder()
+                            .id(UUID.randomUUID().toString())
+                            .build();
+                    return farmerProfileRepository.save(profile);
+                });
+    }
+
+    public List<Product> getFarmerProducts(String userId) {
+        FarmerProfile profile = farmerProfileRepository.findByUserId(userId)
+                .orElseThrow(() -> new IllegalArgumentException("Farmer profile not found for user: " + userId));
+        return productRepository.findByFarmerIdOrderByCreatedAtDesc(profile.getId());
+    }
+
+    public Product addProduct(String userId, String name, String category, String quantity, String grade) {
+        FarmerProfile profile = farmerProfileRepository.findByUserId(userId)
+                .orElseThrow(() -> new IllegalArgumentException("Farmer profile not found for user: " + userId));
+
+        Product product = Product.builder()
+                .id(UUID.randomUUID().toString())
+                .farmer(profile)
+                .name(name)
+                .category(category != null ? category : "Vegetables")
+                .quantity(quantity != null ? quantity : "500 kg")
+                .grade(grade != null ? grade : "A")
+                .status("Available")
+                .build();
+
+        return productRepository.save(product);
+    }
+
+    public LogisticsRequest requestLogistics(String userId, String productId, String productName, 
+                                             String quantity, String pickupLocation, String destination, 
+                                             String estimatedEarnings) {
+        FarmerProfile profile = farmerProfileRepository.findByUserId(userId)
+                .orElseThrow(() -> new IllegalArgumentException("Farmer profile not found for user: " + userId));
+
+        Product product = null;
+        if (productId != null && !productId.isEmpty()) {
+            product = productRepository.findById(productId).orElse(null);
         }
-        String id = "prod-" + UUID.randomUUID().toString().substring(0, 8);
-        Product p = new Product(id, farmerId, name, category, quantity, grade);
-        productDb.put(id, p);
-        return p;
+
+        LogisticsRequest request = LogisticsRequest.builder()
+                .id(UUID.randomUUID().toString())
+                .farmer(profile)
+                .product(product)
+                .productName(productName != null ? productName : "Produce")
+                .quantity(quantity != null ? quantity : "500 kg")
+                .pickupLocation(pickupLocation != null ? pickupLocation : "Farm Gate")
+                .destination(destination != null ? destination : "Pune APMC Mandi")
+                .estimatedEarnings(estimatedEarnings != null ? estimatedEarnings : "₹2,500")
+                .status("Searching")
+                .build();
+
+        return logisticsRequestRepository.save(request);
     }
 
-    public List<Product> getFarmerProducts(String farmerId) {
-        List<Product> list = new ArrayList<>();
-        for (Product p : productDb.values()) {
-            if (p.getFarmerId() != null && (farmerId == null || p.getFarmerId().equals(farmerId))) {
-                list.add(p);
-            }
-        }
-        return list;
-    }
-
-    public LogisticsRequest requestLogistics(String farmerId, String productId, String productName, double quantity, String pickup, String dest, double estEarnings) {
-        String id = "req-" + UUID.randomUUID().toString().substring(0, 8);
-        LogisticsRequest req = new LogisticsRequest(id, farmerId, productId, productName, quantity, pickup, dest, estEarnings);
-        logisticsDb.put(id, req);
-        return req;
-    }
-
-    public List<LogisticsRequest> getFarmerDeliveries(String farmerId) {
-        List<LogisticsRequest> list = new ArrayList<>();
-        for (LogisticsRequest req : logisticsDb.values()) {
-            if (req.getFarmerId() != null && (farmerId == null || req.getFarmerId().equals(farmerId))) {
-                list.add(req);
-            }
-        }
-        return list;
+    public List<LogisticsRequest> getFarmerDeliveries(String userId) {
+        FarmerProfile profile = farmerProfileRepository.findByUserId(userId)
+                .orElseThrow(() -> new IllegalArgumentException("Farmer profile not found for user: " + userId));
+        return logisticsRequestRepository.findByFarmerIdOrderByCreatedAtDesc(profile.getId());
     }
 }

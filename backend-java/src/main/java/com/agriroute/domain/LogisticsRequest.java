@@ -1,72 +1,87 @@
 package com.agriroute.domain;
 
-import java.time.LocalDateTime;
+import jakarta.persistence.*;
+import lombok.*;
+import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.UpdateTimestamp;
 
+import java.time.LocalDateTime;
+import java.util.UUID;
+
+@Entity
+@Table(name = "logistics_requests")
+@Getter
+@Setter
+@NoArgsConstructor
+@AllArgsConstructor
+@Builder
 public class LogisticsRequest {
+    @Id
+    @Column(name = "id", length = 36)
     private String id;
-    private String farmerId;
-    private String productId;
-    private String transporterId;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "farmer_id", nullable = false)
+    private FarmerProfile farmer;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "product_id")
+    private Product product;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "transporter_id")
+    private TransporterProfile transporter;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "vehicle_id")
+    private TransporterVehicle vehicleRef;
+
+    @Column(name = "product_name", nullable = false, length = 255)
     private String productName;
-    private double quantity;
+
+    @Column(name = "quantity", length = 100)
+    private String quantity;
+
+    @Column(name = "pickup_location", length = 255)
     private String pickupLocation;
+
+    @Column(name = "estimated_earnings", length = 100)
+    private String estimatedEarnings;
+
+    @Column(name = "status", length = 50)
+    private String status = "Searching";
+
+    @Column(name = "driver", length = 255)
+    private String driver;
+
+    @Column(name = "vehicle", length = 255)
+    private String vehicle;
+
+    @Column(name = "destination", nullable = false, length = 255)
     private String destination;
-    private double estimatedEarnings;
-    private String status;
+
+    @Column(name = "eta", length = 100)
     private String eta;
+
+    @Column(name = "procurement_request_id", length = 36)
+    private String procurementRequestId;
+
+    @ManyToOne(fetch = FetchType.LAZY)
+    @JoinColumn(name = "procurement_request_id", insertable = false, updatable = false)
+    private ProcurementRequest procurementRequest;
+
+    @CreationTimestamp
+    @Column(name = "created_at", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
-    public LogisticsRequest() {
-        this.createdAt = LocalDateTime.now();
-        this.status = "PENDING";
+    @UpdateTimestamp
+    @Column(name = "updated_at", nullable = false)
+    private LocalDateTime updatedAt;
+
+    @PrePersist
+    public void prePersist() {
+        if (id == null) {
+            id = UUID.randomUUID().toString();
+        }
     }
-
-    public LogisticsRequest(String id, String farmerId, String productId, String productName, double quantity, String pickupLocation, String destination, double estimatedEarnings) {
-        this.id = id;
-        this.farmerId = farmerId;
-        this.productId = productId;
-        this.productName = productName;
-        this.quantity = quantity;
-        this.pickupLocation = pickupLocation;
-        this.destination = destination;
-        this.estimatedEarnings = estimatedEarnings;
-        this.status = "PENDING";
-        this.createdAt = LocalDateTime.now();
-    }
-
-    public String getId() { return id; }
-    public void setId(String id) { this.id = id; }
-
-    public String getFarmerId() { return farmerId; }
-    public void setFarmerId(String farmerId) { this.farmerId = farmerId; }
-
-    public String getProductId() { return productId; }
-    public void setProductId(String productId) { this.productId = productId; }
-
-    public String getTransporterId() { return transporterId; }
-    public void setTransporterId(String transporterId) { this.transporterId = transporterId; }
-
-    public String getProductName() { return productName; }
-    public void setProductName(String productName) { this.productName = productName; }
-
-    public double getQuantity() { return quantity; }
-    public void setQuantity(double quantity) { this.quantity = quantity; }
-
-    public String getPickupLocation() { return pickupLocation; }
-    public void setPickupLocation(String pickupLocation) { this.pickupLocation = pickupLocation; }
-
-    public String getDestination() { return destination; }
-    public void setDestination(String destination) { this.destination = destination; }
-
-    public double getEstimatedEarnings() { return estimatedEarnings; }
-    public void setEstimatedEarnings(double estimatedEarnings) { this.estimatedEarnings = estimatedEarnings; }
-
-    public String getStatus() { return status; }
-    public void setStatus(String status) { this.status = status; }
-
-    public String getEta() { return eta; }
-    public void setEta(String eta) { this.eta = eta; }
-
-    public LocalDateTime getCreatedAt() { return createdAt; }
-    public void setCreatedAt(LocalDateTime createdAt) { this.createdAt = createdAt; }
 }

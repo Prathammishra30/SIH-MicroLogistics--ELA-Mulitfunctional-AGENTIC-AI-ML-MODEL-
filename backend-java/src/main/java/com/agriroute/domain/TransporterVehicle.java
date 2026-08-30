@@ -9,38 +9,38 @@ import java.time.LocalDateTime;
 import java.util.UUID;
 
 @Entity
-@Table(name = "products")
+@Table(name = "transporter_vehicles")
 @Getter
 @Setter
 @NoArgsConstructor
 @AllArgsConstructor
 @Builder
-public class Product {
+public class TransporterVehicle {
     @Id
     @Column(name = "id", length = 36)
     private String id;
 
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "farmer_id", nullable = false)
-    private FarmerProfile farmer;
+    @JoinColumn(name = "transporter_id", nullable = false)
+    private TransporterProfile transporter;
 
-    @Column(name = "name", nullable = false, length = 255)
-    private String name;
+    @Column(name = "type", nullable = false, length = 255)
+    private String type;
 
-    @Column(name = "category", length = 255)
-    private String category;
+    @Column(name = "registration", unique = true, nullable = false, length = 50)
+    private String registration;
 
-    @Column(name = "quantity", length = 100)
-    private String quantity;
+    @Column(name = "capacity", nullable = false, length = 50)
+    private String capacity;
 
-    @Column(name = "grade", length = 50)
-    private String grade;
-
-    @Column(name = "harvest_date", length = 20)
-    private String harvestDate;
+    @Column(name = "capacity_kg")
+    private Integer capacityKg = 0;
 
     @Column(name = "status", length = 50)
     private String status = "Available";
+
+    @Column(name = "utilization")
+    private Integer utilization = 0;
 
     @CreationTimestamp
     @Column(name = "created_at", nullable = false, updatable = false)
@@ -50,7 +50,7 @@ public class Product {
     @Column(name = "updated_at", nullable = false)
     private LocalDateTime updatedAt;
 
-    @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true)
+    @OneToMany(mappedBy = "vehicleRef", cascade = CascadeType.ALL, orphanRemoval = true)
     private java.util.List<LogisticsRequest> logisticsRequests = new java.util.ArrayList<>();
 
     @PrePersist

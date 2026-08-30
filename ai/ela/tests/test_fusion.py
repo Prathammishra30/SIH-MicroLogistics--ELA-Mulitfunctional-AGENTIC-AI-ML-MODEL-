@@ -106,7 +106,7 @@ async def test_critical_end_to_end_fusion_flow():
 
     # 2. Verification of Staged Confirmation & Decision Support
     assert response.confirmation_action is not None
-    assert response.confirmation_action["toolName"] == "request_transport"
+    assert response.confirmation_action["toolName"] == "create_logistics_request"
     params = response.confirmation_action["params"]
     assert params["pickupLocation"] == "Nashik"
     assert params["destination"] == "Pune APMC Mandi" or "Pune" in params["destination"]
