@@ -96,8 +96,9 @@ public class ElaToolController {
         String category = (String) params.getOrDefault("category", "Vegetables");
         String quantity = (String) params.getOrDefault("quantity", "500 kg");
         String grade = (String) params.getOrDefault("grade", "A");
+        String harvestDate = (String) params.getOrDefault("harvestDate", java.time.LocalDate.now().toString());
         try {
-            var product = farmerService.addProduct(userId, name, category, quantity, grade);
+            var product = farmerService.addProduct(userId, name, category, quantity, grade, harvestDate);
             return ResponseEntity.ok(ElaToolResponse.ok("create_product", "Product added successfully", product));
         } catch (Exception e) {
             return ResponseEntity.badRequest().body(ElaToolResponse.fail("create_product", e.getMessage()));

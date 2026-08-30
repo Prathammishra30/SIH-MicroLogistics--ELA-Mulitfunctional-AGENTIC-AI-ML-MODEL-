@@ -1,5 +1,7 @@
 package com.agriroute.domain;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
@@ -20,23 +22,24 @@ public class TransporterProfile {
     @Column(name = "id", length = 36)
     private String id;
 
+    @JsonBackReference("user-transporter")
     @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id", unique = true, nullable = false)
+    @JoinColumn(name = "\"userId\"", unique = true, nullable = false)
     private User user;
 
-    @Column(name = "full_name", length = 255)
+    @Column(name = "\"fullName\"", length = 255)
     private String fullName;
 
-    @Column(name = "vehicle_type", length = 255)
+    @Column(name = "\"vehicleType\"", length = 255)
     private String vehicleType = "Pickup (1.5 - 2.5 MT)";
 
-    @Column(name = "vehicle_reg_no", length = 50)
+    @Column(name = "\"vehicleRegNo\"", length = 50)
     private String vehicleRegNo;
 
     @Column(name = "capacity", length = 50)
     private String capacity = "2.0 MT";
 
-    @Column(name = "operating_region", length = 255)
+    @Column(name = "\"operatingRegion\"", length = 255)
     private String operatingRegion = "Western Maharashtra (Pune - Satara - Kolhapur)";
 
     @Column(name = "ownership", length = 255)
@@ -46,17 +49,19 @@ public class TransporterProfile {
     private String phone;
 
     @CreationTimestamp
-    @Column(name = "created_at", nullable = false, updatable = false)
+    @Column(name = "\"createdAt\"", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
     @UpdateTimestamp
-    @Column(name = "updated_at", nullable = false)
+    @Column(name = "\"updatedAt\"", nullable = false)
     private LocalDateTime updatedAt;
 
+    @JsonIgnore
     @OneToMany(mappedBy = "transporter", cascade = CascadeType.ALL, orphanRemoval = true)
     private java.util.List<TransporterVehicle> vehicles = new java.util.ArrayList<>();
 
-    @OneToMany(mappedBy = "transporter", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonIgnore
+    @OneToMany(mappedBy = "transporter")
     private java.util.List<LogisticsRequest> assignedTrips = new java.util.ArrayList<>();
 
     @PrePersist

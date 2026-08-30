@@ -1,5 +1,6 @@
 package com.agriroute.domain;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
@@ -20,35 +21,39 @@ public class LogisticsRequest {
     @Column(name = "id", length = 36)
     private String id;
 
+    @JsonIgnore
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "farmer_id", nullable = false)
+    @JoinColumn(name = "\"farmerId\"", nullable = false)
     private FarmerProfile farmer;
 
+    @JsonIgnore
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "product_id")
+    @JoinColumn(name = "\"productId\"")
     private Product product;
 
+    @JsonIgnore
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "transporter_id")
+    @JoinColumn(name = "\"transporterId\"")
     private TransporterProfile transporter;
 
+    @JsonIgnore
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "vehicle_id")
+    @JoinColumn(name = "\"vehicleId\"")
     private TransporterVehicle vehicleRef;
 
-    @Column(name = "product_name", nullable = false, length = 255)
+    @Column(name = "\"productName\"", nullable = false, length = 255)
     private String productName;
 
     @Column(name = "quantity", length = 100)
     private String quantity;
 
-    @Column(name = "pickup_location", length = 255)
+    @Column(name = "\"pickupLocation\"", length = 255)
     private String pickupLocation;
 
-    @Column(name = "estimated_earnings", length = 100)
+    @Column(name = "\"estimatedEarnings\"", length = 100)
     private String estimatedEarnings;
 
-    @Column(name = "status", length = 50)
+    @Column(name = "status", nullable = false, length = 50)
     private String status = "Searching";
 
     @Column(name = "driver", length = 255)
@@ -63,19 +68,20 @@ public class LogisticsRequest {
     @Column(name = "eta", length = 100)
     private String eta;
 
-    @Column(name = "procurement_request_id", length = 36)
+    @Column(name = "\"procurementRequestId\"", length = 36)
     private String procurementRequestId;
 
+    @JsonIgnore
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "procurement_request_id", insertable = false, updatable = false)
+    @JoinColumn(name = "\"procurementRequestId\"", insertable = false, updatable = false)
     private ProcurementRequest procurementRequest;
 
     @CreationTimestamp
-    @Column(name = "created_at", nullable = false, updatable = false)
+    @Column(name = "\"createdAt\"", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
     @UpdateTimestamp
-    @Column(name = "updated_at", nullable = false)
+    @Column(name = "\"updatedAt\"", nullable = false)
     private LocalDateTime updatedAt;
 
     @PrePersist

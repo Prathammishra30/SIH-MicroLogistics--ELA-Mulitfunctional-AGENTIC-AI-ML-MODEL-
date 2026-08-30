@@ -43,7 +43,7 @@ public class FarmerBusinessService {
         return productRepository.findByFarmerIdOrderByCreatedAtDesc(profile.getId());
     }
 
-    public Product addProduct(String userId, String name, String category, String quantity, String grade) {
+    public Product addProduct(String userId, String name, String category, String quantity, String grade, String harvestDate) {
         FarmerProfile profile = farmerProfileRepository.findByUserId(userId)
                 .orElseThrow(() -> new IllegalArgumentException("Farmer profile not found for user: " + userId));
 
@@ -54,6 +54,7 @@ public class FarmerBusinessService {
                 .category(category != null ? category : "Vegetables")
                 .quantity(quantity != null ? quantity : "500 kg")
                 .grade(grade != null ? grade : "A")
+                .harvestDate(harvestDate != null ? harvestDate : java.time.LocalDate.now().toString())
                 .status("Available")
                 .build();
 

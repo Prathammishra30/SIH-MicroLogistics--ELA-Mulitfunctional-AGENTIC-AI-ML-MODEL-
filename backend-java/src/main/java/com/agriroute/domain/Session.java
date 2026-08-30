@@ -1,5 +1,6 @@
 package com.agriroute.domain;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
@@ -19,21 +20,22 @@ public class Session {
     @Column(name = "id", length = 36)
     private String id;
 
+    @JsonIgnore
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id", nullable = false)
+    @JoinColumn(name = "\"userId\"", nullable = false)
     private User user;
 
-    @Column(name = "expires_at", nullable = false)
+    @Column(name = "\"expiresAt\"", nullable = false)
     private LocalDateTime expiresAt;
 
     @CreationTimestamp
-    @Column(name = "created_at", nullable = false, updatable = false)
+    @Column(name = "\"createdAt\"", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
-    @Column(name = "revoked_at")
+    @Column(name = "\"revokedAt\"")
     private LocalDateTime revokedAt;
 
-    @Column(name = "last_used_at", nullable = false)
+    @Column(name = "\"lastUsedAt\"", nullable = false)
     private LocalDateTime lastUsedAt = LocalDateTime.now();
 
     @PrePersist

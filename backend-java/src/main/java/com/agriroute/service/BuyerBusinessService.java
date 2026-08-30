@@ -43,6 +43,7 @@ public class BuyerBusinessService {
                 .quantity(quantityRequired != null ? quantityRequired : "500 kg")
                 .targetPrice(targetPrice != null ? targetPrice : "₹40/kg")
                 .destination(deliveryLocation != null ? deliveryLocation : "Pune APMC Mandi")
+                .requiredBy(java.time.LocalDate.now().plusDays(7).toString())
                 .buyerName(profile.getContactPerson() != null ? profile.getContactPerson() : profile.getBusinessName())
                 .status("Open")
                 .build();

@@ -1,5 +1,7 @@
 package com.agriroute.domain;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
@@ -20,8 +22,9 @@ public class FarmerProfile {
     @Column(name = "id", length = 36)
     private String id;
 
+    @JsonBackReference("user-farmer")
     @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id", unique = true, nullable = false)
+    @JoinColumn(name = "\"userId\"", unique = true, nullable = false)
     private User user;
 
     @Column(name = "phone", length = 20)
@@ -36,26 +39,28 @@ public class FarmerProfile {
     @Column(name = "state", length = 255)
     private String state = "Maharashtra";
 
-    @Column(name = "producer_type", length = 255)
+    @Column(name = "\"producerType\"", length = 255)
     private String producerType = "Farmer";
 
     @Column(name = "category", length = 255)
     private String category = "Fresh Vegetables & Fruits";
 
-    @Column(name = "farm_name", length = 255)
+    @Column(name = "\"farmName\"", length = 255)
     private String farmName;
 
     @CreationTimestamp
-    @Column(name = "created_at", nullable = false, updatable = false)
+    @Column(name = "\"createdAt\"", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
     @UpdateTimestamp
-    @Column(name = "updated_at", nullable = false)
+    @Column(name = "\"updatedAt\"", nullable = false)
     private LocalDateTime updatedAt;
 
+    @JsonIgnore
     @OneToMany(mappedBy = "farmer", cascade = CascadeType.ALL, orphanRemoval = true)
     private java.util.List<Product> products = new java.util.ArrayList<>();
 
+    @JsonIgnore
     @OneToMany(mappedBy = "farmer", cascade = CascadeType.ALL, orphanRemoval = true)
     private java.util.List<LogisticsRequest> logisticsRequests = new java.util.ArrayList<>();
 

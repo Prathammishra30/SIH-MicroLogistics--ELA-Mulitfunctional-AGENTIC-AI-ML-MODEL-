@@ -1,9 +1,13 @@
 package com.agriroute.domain;
 
+import com.fasterxml.jackson.annotation.JsonManagedReference;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
+import org.hibernate.annotations.JdbcTypeCode;
 import org.hibernate.annotations.UpdateTimestamp;
+import org.hibernate.type.SqlTypes;
 
 import java.time.LocalDateTime;
 import java.util.UUID;
@@ -29,32 +33,40 @@ public class User {
     @Column(name = "name", nullable = false, length = 255)
     private String name;
 
-    @Column(name = "password_hash", nullable = false, length = 255)
+    @Column(name = "\"passwordHash\"", nullable = false, length = 255)
     private String passwordHash;
 
     @Enumerated(EnumType.STRING)
-    @Column(name = "role", nullable = false, length = 20)
+    @JdbcTypeCode(SqlTypes.NAMED_ENUM)
+    @Column(name = "role", nullable = false, columnDefinition = "\"Role\"")
     private UserRole role;
 
-    @Column(name = "is_active", nullable = false)
+    @Column(name = "\"isActive\"", nullable = false)
     private Boolean isActive = true;
 
     @CreationTimestamp
-    @Column(name = "created_at", nullable = false, updatable = false)
+    @Column(name = "\"createdAt\"", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
     @UpdateTimestamp
-    @Column(name = "updated_at", nullable = false)
+    @Column(name = "\"updatedAt\"", nullable = false)
     private LocalDateTime updatedAt;
 
+    @JsonManagedReference("user-farmer")
     @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     private FarmerProfile farmerProfile;
 
+    @JsonManagedReference("user-buyer")
     @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     private BuyerProfile buyerProfile;
 
+    @JsonManagedReference("user-transporter")
     @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     private TransporterProfile transporterProfile;
+
+    @JsonIgnore
+    @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
+    private java.util.List<Session> sessions = new java.util.ArrayList<>();
 
     @PrePersist
     public void prePersist() {

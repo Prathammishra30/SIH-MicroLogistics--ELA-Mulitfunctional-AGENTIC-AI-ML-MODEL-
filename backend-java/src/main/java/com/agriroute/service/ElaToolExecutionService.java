@@ -20,11 +20,12 @@ public class ElaToolExecutionService {
     public ElaToolResponse executeTool(ElaToolRequest request) {
         String tool = request.getToolName();
         String roleStr = request.getRole() != null ? request.getRole().toUpperCase() : "GUEST";
-        UserRole role;
+        UserRole role = null;
         try {
             role = UserRole.valueOf(roleStr);
         } catch (Exception e) {
-            role = UserRole.GUEST;
+            // GUEST is an application context, not a persisted Prisma Role enum.
+            // Keeping it null makes every mutation fail the role gate below.
         }
 
         Map<String, Object> p = request.getParams() != null ? request.getParams() : Map.of();
@@ -38,9 +39,10 @@ public class ElaToolExecutionService {
                 }
                 String name = (String) p.getOrDefault("name", "Tomatoes");
                 String cat = (String) p.getOrDefault("category", "Vegetables");
-                double qty = p.containsKey("quantity") ? Double.parseDouble(p.get("quantity").toString()) : 500.0;
+                String qty = p.containsKey("quantity") ? p.get("quantity").toString() : "500 kg";
                 String grade = (String) p.getOrDefault("grade", "A");
-                Object savedProduct = farmerService.addProduct(request.getUserId(), name, cat, qty, grade);
+                String harvestDate = (String) p.getOrDefault("harvestDate", java.time.LocalDate.now().toString());
+                Object savedProduct = farmerService.addProduct(request.getUserId(), name, cat, qty, grade, harvestDate);
                 return ElaToolResponse.ok(tool, "Product added successfully to inventory.", savedProduct);
 
             case "get_farmer_products":
@@ -52,10 +54,10 @@ public class ElaToolExecutionService {
                     return ElaToolResponse.fail(tool, "Access Denied: Only Farmers can request transport.");
                 }
                 String prodName = (String) p.getOrDefault("productName", "Tomatoes");
-                double logQty = p.containsKey("quantity") ? Double.parseDouble(p.get("quantity").toString()) : 500.0;
+                String logQty = p.containsKey("quantity") ? p.get("quantity").toString() : "500 kg";
                 String pickup = (String) p.getOrDefault("pickupLocation", "Farmer Farm");
                 String dest = (String) p.getOrDefault("destination", "Pune APMC Mandi");
-                double earnings = p.containsKey("estimatedEarnings") ? Double.parseDouble(p.get("estimatedEarnings").toString()) : 3500.0;
+                String earnings = p.containsKey("estimatedEarnings") ? p.get("estimatedEarnings").toString() : "3500";
                 Object logReq = farmerService.requestLogistics(request.getUserId(), "prod-1", prodName, logQty, pickup, dest, earnings);
                 return ElaToolResponse.ok(tool, "Logistics request created successfully.", logReq);
 
@@ -68,8 +70,8 @@ public class ElaToolExecutionService {
                     return ElaToolResponse.fail(tool, "Access Denied: Only Buyers can post procurement demands.");
                 }
                 String crop = (String) p.getOrDefault("cropName", "Tomatoes");
-                double bQty = p.containsKey("quantityKg") ? Double.parseDouble(p.get("quantityKg").toString()) : 500.0;
-                double maxPrice = p.containsKey("maxPricePerKg") ? Double.parseDouble(p.get("maxPricePerKg").toString()) : 45.0;
+                String bQty = p.containsKey("quantityKg") ? p.get("quantityKg").toString() : "500 kg";
+                String maxPrice = p.containsKey("maxPricePerKg") ? p.get("maxPricePerKg").toString() : "45";
                 String loc = (String) p.getOrDefault("deliveryLocation", "Pune APMC Mandi");
                 Object proc = buyerService.postProcurement(request.getUserId(), crop, bQty, maxPrice, loc);
                 return ElaToolResponse.ok(tool, "Procurement order posted successfully.", proc);
@@ -85,7 +87,7 @@ public class ElaToolExecutionService {
                 String fullName = (String) p.getOrDefault("fullName", "Sunil Deshmukh");
                 String vType = (String) p.getOrDefault("vehicleType", "Mini Truck (750 kg)");
                 String regNo = (String) p.getOrDefault("vehicleRegNo", "MH 12 AB 9876");
-                double cap = p.containsKey("capacity") ? Double.parseDouble(p.get("capacity").toString()) : 750.0;
+                String cap = p.containsKey("capacity") ? p.get("capacity").toString() : "750 kg";
                 String reg = (String) p.getOrDefault("operatingRegion", "Pune Region");
                 String phone = (String) p.getOrDefault("phone", "+91 9876543210");
                 Object veh = transporterService.registerVehicle(request.getUserId(), fullName, vType, regNo, cap, reg, phone);

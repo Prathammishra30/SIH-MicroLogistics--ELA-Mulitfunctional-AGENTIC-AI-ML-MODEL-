@@ -1,5 +1,6 @@
 package com.agriroute.domain;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
@@ -20,8 +21,9 @@ public class TransporterVehicle {
     @Column(name = "id", length = 36)
     private String id;
 
+    @JsonIgnore
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "transporter_id", nullable = false)
+    @JoinColumn(name = "\"transporterId\"", nullable = false)
     private TransporterProfile transporter;
 
     @Column(name = "type", nullable = false, length = 255)
@@ -33,24 +35,25 @@ public class TransporterVehicle {
     @Column(name = "capacity", nullable = false, length = 50)
     private String capacity;
 
-    @Column(name = "capacity_kg")
+    @Column(name = "\"capacityKg\"", nullable = false)
     private Integer capacityKg = 0;
 
-    @Column(name = "status", length = 50)
+    @Column(name = "status", nullable = false, length = 50)
     private String status = "Available";
 
-    @Column(name = "utilization")
+    @Column(name = "utilization", nullable = false)
     private Integer utilization = 0;
 
     @CreationTimestamp
-    @Column(name = "created_at", nullable = false, updatable = false)
+    @Column(name = "\"createdAt\"", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
     @UpdateTimestamp
-    @Column(name = "updated_at", nullable = false)
+    @Column(name = "\"updatedAt\"", nullable = false)
     private LocalDateTime updatedAt;
 
-    @OneToMany(mappedBy = "vehicleRef", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonIgnore
+    @OneToMany(mappedBy = "vehicleRef")
     private java.util.List<LogisticsRequest> logisticsRequests = new java.util.ArrayList<>();
 
     @PrePersist

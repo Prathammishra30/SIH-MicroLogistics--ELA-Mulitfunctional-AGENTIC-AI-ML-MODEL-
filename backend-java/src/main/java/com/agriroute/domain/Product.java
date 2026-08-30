@@ -1,5 +1,6 @@
 package com.agriroute.domain;
 
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
@@ -20,37 +21,39 @@ public class Product {
     @Column(name = "id", length = 36)
     private String id;
 
+    @JsonIgnore
     @ManyToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "farmer_id", nullable = false)
+    @JoinColumn(name = "\"farmerId\"", nullable = false)
     private FarmerProfile farmer;
 
     @Column(name = "name", nullable = false, length = 255)
     private String name;
 
-    @Column(name = "category", length = 255)
+    @Column(name = "category", nullable = false, length = 255)
     private String category;
 
-    @Column(name = "quantity", length = 100)
+    @Column(name = "quantity", nullable = false, length = 100)
     private String quantity;
 
-    @Column(name = "grade", length = 50)
+    @Column(name = "grade", nullable = false, length = 50)
     private String grade;
 
-    @Column(name = "harvest_date", length = 20)
+    @Column(name = "\"harvestDate\"", nullable = false, length = 20)
     private String harvestDate;
 
-    @Column(name = "status", length = 50)
+    @Column(name = "status", nullable = false, length = 50)
     private String status = "Available";
 
     @CreationTimestamp
-    @Column(name = "created_at", nullable = false, updatable = false)
+    @Column(name = "\"createdAt\"", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
     @UpdateTimestamp
-    @Column(name = "updated_at", nullable = false)
+    @Column(name = "\"updatedAt\"", nullable = false)
     private LocalDateTime updatedAt;
 
-    @OneToMany(mappedBy = "product", cascade = CascadeType.ALL, orphanRemoval = true)
+    @JsonIgnore
+    @OneToMany(mappedBy = "product")
     private java.util.List<LogisticsRequest> logisticsRequests = new java.util.ArrayList<>();
 
     @PrePersist

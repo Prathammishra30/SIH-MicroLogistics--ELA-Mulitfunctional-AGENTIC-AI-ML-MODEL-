@@ -1,5 +1,7 @@
 package com.agriroute.domain;
 
+import com.fasterxml.jackson.annotation.JsonBackReference;
+import com.fasterxml.jackson.annotation.JsonIgnore;
 import jakarta.persistence.*;
 import lombok.*;
 import org.hibernate.annotations.CreationTimestamp;
@@ -20,17 +22,18 @@ public class BuyerProfile {
     @Column(name = "id", length = 36)
     private String id;
 
+    @JsonBackReference("user-buyer")
     @OneToOne(fetch = FetchType.LAZY)
-    @JoinColumn(name = "user_id", unique = true, nullable = false)
+    @JoinColumn(name = "\"userId\"", unique = true, nullable = false)
     private User user;
 
-    @Column(name = "business_name", length = 255)
+    @Column(name = "\"businessName\"", length = 255)
     private String businessName;
 
-    @Column(name = "contact_person", length = 255)
+    @Column(name = "\"contactPerson\"", length = 255)
     private String contactPerson;
 
-    @Column(name = "business_type", length = 255)
+    @Column(name = "\"businessType\"", length = 255)
     private String businessType = "APMC Licensed Commission Agent & Trader";
 
     @Column(name = "location", length = 255)
@@ -43,13 +46,14 @@ public class BuyerProfile {
     private String phone;
 
     @CreationTimestamp
-    @Column(name = "created_at", nullable = false, updatable = false)
+    @Column(name = "\"createdAt\"", nullable = false, updatable = false)
     private LocalDateTime createdAt;
 
     @UpdateTimestamp
-    @Column(name = "updated_at", nullable = false)
+    @Column(name = "\"updatedAt\"", nullable = false)
     private LocalDateTime updatedAt;
 
+    @JsonIgnore
     @OneToMany(mappedBy = "buyer", cascade = CascadeType.ALL, orphanRemoval = true)
     private java.util.List<ProcurementRequest> procurements = new java.util.ArrayList<>();
 

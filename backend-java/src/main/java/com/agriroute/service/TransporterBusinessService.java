@@ -56,6 +56,7 @@ public class TransporterBusinessService {
                 .capacity(capacity != null ? capacity : "750 kg")
                 .capacityKg(parseCapacityKg(capacity))
                 .status("Available")
+                .utilization(0)
                 .build();
 
         return transporterVehicleRepository.save(vehicle);
