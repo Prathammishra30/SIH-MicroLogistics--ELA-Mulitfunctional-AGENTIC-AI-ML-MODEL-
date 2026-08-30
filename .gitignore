@@ -25,3 +25,9 @@ dist-ssr
 *.njsproj
 *.sln
 *.sw?
+
+backend-java/apache-maven-3.9.8/
+backend-java/maven.zip
+backend-java/target/
+**/__pycache__/
+*.pyc
