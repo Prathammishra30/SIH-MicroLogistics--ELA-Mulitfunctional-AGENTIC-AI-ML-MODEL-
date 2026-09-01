@@ -24,6 +24,7 @@ export async function forwardChatToPythonELA(
     const payload = {
       message: chatRequest.message,
       context: chatRequest.context || {},
+      session_id: chatRequest.context?.sessionId || undefined,
       user: authUser
         ? {
             id: authUser.id,
@@ -34,7 +35,7 @@ export async function forwardChatToPythonELA(
     };
 
     const controller = new AbortController();
-    const timeout = setTimeout(() => controller.abort(), 2500);
+    const timeout = setTimeout(() => controller.abort(), 5000);
 
     const res = await fetch(`${PYTHON_ELA_URL}/v1/ela/chat`, {
       method: 'POST',

@@ -95,6 +95,19 @@ class ETAPredictionModel(IMLModel[EtaFeatures, EtaOutput]):
             return True, f"Distance ({f.distance_km} km) is outside regional transport operational boundaries [1 - 2,000 km]."
         return False, None
 
+    def _extract_target(self, row: Dict[str, Any]) -> float:
+        """
+        Extracts ground truth target value with strict precedence.
+        Raises ValueError if no valid target exists.
+        """
+        for k in ["actual_value", "target", "actual_duration_mins"]:
+            if k in row and row[k] is not None:
+                try:
+                    return float(row[k])
+                except (ValueError, TypeError):
+                    pass
+        raise ValueError(f"No valid ground truth target found in sample: {row}")
+
     async def train(self, dataset: List[Dict[str, Any]]) -> ModelMetrics:
         """
         Trains learned residual layer against (actual_duration - baseline_duration).
@@ -105,14 +118,23 @@ class ETAPredictionModel(IMLModel[EtaFeatures, EtaOutput]):
 
         X_rows = []
         residuals = []
+        valid_rows = []
         for row in dataset:
+            try:
+                target = self._extract_target(row)
+            except ValueError:
+                continue
             feats = row.get("features", {})
             f_obj = EtaFeatures(**feats) if isinstance(feats, dict) else feats
-            target = float(row.get("target", row.get("actual_duration_mins", 180.0)))
             baseline = self._compute_kinematic_baseline(f_obj)
             res = target - baseline
             X_rows.append(self._extract_residual_vector(f_obj))
             residuals.append(res)
+            valid_rows.append((f_obj, target))
+
+        if len(valid_rows) < 4:
+            self._status = "trained"
+            return ModelMetrics(mae=0.0, rmse=0.0, sample_count=0)
 
         X = np.array(X_rows)
         y = np.array(residuals)
@@ -127,17 +149,37 @@ class ETAPredictionModel(IMLModel[EtaFeatures, EtaOutput]):
             pass
 
         # Evaluate complete hybrid prediction on training data
-        y_true = [float(r.get("target", r.get("actual_duration_mins", 180.0))) for r in dataset]
+        y_true = [target for _, target in valid_rows]
         y_pred = []
-        for row in dataset:
-            feats = row.get("features", {})
-            f_obj = EtaFeatures(**feats) if isinstance(feats, dict) else feats
+        for f_obj, _ in valid_rows:
             pred_res = await self.predict(f_obj)
             y_pred.append(pred_res.prediction.estimated_duration_minutes)
 
         metrics = compute_metrics(y_true, y_pred)
         self._last_evaluated_metrics = metrics
         return metrics
+
+    async def evaluate_baseline(self, test_dataset: List[Dict[str, Any]]) -> ModelMetrics:
+        """
+        Evaluates pure domain physics kinematic baseline without learned residual adjustments.
+        """
+        if not test_dataset:
+            return ModelMetrics(mae=0.0, rmse=0.0, sample_count=0)
+
+        y_true = []
+        y_pred = []
+        for sample in test_dataset:
+            try:
+                target = self._extract_target(sample)
+            except ValueError:
+                continue
+            feats = sample.get("features", {})
+            f_obj = EtaFeatures(**feats) if isinstance(feats, dict) else feats
+            baseline_mins = self._compute_kinematic_baseline(f_obj)
+            y_true.append(target)
+            y_pred.append(float(baseline_mins))
+
+        return compute_metrics(y_true, y_pred)
 
     async def evaluate(self, test_dataset: List[Dict[str, Any]]) -> ModelMetrics:
         if not test_dataset:
@@ -146,12 +188,15 @@ class ETAPredictionModel(IMLModel[EtaFeatures, EtaOutput]):
         y_true = []
         y_pred = []
         for sample in test_dataset:
+            try:
+                target = self._extract_target(sample)
+            except ValueError:
+                continue
             feats = sample.get("features", {})
             f_obj = EtaFeatures(**feats) if isinstance(feats, dict) else feats
-            target = float(sample.get("target", sample.get("actual_duration_mins", 180.0)))
             pred_res = await self.predict(f_obj)
             y_true.append(target)
-            y_pred.append(pred_res.prediction.estimated_duration_minutes)
+            y_pred.append(float(pred_res.prediction.estimated_duration_minutes))
 
         metrics = compute_metrics(y_true, y_pred)
         self._last_evaluated_metrics = metrics

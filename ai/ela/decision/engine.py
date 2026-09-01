@@ -69,22 +69,28 @@ class DecisionEngine:
         transit_hours = top_opt.estimated_duration_minutes / 60.0
         is_perish_urgent, perish_note = self.knowledge.check_perishability_urgency(commodity, transit_hours)
 
-        # 3. Formulate Concise Decision Factors (No Raw CoT Exposure)
+        # 3. Formulate Concise Decision Factors
+        weights = self.decision_support.STRATEGY_WEIGHTS.get(strategy.upper(), self.decision_support.STRATEGY_WEIGHTS["BALANCED"])
         factors = [
             DecisionFactor(
                 category="LOAD_FIT",
-                weight=0.35,
+                weight=weights["w_match"],
                 summary=f"Vehicle capacity ({top_opt.capacity_kg:.0f} kg) provides {top_opt.match_score * 100:.0f}% load fit.",
             ),
             DecisionFactor(
                 category="COST",
-                weight=0.35 if strategy == "CHEAPEST" else 0.25,
+                weight=weights["w_cost"],
                 summary=f"Estimated freight: ₹{top_opt.estimated_cost:.0f} (competitive regional rate).",
             ),
             DecisionFactor(
                 category="TRANSIT_SPEED",
-                weight=0.40 if (strategy == "FASTEST" or is_perish_urgent) else 0.25,
+                weight=weights["w_eta"],
                 summary=f"Estimated transit: {top_opt.formatted_duration} via primary highway corridor.",
+            ),
+            DecisionFactor(
+                category="RELIABILITY",
+                weight=weights["w_rel"],
+                summary=f"Transporter reliability: {top_opt.reliability_score * 100:.0f}% delivery certainty.",
             ),
         ]
 
@@ -124,6 +130,6 @@ class DecisionEngine:
             requires_confirmation=True,
             explanation_summary=(
                 f"Recommended **{top_opt.vehicle_type}** (Estimated Freight: ₹{top_opt.estimated_cost:.0f}, ETA: {top_opt.formatted_duration}) "
-                f"based on {strategy.lower()} optimization. {top_opt.recommendation_reason}"
+                f"based on {strategy.lower()} strategy. {top_opt.recommendation_reason}"
             ),
         )

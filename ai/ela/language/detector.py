@@ -37,30 +37,54 @@ def detect_language_script(text: str) -> Tuple[str, str]:
     }
 
     best_script = max(counts.keys(), key=lambda k: counts[k][0])
-    if counts[best_script][0] >= 2:
+    if counts[best_script][0] >= 1:
         _, lang, script = counts[best_script]
         # Distinguish Marathi vs Hindi in Devanagari script via specific lexical markers
         if script == "Devanagari":
-            marathi_markers = ["आहे", "माझे", "मला", "नाही", "पाहिजे", "शेतकरी", "गाडी", "करा", "द्या", "काय", "आणि"]
+            marathi_markers = [
+                "आहे", "माझे", "मला", "नाही", "पाहिजे", "शेतकरी", "गाडी", "करा", "द्या", "काय", "आणि",
+                "लागेल", "ते", "किती", "वेळ", "अंतर", "फेऱ्या", "ट्रक", "माझ्याकडे", "पाठवायचे", "दाखवा",
+                "विकायचे", "खरेदी", "वाहतूक"
+            ]
             if any(m in text for m in marathi_markers):
                 return "mr", "Devanagari"
             return "hi", "Devanagari"
         return lang, script
 
-    # Check for Hinglish patterns in Latin text
+    # Check for Indic transliteration / Romanized patterns in Latin text
     t_lower = text.lower()
+    marathi_latin_markers = [
+        "ahe", "pahije", "pathva", "majhe", "mala", "shetkari", "gadi", "dya", "kay", "vikayche", "vahtuk"
+    ]
+    tamil_latin_markers = [
+        "enakku", "vendum", "takkali", "vivasaayi", "vanigargal", "anuppa", "theriyum"
+    ]
+    telugu_latin_markers = [
+        "naaku", "kaavali", "pampali", "raithu", "vyapari", "ravana", "tamatala"
+    ]
+    bengali_latin_markers = [
+        "amar", "chai", "pathate", "krishok", "poribohon", "tometo"
+    ]
+    kannada_latin_markers = [
+        "nanage", "beku", "sagisa", "raitha", "sarige", "tometo"
+    ]
     hinglish_markers = [
         "karna", "chahiye", "bhejna", "mera", "meri", "mere", "paas", "hai", "hain",
         "karo", "bhai", "kisan", "hoon", "tamatar", "mandi", "bhav", "kya", "kitna",
-        "kaise", "gaadi", "daam", "mujhe", "humko", "apna", "shuru"
-    ]
-    marathi_latin_markers = [
-        "ahe", "pahije", "pathva", "majhe", "mala", "shetkari", "gadi", "dya", "kay"
+        "kaise", "gaadi", "daam", "mujhe", "humko", "apna", "shuru", "sasta", "sabse",
+        "rakhna", "kharidna", "fasal"
     ]
 
     if any(re.search(rf"\b{m}\b", t_lower) for m in marathi_latin_markers):
         return "mr", "Latin"
-
+    if any(re.search(rf"\b{m}\b", t_lower) for m in tamil_latin_markers):
+        return "ta", "Latin"
+    if any(re.search(rf"\b{m}\b", t_lower) for m in telugu_latin_markers):
+        return "te", "Latin"
+    if any(re.search(rf"\b{m}\b", t_lower) for m in bengali_latin_markers):
+        return "bn", "Latin"
+    if any(re.search(rf"\b{m}\b", t_lower) for m in kannada_latin_markers):
+        return "kn", "Latin"
     if any(re.search(rf"\b{m}\b", t_lower) for m in hinglish_markers):
         return "hi", "Latin"
 

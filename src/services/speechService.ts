@@ -45,6 +45,7 @@ interface SpeechRecognitionInstance extends EventTarget {
   onresult: ((event: SpeechEvent) => void) | null;
   onerror: ((event: SpeechErrorEvent) => void) | null;
   onend: (() => void) | null;
+  onstart: (() => void) | null;
 }
 
 declare global {
@@ -72,7 +73,8 @@ export class SpeechService {
     lang: SupportedSpeechLang = 'en',
     onResult: (transcript: string, isFinal: boolean) => void,
     onError?: (err: string) => void,
-    onEnd?: () => void
+    onEnd?: () => void,
+    onSpeechStart?: () => void
   ): boolean {
     if (!this.isSTTSupported()) {
       onError?.('Speech recognition is not supported in this browser.');
@@ -91,6 +93,10 @@ export class SpeechService {
       this.recognition.continuous = false;
       this.recognition.interimResults = true;
       this.recognition.lang = langLocaleMap[lang] || 'en-IN';
+
+      this.recognition.onstart = () => {
+        onSpeechStart?.();
+      };
 
       this.recognition.onresult = (event: SpeechEvent) => {
         let interim = '';

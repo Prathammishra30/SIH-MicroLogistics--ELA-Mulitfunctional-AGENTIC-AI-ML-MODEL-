@@ -14,6 +14,10 @@ class ConversationSession:
         self.created_at = datetime.now().isoformat()
         self.updated_at = datetime.now().isoformat()
 
+    @property
+    def entities(self) -> CanonicalEntities:
+        return self.accumulated_entities
+
 
 class ConversationMemory:
     _sessions: Dict[str, ConversationSession] = {}
@@ -39,7 +43,11 @@ class ConversationMemory:
         sess = cls.get_session(session_id)
         # Merge new non-null entities into accumulated session state
         for field, val in new_entities.model_dump(exclude_none=True).items():
-            setattr(sess.accumulated_entities, field, val)
+            if field == "strategy":
+                if val != "BALANCED" or getattr(sess.accumulated_entities, "strategy", "BALANCED") == "BALANCED":
+                    setattr(sess.accumulated_entities, field, val)
+            else:
+                setattr(sess.accumulated_entities, field, val)
         sess.updated_at = datetime.now().isoformat()
         return sess.accumulated_entities
 
@@ -79,9 +87,22 @@ class PrivacySanitizer:
         clean = {}
         for k, v in data.items():
             if any(secret_term in k.lower() for secret_term in ['password', 'otp', 'pin', 'secret', 'token']):
-                clean[k] = '[REDACTED]'
+                clean[k] = '[REDACTED_SECRET]'
             elif isinstance(v, dict):
                 clean[k] = cls.sanitize_dict(v)
             else:
                 clean[k] = v
         return clean
+
+    @classmethod
+    def sanitize_text(cls, text: Optional[str]) -> Optional[str]:
+        if not text:
+            return text
+        import re
+        # Redact JWTs and bearer tokens
+        sanitized = re.sub(r'eyJ[a-zA-Z0-9_\-\.]+', '[REDACTED_TOKEN]', text)
+        sanitized = re.sub(r'Bearer\s+[a-zA-Z0-9_\-\.]+', 'Bearer [REDACTED_TOKEN]', sanitized, flags=re.IGNORECASE)
+        # Redact passwords and pin patterns
+        sanitized = re.sub(r'password\s*[:=]\s*\S+', 'password: [REDACTED_SECRET]', sanitized, flags=re.IGNORECASE)
+        sanitized = re.sub(r'pin\s*[:=]\s*\d+', 'pin: [REDACTED_SECRET]', sanitized, flags=re.IGNORECASE)
+        return sanitized

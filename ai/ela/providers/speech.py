@@ -19,6 +19,10 @@ class AudioSynthesisResult(BaseModel):
     duration_seconds: float = 0.0
     provider_name: str
 
+    @property
+    def audio_base64(self) -> str:
+        return self.audio_data_base64
+
 
 class SpeechToTextProvider(ABC):
     @property

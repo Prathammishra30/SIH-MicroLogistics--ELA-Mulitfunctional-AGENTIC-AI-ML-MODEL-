@@ -170,13 +170,11 @@ class ElaIntelligenceEngine:
         confirmation_action: Optional[Dict[str, Any]] = None
 
         if canonical.intent in ['CREATE_LOGISTICS_WORKFLOW', 'MOVE_PRODUCE']:
-            # Extract user optimization strategy
-            norm_msg = raw_message.lower()
-            strategy = "CHEAPEST" if ("cheap" in norm_msg or "सस्ता" in norm_msg or "कमी खर्च" in norm_msg) else (
-                "FASTEST" if ("fast" in norm_msg or "जल्दी" in norm_msg or "तात्काळ" in norm_msg or "urgent" in norm_msg) else (
-                    "FRESHNESS" if ("fresh" in norm_msg or "ताज़ा" in norm_msg or "ताजे" in norm_msg) else "BALANCED"
-                )
-            )
+            # Extract user optimization strategy using robust multilingual extractor
+            from ai.ela.intent.strategy import StrategyExtractor
+            curr_strat = getattr(accumulated_entities, 'strategy', 'BALANCED') or 'BALANCED'
+            strategy = StrategyExtractor.extract_strategy(raw_message, fallback=curr_strat)
+            accumulated_entities.strategy = strategy
 
             decision_rec = await self.decision_engine.decide_logistics_plan(
                 origin=accumulated_entities.pickup_location or "Nashik",
@@ -264,6 +262,7 @@ class ElaIntelligenceEngine:
             language=lang,
             input_message=raw_message,
             intent=canonical.intent,
+            strategy=getattr(accumulated_entities, 'strategy', 'BALANCED'),
             confidence=conf_result.confidence,
             planner_steps=[{"step": s.step_number, "tool": s.tool_name, "args": s.arguments} for s in plan.steps],
             selected_tools=[s.tool_name for s in plan.steps],

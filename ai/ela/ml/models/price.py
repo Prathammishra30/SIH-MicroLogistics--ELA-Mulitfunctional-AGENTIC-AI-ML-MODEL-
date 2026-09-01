@@ -30,6 +30,10 @@ class PriceOutput(BaseModel):
     price_range_str: str
     feature_importance: Dict[str, float] = Field(default_factory=dict)
 
+    @property
+    def predicted_spot_price(self) -> float:
+        return self.predicted_avg_price
+
 
 class PricePredictionModel(IMLModel[PriceFeatures, PriceOutput]):
     """
@@ -81,6 +85,19 @@ class PricePredictionModel(IMLModel[PriceFeatures, PriceOutput]):
             return True, f"Arrival volume ({f.current_arrivals_tonnes} tonnes) represents extreme anomaly."
         return False, None
 
+    def _extract_target(self, row: Dict[str, Any]) -> float:
+        """
+        Extracts ground truth price with strict precedence.
+        Raises ValueError if no valid target exists.
+        """
+        for k in ["actual_value", "target", "modal_price", "price", "actual_price"]:
+            if k in row and row[k] is not None:
+                try:
+                    return float(row[k])
+                except (ValueError, TypeError):
+                    pass
+        raise ValueError(f"No valid ground truth target found in sample: {row}")
+
     async def train(self, dataset: List[Dict[str, Any]]) -> ModelMetrics:
         if not dataset or len(dataset) < 4:
             self._status = "trained"
@@ -89,11 +106,18 @@ class PricePredictionModel(IMLModel[PriceFeatures, PriceOutput]):
         X_rows = []
         y_rows = []
         for row in dataset:
+            try:
+                target = self._extract_target(row)
+            except ValueError:
+                continue
             feats = row.get("features", {})
             f_obj = PriceFeatures(**feats) if isinstance(feats, dict) else feats
-            target = float(row.get("target", row.get("price", 40.0)))
             X_rows.append(self._extract_vector(f_obj))
             y_rows.append(target)
+
+        if len(y_rows) < 4:
+            self._status = "trained"
+            return ModelMetrics(mae=0.0, rmse=0.0, sample_count=0)
 
         X = np.array(X_rows)
         y = np.array(y_rows)
@@ -112,6 +136,28 @@ class PricePredictionModel(IMLModel[PriceFeatures, PriceOutput]):
         self._last_evaluated_metrics = metrics
         return metrics
 
+    async def evaluate_baseline(self, test_dataset: List[Dict[str, Any]]) -> ModelMetrics:
+        """
+        Evaluates historical mandi modal price baseline.
+        """
+        if not test_dataset:
+            return ModelMetrics(mae=0.0, rmse=0.0, sample_count=0)
+
+        y_true = []
+        y_pred = []
+        for sample in test_dataset:
+            try:
+                target = self._extract_target(sample)
+            except ValueError:
+                continue
+            feats = sample.get("features", {})
+            f_obj = PriceFeatures(**feats) if isinstance(feats, dict) else feats
+            hist_price = getattr(f_obj, "historical_avg_price", getattr(f_obj, "modal_price_historical", 35.0))
+            y_true.append(target)
+            y_pred.append(float(hist_price))
+
+        return compute_metrics(y_true, y_pred)
+
     async def evaluate(self, test_dataset: List[Dict[str, Any]]) -> ModelMetrics:
         if not test_dataset:
             return ModelMetrics(mae=0.0, rmse=0.0, sample_count=0)
@@ -119,12 +165,15 @@ class PricePredictionModel(IMLModel[PriceFeatures, PriceOutput]):
         y_true = []
         y_pred = []
         for sample in test_dataset:
+            try:
+                target = self._extract_target(sample)
+            except ValueError:
+                continue
             feats = sample.get("features", {})
             f_obj = PriceFeatures(**feats) if isinstance(feats, dict) else feats
-            target = float(sample.get("target", sample.get("price", 40.0)))
             pred_res = await self.predict(f_obj)
             y_true.append(target)
-            y_pred.append(pred_res.prediction.predicted_avg_price)
+            y_pred.append(float(pred_res.prediction.predicted_avg_price))
 
         metrics = compute_metrics(y_true, y_pred)
         self._last_evaluated_metrics = metrics

@@ -88,15 +88,22 @@ public class ElaToolController {
         }
     }
 
+    private String getParamString(Map<String, Object> params, String key, String defaultValue) {
+        if (params == null || !params.containsKey(key) || params.get(key) == null) {
+            return defaultValue;
+        }
+        return String.valueOf(params.get(key));
+    }
+
     private ResponseEntity<ElaToolResponse> handleCreateProduct(String userId, Map<String, Object> params, boolean confirmed) {
         if (!confirmed) {
             return ResponseEntity.ok(ElaToolResponse.fail("create_product", "Confirmation required"));
         }
-        String name = (String) params.getOrDefault("name", "Tomatoes");
-        String category = (String) params.getOrDefault("category", "Vegetables");
-        String quantity = (String) params.getOrDefault("quantity", "500 kg");
-        String grade = (String) params.getOrDefault("grade", "A");
-        String harvestDate = (String) params.getOrDefault("harvestDate", java.time.LocalDate.now().toString());
+        String name = getParamString(params, "name", "Tomatoes");
+        String category = getParamString(params, "category", "Vegetables");
+        String quantity = getParamString(params, "quantity", "500 kg");
+        String grade = getParamString(params, "grade", "A");
+        String harvestDate = getParamString(params, "harvestDate", java.time.LocalDate.now().toString());
         try {
             var product = farmerService.addProduct(userId, name, category, quantity, grade, harvestDate);
             return ResponseEntity.ok(ElaToolResponse.ok("create_product", "Product added successfully", product));
@@ -109,11 +116,11 @@ public class ElaToolController {
         if (!confirmed) {
             return ResponseEntity.ok(ElaToolResponse.fail("create_logistics_request", "Confirmation required"));
         }
-        String productName = (String) params.getOrDefault("productName", "Tomatoes");
-        String quantity = (String) params.getOrDefault("quantity", "500 kg");
-        String pickupLocation = (String) params.getOrDefault("pickupLocation", "Farm Gate");
-        String destination = (String) params.getOrDefault("destination", "Pune APMC Mandi");
-        String estimatedEarnings = (String) params.getOrDefault("estimatedFreight", params.getOrDefault("estimatedEarnings", "₹2,500"));
+        String productName = getParamString(params, "productName", "Tomatoes");
+        String quantity = getParamString(params, "quantity", "500 kg");
+        String pickupLocation = getParamString(params, "pickupLocation", "Farm Gate");
+        String destination = getParamString(params, "destination", "Pune APMC Mandi");
+        String estimatedEarnings = getParamString(params, "estimatedFreight", getParamString(params, "estimatedEarnings", "₹2,500"));
         try {
             var request = farmerService.requestLogistics(userId, null, productName, quantity, pickupLocation, destination, estimatedEarnings);
             return ResponseEntity.ok(ElaToolResponse.ok("create_logistics_request", "Logistics request created successfully", request));
@@ -144,10 +151,10 @@ public class ElaToolController {
         if (!confirmed) {
             return ResponseEntity.ok(ElaToolResponse.fail("create_procurement", "Confirmation required"));
         }
-        String cropName = (String) params.getOrDefault("cropName", "Tomatoes");
-        String quantity = (String) params.getOrDefault("quantityRequired", params.getOrDefault("quantity", "500 kg"));
-        String targetPrice = (String) params.getOrDefault("maxPricePerKg", params.getOrDefault("targetPrice", "₹40/kg"));
-        String destination = (String) params.getOrDefault("deliveryLocation", params.getOrDefault("destination", "Pune APMC Mandi"));
+        String cropName = getParamString(params, "cropName", "Tomatoes");
+        String quantity = getParamString(params, "quantityRequired", getParamString(params, "quantity", "500 kg"));
+        String targetPrice = getParamString(params, "maxPricePerKg", getParamString(params, "targetPrice", "₹40/kg"));
+        String destination = getParamString(params, "deliveryLocation", getParamString(params, "destination", "Pune APMC Mandi"));
         try {
             var procurement = buyerService.postProcurement(userId, cropName, quantity, targetPrice, destination);
             return ResponseEntity.ok(ElaToolResponse.ok("create_procurement", "Procurement order posted successfully", procurement));
@@ -169,12 +176,12 @@ public class ElaToolController {
         if (!confirmed) {
             return ResponseEntity.ok(ElaToolResponse.fail("create_vehicle", "Confirmation required"));
         }
-        String fullName = (String) params.getOrDefault("fullName", "Driver");
-        String vehicleType = (String) params.getOrDefault("vehicleType", "Mini Truck (750 kg)");
-        String vehicleRegNo = (String) params.getOrDefault("vehicleRegNo", "MH 12 AB 9876");
-        String capacity = (String) params.getOrDefault("capacity", "750 kg");
-        String operatingRegion = (String) params.getOrDefault("operatingRegion", "Pune Region");
-        String phone = (String) params.getOrDefault("phone", "+91 9876543210");
+        String fullName = getParamString(params, "fullName", "Driver");
+        String vehicleType = getParamString(params, "vehicleType", "Mini Truck (750 kg)");
+        String vehicleRegNo = getParamString(params, "vehicleRegNo", "MH 12 AB 9876");
+        String capacity = getParamString(params, "capacity", "750 kg");
+        String operatingRegion = getParamString(params, "operatingRegion", "Pune Region");
+        String phone = getParamString(params, "phone", "+91 9876543210");
         try {
             var vehicle = transporterService.registerVehicle(userId, fullName, vehicleType, vehicleRegNo, capacity, operatingRegion, phone);
             return ResponseEntity.ok(ElaToolResponse.ok("create_vehicle", "Vehicle registered successfully", vehicle));

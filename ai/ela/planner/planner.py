@@ -113,11 +113,13 @@ class GoalManager:
             ]
             title = f"Process {intent}"
 
+        strat = getattr(entities, 'strategy', 'BALANCED') or 'BALANCED'
         return GoalPlan(
             goal_id=goal_id,
             title=title,
             original_prompt=raw_prompt,
             role=role,
+            strategy=strat,
             status='PLANNING',
             subtasks=subtasks,
         )

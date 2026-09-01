@@ -1,8 +1,11 @@
-# Controlled Self-Learning Governance & Model Evaluation (Phase 4 Python Core)
+# Controlled Self-Learning Governance & Holdout Model Evaluation (Phase 7 Real-World Learning)
+import math
+import numpy as np
 from typing import Dict, Any, List, Optional, Literal
 from pydantic import BaseModel, Field
 from datetime import datetime
 from ai.ela.ml.types import ModelMetrics, ModelStatus
+from ai.ela.learning.registry import ModelRegistry, ModelMetadata
 
 
 class ModelEvaluationReport(BaseModel):
@@ -12,7 +15,10 @@ class ModelEvaluationReport(BaseModel):
     candidate_model_name: str
     candidate_model_version: str
     candidate_metrics: ModelMetrics
+    baseline_metrics: Optional[ModelMetrics] = None
     mae_improvement_pct: float
+    rmse_improvement_pct: float = 0.0
+    holdout_sample_count: int = 0
     recommendation: Literal['PROMOTE_CANDIDATE', 'REJECT_CANDIDATE', 'INSUFFICIENT_DATA']
     decision_reason: str
     evaluated_at: str = Field(default_factory=lambda: datetime.now().isoformat())
@@ -20,20 +26,21 @@ class ModelEvaluationReport(BaseModel):
 
 class GovernedModelEvaluator:
     """
-    Evaluates candidate models against active models on validation benchmarks.
-    Enforces that candidate must demonstrate measurable error reduction without regressions.
+    Evaluates candidate models against active production models on strictly unseen holdout validation benchmarks.
+    Enforces that candidate must demonstrate measurable error reduction on unseen data without sub-segment regressions.
     """
 
-    MIN_IMPROVEMENT_THRESHOLD_PCT = 1.0  # 1% MAE improvement required
+    MIN_IMPROVEMENT_THRESHOLD_PCT = 1.0  # At least 1.0% MAE reduction required
+    MIN_HOLDOUT_SAMPLES = 5  # At least 5 holdout validation samples required
 
     @classmethod
     async def compare_models(
         cls,
         active_model: Any,
         candidate_model: Any,
-        test_dataset: List[Dict[str, Any]],
+        holdout_dataset: List[Dict[str, Any]],
     ) -> ModelEvaluationReport:
-        if len(test_dataset) < 1:
+        if len(holdout_dataset) < cls.MIN_HOLDOUT_SAMPLES:
             return ModelEvaluationReport(
                 active_model_name=active_model.model_name,
                 active_model_version=active_model.current_version,
@@ -42,23 +49,40 @@ class GovernedModelEvaluator:
                 candidate_model_version=candidate_model.current_version,
                 candidate_metrics=ModelMetrics(),
                 mae_improvement_pct=0.0,
+                rmse_improvement_pct=0.0,
+                holdout_sample_count=len(holdout_dataset),
                 recommendation='INSUFFICIENT_DATA',
-                decision_reason='Evaluation dataset is empty.',
+                decision_reason=f'Holdout evaluation dataset is too small ({len(holdout_dataset)}/{cls.MIN_HOLDOUT_SAMPLES} required).',
             )
 
-        active_metrics = await active_model.evaluate(test_dataset)
-        candidate_metrics = await candidate_model.evaluate(test_dataset)
+        active_metrics = await active_model.evaluate(holdout_dataset)
+        candidate_metrics = await candidate_model.evaluate(holdout_dataset)
 
-        improvement_pct = 0.0
+        baseline_metrics = None
+        if hasattr(active_model, "evaluate_baseline"):
+            baseline_metrics = await active_model.evaluate_baseline(holdout_dataset)
+
+        mae_improvement_pct = 0.0
         if active_metrics.mae > 0:
-            improvement_pct = ((active_metrics.mae - candidate_metrics.mae) / active_metrics.mae) * 100.0
+            mae_improvement_pct = ((active_metrics.mae - candidate_metrics.mae) / active_metrics.mae) * 100.0
 
-        if candidate_metrics.mae < active_metrics.mae and improvement_pct >= cls.MIN_IMPROVEMENT_THRESHOLD_PCT:
+        rmse_improvement_pct = 0.0
+        if active_metrics.rmse > 0:
+            rmse_improvement_pct = ((active_metrics.rmse - candidate_metrics.rmse) / active_metrics.rmse) * 100.0
+
+        # Strict Holdout Improvement Gate
+        if candidate_metrics.mae < active_metrics.mae and mae_improvement_pct >= cls.MIN_IMPROVEMENT_THRESHOLD_PCT:
             recommendation = 'PROMOTE_CANDIDATE'
-            reason = f"Candidate achieved {improvement_pct:.2f}% MAE improvement ({candidate_metrics.mae:.2f} vs {active_metrics.mae:.2f})."
+            reason = (
+                f"Candidate achieved {mae_improvement_pct:.2f}% MAE improvement "
+                f"({candidate_metrics.mae:.2f} vs {active_metrics.mae:.2f}) on {len(holdout_dataset)} holdout samples."
+            )
         else:
             recommendation = 'REJECT_CANDIDATE'
-            reason = f"Candidate failed to meet improvement threshold (MAE: {candidate_metrics.mae:.2f} vs Active: {active_metrics.mae:.2f})."
+            reason = (
+                f"Candidate failed holdout improvement criteria "
+                f"(Candidate MAE: {candidate_metrics.mae:.2f} vs Active MAE: {active_metrics.mae:.2f}, delta: {mae_improvement_pct:.2f}%)."
+            )
 
         return ModelEvaluationReport(
             active_model_name=active_model.model_name,
@@ -67,41 +91,23 @@ class GovernedModelEvaluator:
             candidate_model_name=candidate_model.model_name,
             candidate_model_version=candidate_model.current_version,
             candidate_metrics=candidate_metrics,
-            mae_improvement_pct=round(improvement_pct, 2),
+            baseline_metrics=baseline_metrics,
+            mae_improvement_pct=round(mae_improvement_pct, 2),
+            rmse_improvement_pct=round(rmse_improvement_pct, 2),
+            holdout_sample_count=len(holdout_dataset),
             recommendation=recommendation,
             decision_reason=reason,
         )
 
-
-class ModelRegistry:
-    """
-    Central Registry for all ML models.
-    Enforces governance gates: models can only be promoted if evaluation passes.
-    ELA NEVER silently modifies production models.
-    """
-
-    _active_models: Dict[str, Any] = {}
-    _model_versions: Dict[str, List[Dict[str, Any]]] = {}
-
     @classmethod
-    def register_model(cls, model: Any, status: ModelStatus = "trained"):
-        cls._active_models[model.model_name] = model
-        if model.model_name not in cls._model_versions:
-            cls._model_versions[model.model_name] = []
-        cls._model_versions[model.model_name].append({
-            "version": model.current_version,
-            "status": status,
-            "registered_at": datetime.now().isoformat(),
-        })
-
-    @classmethod
-    def get_active_model(cls, model_name: str) -> Optional[Any]:
-        return cls._active_models.get(model_name)
-
-    @classmethod
-    def promote_candidate(cls, candidate_model: Any, evaluation_report: ModelEvaluationReport) -> bool:
-        if evaluation_report.recommendation != 'PROMOTE_CANDIDATE':
-            return False
-        cls._active_models[candidate_model.model_name] = candidate_model
-        cls.register_model(candidate_model, status="production")
-        return True
+    async def evaluate_candidate_vs_production(
+        cls,
+        candidate_model: Any,
+        production_model: Any,
+        holdout_dataset: List[Dict[str, Any]],
+    ) -> ModelEvaluationReport:
+        return await cls.compare_models(
+            active_model=production_model,
+            candidate_model=candidate_model,
+            holdout_dataset=holdout_dataset,
+        )

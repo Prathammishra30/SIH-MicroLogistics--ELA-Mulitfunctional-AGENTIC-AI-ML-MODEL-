@@ -22,15 +22,20 @@ export const ElaWidget: React.FC = () => {
       ? `${state.auth.user.role.charAt(0).toUpperCase() + state.auth.user.role.slice(1).toLowerCase()}`
       : 'Universal AI';
 
-  // Close on Escape key
+  // Listen to open-ela-chat event and Escape key
   useEffect(() => {
+    const handleOpen = () => setIsOpen(true);
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape' && isOpen) {
         setIsOpen(false);
       }
     };
+    window.addEventListener('open-ela-chat', handleOpen);
     window.addEventListener('keydown', handleKeyDown);
-    return () => window.removeEventListener('keydown', handleKeyDown);
+    return () => {
+      window.removeEventListener('open-ela-chat', handleOpen);
+      window.removeEventListener('keydown', handleKeyDown);
+    };
   }, [isOpen]);
 
   return (

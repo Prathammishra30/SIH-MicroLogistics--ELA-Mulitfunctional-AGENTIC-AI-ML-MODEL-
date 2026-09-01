@@ -1,5 +1,5 @@
 import React from 'react';
-import { ArrowRight, Sprout, Truck, Store, MapPin } from 'lucide-react';
+import { ArrowRight, Sprout, Truck, Store, MapPin, Bot, Sparkles } from 'lucide-react';
 import { motion, useReducedMotion } from 'framer-motion';
 import { useLanguage } from '../context/LanguageContext';
 
@@ -141,6 +141,25 @@ export const HeroSection: React.FC<HeroSectionProps> = ({ onExploreRoles }) => {
               className="px-8 py-3.5 rounded-2xl bg-white/10 hover:bg-white/20 backdrop-blur-md border border-white/30 text-white font-bold text-sm sm:text-base transition-colors cursor-pointer shadow-lg hover:shadow-white/10"
             >
               {t('gateway.hero.ctaSecondary')}
+            </motion.button>
+
+            <motion.button
+              onClick={() => window.dispatchEvent(new CustomEvent('open-ela-chat'))}
+              whileHover={
+                shouldReduceMotion
+                  ? undefined
+                  : { scale: 1.03, y: -2, transition: { duration: 0.15 } }
+              }
+              whileTap={
+                shouldReduceMotion
+                  ? undefined
+                  : { scale: 0.97, transition: { duration: 0.1 } }
+              }
+              className="px-8 py-3.5 rounded-2xl bg-gradient-to-r from-emerald-700 via-green-600 to-emerald-600 hover:from-emerald-600 hover:to-green-500 text-white font-bold text-sm sm:text-base transition-all shadow-xl hover:shadow-[0_0_25px_rgba(16,185,129,0.5)] flex items-center gap-2.5 cursor-pointer border border-emerald-400/50"
+            >
+              <Bot className="w-5 h-5 text-amber-300" />
+              <span>Talk to ELA</span>
+              <Sparkles className="w-4 h-4 text-amber-300 animate-pulse" />
             </motion.button>
           </motion.div>
         </motion.div>

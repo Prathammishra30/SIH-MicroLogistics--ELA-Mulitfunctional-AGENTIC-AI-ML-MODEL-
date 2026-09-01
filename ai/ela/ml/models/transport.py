@@ -96,6 +96,19 @@ class TransportCostModel(IMLModel[TransportCostFeatures, TransportCostOutput]):
             return True, f"Transit distance ({f.distance_km} km) exceeds regional micro-logistics scope."
         return False, None
 
+    def _extract_target(self, row: Dict[str, Any]) -> float:
+        """
+        Extracts ground truth freight cost with strict precedence.
+        Raises ValueError if no valid target exists.
+        """
+        for k in ["actual_value", "target", "actual_freight", "actual_cost"]:
+            if k in row and row[k] is not None:
+                try:
+                    return float(row[k])
+                except (ValueError, TypeError):
+                    pass
+        raise ValueError(f"No valid ground truth target found in sample: {row}")
+
     async def train(self, dataset: List[Dict[str, Any]]) -> ModelMetrics:
         if not dataset or len(dataset) < 4:
             self._status = "trained"
@@ -103,14 +116,23 @@ class TransportCostModel(IMLModel[TransportCostFeatures, TransportCostOutput]):
 
         X_rows = []
         residuals = []
+        valid_rows = []
         for row in dataset:
+            try:
+                target = self._extract_target(row)
+            except ValueError:
+                continue
             feats = row.get("features", {})
             f_obj = TransportCostFeatures(**feats) if isinstance(feats, dict) else feats
-            target = float(row.get("target", row.get("actual_freight", 2500.0)))
             _, _, baseline_total = self._compute_tariff_baseline(f_obj)
             res = target - (baseline_total + f_obj.toll_charges)
             X_rows.append(self._extract_elasticity_vector(f_obj))
             residuals.append(res)
+            valid_rows.append((f_obj, target))
+
+        if len(valid_rows) < 4:
+            self._status = "trained"
+            return ModelMetrics(mae=0.0, rmse=0.0, sample_count=0)
 
         X = np.array(X_rows)
         y = np.array(residuals)
@@ -124,17 +146,37 @@ class TransportCostModel(IMLModel[TransportCostFeatures, TransportCostOutput]):
         except np.linalg.LinAlgError:
             pass
 
-        y_true = [float(r.get("target", r.get("actual_freight", 2500.0))) for r in dataset]
+        y_true = [target for _, target in valid_rows]
         y_pred = []
-        for row in dataset:
-            feats = row.get("features", {})
-            f_obj = TransportCostFeatures(**feats) if isinstance(feats, dict) else feats
+        for f_obj, _ in valid_rows:
             pred_res = await self.predict(f_obj)
             y_pred.append(pred_res.prediction.estimated_cost)
 
         metrics = compute_metrics(y_true, y_pred)
         self._last_evaluated_metrics = metrics
         return metrics
+
+    async def evaluate_baseline(self, test_dataset: List[Dict[str, Any]]) -> ModelMetrics:
+        """
+        Evaluates pure standardized tariff baseline without learned elasticity adjustments.
+        """
+        if not test_dataset:
+            return ModelMetrics(mae=0.0, rmse=0.0, sample_count=0)
+
+        y_true = []
+        y_pred = []
+        for sample in test_dataset:
+            try:
+                target = self._extract_target(sample)
+            except ValueError:
+                continue
+            feats = sample.get("features", {})
+            f_obj = TransportCostFeatures(**feats) if isinstance(feats, dict) else feats
+            _, _, baseline_total = self._compute_tariff_baseline(f_obj)
+            y_true.append(target)
+            y_pred.append(float(baseline_total + f_obj.toll_charges))
+
+        return compute_metrics(y_true, y_pred)
 
     async def evaluate(self, test_dataset: List[Dict[str, Any]]) -> ModelMetrics:
         if not test_dataset:
@@ -143,12 +185,15 @@ class TransportCostModel(IMLModel[TransportCostFeatures, TransportCostOutput]):
         y_true = []
         y_pred = []
         for sample in test_dataset:
+            try:
+                target = self._extract_target(sample)
+            except ValueError:
+                continue
             feats = sample.get("features", {})
             f_obj = TransportCostFeatures(**feats) if isinstance(feats, dict) else feats
-            target = float(sample.get("target", sample.get("actual_freight", 2500.0)))
             pred_res = await self.predict(f_obj)
             y_true.append(target)
-            y_pred.append(pred_res.prediction.estimated_cost)
+            y_pred.append(float(pred_res.prediction.estimated_cost))
 
         metrics = compute_metrics(y_true, y_pred)
         self._last_evaluated_metrics = metrics

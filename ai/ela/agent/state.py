@@ -60,6 +60,7 @@ class CanonicalEntities(BaseModel):
     grade: Optional[str] = None
     vehicle_type: Optional[str] = None
     vehicle_reg_no: Optional[str] = None
+    strategy: str = 'BALANCED'
 
 
 class SafetyCheckResult(BaseModel):
@@ -103,6 +104,8 @@ class GoalPlan(BaseModel):
     title: str
     original_prompt: str
     role: UserRole
+    strategy: str = 'BALANCED'
+    constraints: Dict[str, Any] = Field(default_factory=dict)
     status: Literal['PLANNING', 'IN_PROGRESS', 'COMPLETED', 'FAILED'] = 'PLANNING'
     subtasks: List[SubTask] = Field(default_factory=list)
     current_subtask_index: int = 0
@@ -119,12 +122,20 @@ class AgentExecutionTrace(BaseModel):
     language: SupportedLanguage = 'en'
     input_message: str
     intent: ElaIntent = 'GENERAL_HELP'
+    goal_title: Optional[str] = None
+    strategy: str = 'BALANCED'
+    lifecycle_stage: str = 'RESPONDING'
     confidence: ConfidenceScore = Field(default_factory=ConfidenceScore)
     planner_steps: List[Dict[str, Any]] = Field(default_factory=list)
     selected_tools: List[str] = Field(default_factory=list)
     tool_results: List[Dict[str, Any]] = Field(default_factory=list)
+    models_used: List[str] = Field(default_factory=list)
+    predictions_summary: Optional[Dict[str, Any]] = None
+    decision_trace: Optional[Dict[str, Any]] = None
+    verification_status: str = 'VERIFIED'
+    learning_event_created: bool = False
     model_provider: str = 'PythonRuleBasedCanonicalProvider'
-    model_version: str = 'ela-py-v4'
+    model_version: str = 'ela-py-v8.1'
     total_latency_ms: float = 0.0
     final_outcome: AgentOutcome = 'SUCCESS'
     timestamp: str = Field(default_factory=lambda: datetime.now().isoformat())

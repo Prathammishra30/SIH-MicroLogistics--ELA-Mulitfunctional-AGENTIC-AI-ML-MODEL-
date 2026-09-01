@@ -68,21 +68,8 @@ export const ElaChat: React.FC<ElaChatProps> = ({ onClose }) => {
           ? `नमस्ते ${currentUserName || 'ट्रांसपोर्टर जी'}! मैं ELA हूँ। उपलब्ध ट्रिप्स खोजने, गाड़ी प्रबंधन या कमाई देखने में मैं आपकी सहायता करूँगी।`
           : `Hello ${currentUserName || 'Transporter'}! I'm ELA. I can help you find available loads, manage vehicles, track trips, and view earnings.`;
     } else {
-      // Universal Landing Welcome Message across all 7 Indian languages
-      welcomeText =
-        language === 'mr'
-          ? 'नमस्कार! मी ELA — तुमची अ‍ॅग्रीरूट AI सहाय्यक. मी तुम्हाला शेतकरी, खरेदीदार किंवा वाहतूकदार पोर्टलमध्ये प्रवेश करण्यास, अ‍ॅग्रीरूट कसे कार्य करते ते समजून घेण्यास किंवा कार्ये पूर्ण करण्यास मदत करू शकते.'
-          : language === 'hi'
-          ? 'नमस्ते! मैं ELA हूँ — आपकी एग्रीरूट Universal Intelligence Assistant। मैं आपको किसान, खरीदार या ट्रांसपोर्टर पोर्टल में प्रवेश करने, एग्रीरूट कैसे काम करता है यह समझने, या काम पूरे करने में मदद कर सकती हूँ।'
-          : language === 'ta'
-          ? 'வணக்கம்! நான் ELA, உங்கள் அக்ரிரூட் AI உதவியாளர். விவசாயி, வாங்குபவர் அல்லது டிரான்ஸ்போர்ட்டர் போர்ட்டலை அணுகவும், அக்ரிரூட் எவ்வாறு செயல்படுகிறது என்பதைப் புரிந்து கொள்ளவும் நான் உதவ முடியும்.'
-          : language === 'te'
-          ? 'నమస్కారం! నేను ELA, మీ అగ్రిరూట్ AI సహాయకురాలిని. రైతు, కొనుగోలుదారు లేదా రవాణాదారు పోర్టల్‌ను యాక్సెస్ చేయడానికి, అగ్రిరూట్ ఎలా పనిచేస్తుందో అర్థం చేసుకోవడానికి నేను సహాయం చేయగలను.'
-          : language === 'bn'
-          ? 'নমস্কার! আমি ELA, আপনার অ্যাগ্রিরুট AI সহকারী। আমি আপনাকে কৃষক, ক্রেতা বা পরিবহনকারী পোর্টালে প্রবেশ করতে, অ্যাগ্রিরুট কীভাবে কাজ করে তা বুঝতে সাহায্য করতে পারি।'
-          : language === 'kn'
-          ? 'ನಮಸ್ಕಾರ! ನಾನು ELA, ನಿಮ್ಮ ಅಗ್ರಿರೌಟ್ AI ಸಹಾಯಕ. ರೈತ, ಖರೀದಿದಾರ ಅಥವಾ ಸಾರಿಗೆದಾರ ಪೋರ್ಟಲ್ ಅನ್ನು ಪ್ರವೇಶಿಸಲು, ಅಗ್ರಿರೌಟ್ ಹೇಗೆ ಕಾರ್ಯನಿರ್ವಹಿಸುತ್ತದೆ ಎಂಬುದನ್ನು ಅರ್ಥಮಾಡಿಕೊಳ್ಳಲು ನಾನು ನಿಮಗೆ ಸಹಾಯ ಮಾಡಬಲ್ಲೆ.'
-          : "Hello! I'm ELA, your AgriRoute Universal Intelligence Assistant. मैं Farmer, Buyer या Transporter portal में आपकी मदद कर सकती हूँ. How can I help you today?";
+      // Universal Landing Welcome Message (Hard requirement: bilingual natural greeting)
+      welcomeText = "How can I help you?\nमैं आपकी कैसे मदद कर सकती हूँ?";
     }
 
     return {
@@ -133,7 +120,7 @@ export const ElaChat: React.FC<ElaChatProps> = ({ onClose }) => {
     }
   }, [messages, storageKey]);
 
-  const handleSendMessage = async (text: string) => {
+  const handleSendMessage = async (text: string, isVoiceSource = false) => {
     const trimmed = text.trim();
     if (!trimmed) return;
 
@@ -144,7 +131,7 @@ export const ElaChat: React.FC<ElaChatProps> = ({ onClose }) => {
         role: 'assistant',
         content:
           t('ela.sensitiveCredentialShield') ||
-          'Please enter your password or OTP directly into the secure login form. For your protection, ELA never processes, stores, or transmits authentication secrets.',
+          'Please enter your password, OTP, or verification code directly into the secure login form. For your protection, ELA never processes, stores, or transmits authentication secrets.',
         timestamp: new Date().toISOString(),
       };
       setMessages((prev) => [
@@ -164,8 +151,20 @@ export const ElaChat: React.FC<ElaChatProps> = ({ onClose }) => {
 
     setMessages((prev) => [...prev, userMsg]);
     setIsLoading(true);
-    setAgentStage('UNDERSTANDING');
-    setAgentStatusMsg('Understanding semantic intent & entities...');
+
+    // Voice lifecycle progression
+    setAgentStage('LANGUAGE_DETECTED');
+    setAgentStatusMsg('Recognizing language and semantic script...');
+
+    setTimeout(() => {
+      setAgentStage('UNDERSTANDING');
+      setAgentStatusMsg('Understanding semantic intent & entities...');
+    }, 200);
+
+    setTimeout(() => {
+      setAgentStage('PLANNING');
+      setAgentStatusMsg('Planning multi-agent delegation & goal execution...');
+    }, 450);
 
     try {
       const historyPayload = messages
@@ -175,12 +174,6 @@ export const ElaChat: React.FC<ElaChatProps> = ({ onClose }) => {
           role: m.role as 'user' | 'assistant',
           content: m.content,
         }));
-
-      // Lifecycle progression
-      setTimeout(() => {
-        setAgentStage('PLANNING');
-        setAgentStatusMsg('Planning tasks & checking resources...');
-      }, 300);
 
       const response = await sendElaChatMessage(trimmed, historyPayload, {
         role: conversationalRole,
@@ -196,10 +189,11 @@ export const ElaChat: React.FC<ElaChatProps> = ({ onClose }) => {
       }
 
       if (response.confirmationAction) {
-        setAgentStage('WAITING_FOR_CONFIRMATION');
+        setAgentStage('CONFIRMATION_REQUIRED');
         setAgentStatusMsg('Action staged — awaiting confirmation...');
       } else {
-        setAgentStage('COMPLETED');
+        setAgentStage('RESPONDING');
+        setAgentStatusMsg('Generated decision response...');
       }
 
       const assistantMsg: ElaMessageType = {
@@ -227,7 +221,9 @@ export const ElaChat: React.FC<ElaChatProps> = ({ onClose }) => {
       }
 
       // Voice synthesis response if user used voice or TTS active
-      if (isSpeaking) {
+      if (isVoiceSource || isSpeaking) {
+        setAgentStage('SPEAKING');
+        setAgentStatusMsg('Speaking response in your language...');
         speakResponse(response.message);
       }
     } catch (error) {
@@ -247,10 +243,10 @@ export const ElaChat: React.FC<ElaChatProps> = ({ onClose }) => {
     } finally {
       setIsLoading(false);
       setTimeout(() => {
-        if (agentStage !== 'WAITING_FOR_CONFIRMATION') {
+        if (agentStage !== 'CONFIRMATION_REQUIRED' && agentStage !== 'WAITING_FOR_CONFIRMATION') {
           setAgentStage('IDLE');
         }
-      }, 2000);
+      }, 2500);
     }
   };
 
@@ -261,11 +257,17 @@ export const ElaChat: React.FC<ElaChatProps> = ({ onClose }) => {
     } else {
       setAgentStage('LISTENING');
       setAgentStatusMsg('Listening to your voice...');
-      startVoiceInput((transcript) => {
-        setAgentStage('TRANSCRIBING');
-        setAgentStatusMsg('Transcribing voice input...');
-        handleSendMessage(transcript);
-      });
+      startVoiceInput(
+        (transcript) => {
+          setAgentStage('TRANSCRIBING');
+          setAgentStatusMsg('Transcribing voice input...');
+          handleSendMessage(transcript, true);
+        },
+        () => {
+          setAgentStage('SPEECH_DETECTED');
+          setAgentStatusMsg('Speech detected...');
+        }
+      );
     }
   };
 

@@ -94,6 +94,7 @@ export interface ElaClientContext {
   language?: SupportedLanguage | string;
   currentPage?: string;
   userName?: string;
+  sessionId?: string;
 }
 
 export interface ElaExecutionContext {
@@ -108,6 +109,7 @@ export interface ElaChatRequest {
   message: string;
   history?: ElaMessage[];
   context?: ElaClientContext;
+  sessionId?: string;
 }
 
 export interface ElaConfirmRequest {

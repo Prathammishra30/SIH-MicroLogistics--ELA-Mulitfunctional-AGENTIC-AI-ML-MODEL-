@@ -26,6 +26,7 @@ class EntityExtractor:
     CROP_KEYWORDS = {
         'tomato': 'Tomatoes',
         'tomatoes': 'Tomatoes',
+        'tamatar': 'Tomatoes',
         'टमाटर': 'Tomatoes',
         'टोमॅटो': 'Tomatoes',
         'தக்காளி': 'Tomatoes',
@@ -34,6 +35,8 @@ class EntityExtractor:
         'ಟೊಮೆಟೊ': 'Tomatoes',
         'onion': 'Onions',
         'onions': 'Onions',
+        'pyaz': 'Onions',
+        'kanda': 'Onions',
         'कांदा': 'Onions',
         'प्याज': 'Onions',
         'வெங்காயம்': 'Onions',
@@ -42,6 +45,9 @@ class EntityExtractor:
         'ಈರುಳ್ಳಿ': 'Onions',
         'potato': 'Potatoes',
         'potatoes': 'Potatoes',
+        'aalu': 'Potatoes',
+        'alu': 'Potatoes',
+        'batata': 'Potatoes',
         'बटाटा': 'Potatoes',
         'आलू': 'Potatoes',
         'உருளைக்கிழங்கு': 'Potatoes',
@@ -49,6 +55,7 @@ class EntityExtractor:
         'আলু': 'Potatoes',
         'ಆಲೂಗಡ್ಡೆ': 'Potatoes',
         'wheat': 'Wheat',
+        'gehu': 'Wheat',
         'गहू': 'Wheat',
         'गेहूं': 'Wheat',
         'गेहूँ': 'Wheat',
@@ -57,6 +64,7 @@ class EntityExtractor:
         'গম': 'Wheat',
         'ಗೋಧಿ': 'Wheat',
         'rice': 'Rice',
+        'chawal': 'Rice',
         'तांदूळ': 'Rice',
         'चावल': 'Rice',
         'அரிசி': 'Rice',
@@ -181,5 +189,9 @@ class EntityExtractor:
                 entities.grade = 'Premium'
             else:
                 entities.grade = 'Standard'
+
+        # 8. Optimization Strategy Extraction
+        from ai.ela.intent.strategy import StrategyExtractor
+        entities.strategy = StrategyExtractor.extract_strategy(text)
 
         return entities

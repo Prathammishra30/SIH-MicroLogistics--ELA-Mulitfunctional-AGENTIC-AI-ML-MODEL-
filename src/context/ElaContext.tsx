@@ -12,7 +12,7 @@ export interface ElaContextType {
   isSpeaking: boolean;
   isSTTSupported: boolean;
   isTTSSupported: boolean;
-  startVoiceInput: (onTranscript: (text: string) => void) => boolean;
+  startVoiceInput: (onTranscript: (text: string) => void, onSpeechStart?: () => void) => boolean;
   stopVoiceInput: () => void;
   speakResponse: (text: string) => void;
   stopSpeaking: () => void;
@@ -29,7 +29,7 @@ export const ElaProvider: React.FC<{ children: React.ReactNode }> = ({ children 
   const [isTTSSupported] = useState(() => SpeechService.isTTSSupported());
 
   const startVoiceInput = useCallback(
-    (onTranscript: (text: string) => void): boolean => {
+    (onTranscript: (text: string) => void, onSpeechStart?: () => void): boolean => {
       const validLang = (language || 'en') as SupportedSpeechLang;
       setIsListening(true);
 
@@ -45,6 +45,9 @@ export const ElaProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         },
         () => {
           setIsListening(false);
+        },
+        () => {
+          onSpeechStart?.();
         }
       );
     },
