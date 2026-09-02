@@ -141,6 +141,9 @@ class ElaUniversalBrain:
             'CREATE_PRODUCT_WORKFLOW',
             'CREATE_PROCUREMENT_WORKFLOW',
             'CREATE_VEHICLE_WORKFLOW',
+            'GET_AVAILABLE_TRIPS',
+            'GET_BUYER_PRODUCE',
+            'GET_FARMER_PRODUCTS',
             'LOGIN_GUIDANCE',
         ]
         if not request.authenticated and (canonical.intent in consequential_intents or canonical.intent == 'ROLE_DECLARATION'):
@@ -149,7 +152,50 @@ class ElaUniversalBrain:
                 target_auth_role = 'FARMER'  # Default portal fallback if unspecified
             
             nav_route = f"/auth/{target_auth_role.lower()}"
-            login_msg = self._get_login_guidance_msg(target_auth_role, lang)
+            prod = accumulated_entities.product or accumulated_entities.commodity
+            qty = accumulated_entities.quantity
+            loc = accumulated_entities.pickup_location or accumulated_entities.destination
+            clean_loc = loc.split()[0] if loc else ''
+
+            role_title = target_auth_role.title()
+            role_hi = 'खरीदार' if target_auth_role == 'BUYER' else ('ट्रांसपोर्टर' if target_auth_role == 'TRANSPORTER' else 'किसान')
+            role_mr = 'खरेदीदार' if target_auth_role == 'BUYER' else ('वाहतूकदार' if target_auth_role == 'TRANSPORTER' else 'शेतकरी')
+
+            if prod and qty and target_auth_role in ['FARMER', 'BUYER']:
+                if lang == 'hi':
+                    login_msg = f"मैंने {f'{clean_loc} में ' if clean_loc else ''}{int(qty)} kg {prod} का अनुरोध नोट कर लिया है। चलिए पहले सुरक्षित रूप से {role_hi} खाते में लॉगिन कर लेते हैं।"
+                elif lang == 'mr':
+                    login_msg = f"मी {f'{clean_loc} मधील ' if clean_loc else ''}{int(qty)} kg {prod} ची नोंद घेतली आहे. चला प्रथम सुरक्षितपणे {role_mr} खात्यात लॉगिन करूया."
+                elif lang == 'ta':
+                    login_msg = f"{clean_loc} இல் {int(qty)} kg {prod} பதிவு செய்யப்பட்டுள்ளது. {role_title} கணக்கில் உள்நுழையலாம்."
+                elif lang == 'te':
+                    login_msg = f"{clean_loc} లో {int(qty)} kg {prod} నమోదు చేయబడింది. {role_title} ఖాతాలోకి లాగిన్ అవ్వండి."
+                elif lang == 'bn':
+                    login_msg = f"{clean_loc}-এ {int(qty)} kg {prod} নোট করা হয়েছে। {role_title} অ্যাকাউন্টে লগইন করুন।"
+                elif lang == 'kn':
+                    login_msg = f"{clean_loc} ನಲ್ಲಿ {int(qty)} kg {prod} ದಾಖಲಿಸಲಾಗಿದೆ. {role_title} ಖಾತೆಗೆ ಲಾಗಿನ್ ಮಾಡಿ."
+                else:
+                    login_msg = f"I've noted your {int(qty)} kg {prod}{f' in {clean_loc}' if clean_loc else ''}. Let's securely log in to your {role_title} account to proceed."
+            elif target_auth_role == 'TRANSPORTER':
+                v_type = accumulated_entities.vehicle_type or 'truck'
+                if lang == 'hi':
+                    login_msg = f"मैंने {f'{clean_loc} में ' if clean_loc else ''}आपके वाहन का विवरण नोट कर लिया है। उपलब्ध लोड और फेऱ्या देखने के लिए चलिए ट्रांसपोर्टर खाते में लॉगिन कर लेते हैं।"
+                elif lang == 'mr':
+                    login_msg = f"मी {f'{clean_loc} मधील ' if clean_loc else ''}आपल्या वाहनाची नोंद घेतली आहे. उपलब्ध फेऱ्या पाहण्यासाठी चला वाहतूकदार खात्यात लॉगिन करूया."
+                else:
+                    login_msg = f"I see you have a {v_type}{f' in {clean_loc}' if clean_loc else ''}. Let's securely log in to your Transporter account to view available loads."
+            elif target_auth_role == 'BUYER':
+                if prod and qty:
+                    if lang == 'hi':
+                        login_msg = f"मैंने {int(qty)} kg {prod} खरीद मांग का विवरण नोट कर लिया है। चलिए पहले खरीदार खाते में लॉगिन कर लेते हैं।"
+                    elif lang == 'mr':
+                        login_msg = f"मी {int(qty)} kg {prod} खरेदी मागणीची नोंद घेतली आहे. चला प्रथम खरेदीदार खात्यात लॉगिन करूया."
+                    else:
+                        login_msg = f"I've noted your procurement request for {int(qty)} kg {prod}. Let's securely log in to your Buyer account."
+                else:
+                    login_msg = self._get_login_guidance_msg(target_auth_role, lang)
+            else:
+                login_msg = self._get_login_guidance_msg(target_auth_role, lang)
             
             trace = AgentExecutionTrace(
                 trace_id=trace_id,
@@ -385,22 +431,82 @@ class ElaUniversalBrain:
             if mkt_resp and mkt_resp.reasoning_summary:
                 return mkt_resp.reasoning_summary
 
-        msgs = {
-            'en': f"Processed request for **{prod}** ({qty} kg) to **{dest}**.",
-            'hi': f"आपके **{prod}** ({qty} kg) का अनुरोध संसाधित कर लिया गया है।",
-            'mr': f"आपल्या **{prod}** ({qty} kg) च्या विनंतीवर प्रक्रिया पूर्ण झाली आहे.",
-            'ta': f"**{prod}** ({qty} kg) க்கான கோரிக்கை செயலாக்கப்பட்டது.",
-            'te': f"**{prod}** ({qty} kg) అభ్యర్థన ప్రాసెస్ చేయబడింది.",
-            'bn': f"**{prod}** ({qty} kg) এর জন্য অনুরোধ প্রক্রিয়াকরণ সম্পন্ন হয়েছে।",
-            'kn': f"**{prod}** ({qty} kg) ವಿನಂತಿಯನ್ನು ಪ್ರಕ್ರಿಯೆಗೊಳಿಸಲಾಗಿದೆ.",
-        }
-        return msgs.get(lang, msgs['en'])
+        if intent == 'ROLE_DECLARATION':
+            role = getattr(entities, 'target_role', None) or 'FARMER'
+            farmer_ack = {
+                "en": "Got it. I'll help you as a Farmer. What would you like to do?\n\nYou can ask me to list a product, check market demand, book transport, or view your deliveries.",
+                "hi": "समझ गई। मैं एक किसान के रूप में आपकी सहायता करूँगी। आप क्या करना चाहेंगे?\n\nआप मुझसे फसल जोड़ने, मंडी मांग देखने, गाड़ी बुक करने या डिलीवरी देखने के लिए कह सकते हैं।",
+                "mr": "समजले. मी शेतकरी म्हणून तुम्हाला मदत करेन. तुम्हाला काय करायचे आहे?\n\nतुम्ही मला पिके नोंदवणे, बाजार मागणी तपासणे, वाहतूक मागवणे किंवा डिलिव्हरी तपासण्यास सांगू शकता.",
+                "ta": "புரிந்தது. ஒரு விவசாயியாக நான் உங்களுக்கு உதவுவேன். நீங்கள் என்ன செய்ய விரும்புகிறீர்கள்?",
+                "te": "అర్థమైంది. నేను మీకు రైతుగా సహాయం చేస్తాను. మీరు ఏమి చేయాలనుకుంటున్నారు?",
+                "bn": "বুঝেছি। আমি একজন কৃষক হিসেবে আপনাকে সাহায্য করব। আপনি কী করতে চান?",
+                "kn": "ತಿಳಿಯಿತು. ನಾನು ನಿಮಗೆ ರೈತರಾಗಿ ಸಹಾಯ ಮಾಡುತ್ತೇನೆ. ನೀವು ಏನು ಮಾಡಲು ಬಯಸುತ್ತೀರಿ?",
+            }
+            buyer_ack = {
+                "en": "Got it. I'll help you as a Buyer. What would you like to do?\n\nYou can ask me to post procurement demands, browse fresh produce, or track your orders.",
+                "hi": "समझ गई। मैं एक खरीदार के रूप में आपकी सहायता करूँगी। आप क्या करना चाहेंगे?\n\nआप मुझसे खरीद मांग पोस्ट करने, ताज़ा उपज देखने या ऑर्डर ट्रैक करने के लिए कह सकते हैं।",
+                "mr": "समजले. मी खरेदीदार म्हणून तुम्हाला मदत करेन. तुम्हाला काय करायचे आहे?\n\nतुम्ही मला खरेदी मागणी नोंदवणे, शेतमाल शोधणे किंवा ऑर्डर्स तपासण्यास सांगू शकता.",
+                "ta": "புரிந்தது. வாங்குபவராக நான் உங்களுக்கு உதவுவேன். நீங்கள் என்ன செய்ய விரும்புகிறீர்கள்?",
+                "te": "అర్థమైంది. నేను మీకు కొనుగోలుదారుగా సహాయం చేస్తాను. మీరు ఏమి చేయాలనుకుంటున్నారు?",
+                "bn": "বুঝেছি। আমি একজন ক্রেতা হিসেবে আপনাকে সাহায্য করব। আপনি কী করতে চান?",
+                "kn": "ತಿಳಿಯಿತು. ನಾನು ನಿಮಗೆ ಖರೀದಿದಾರರಾಗಿ ಸಹಾಯ ಮಾಡುತ್ತೇನೆ. ನೀವು ಏನು ಮಾಡಲು ಬಯಸುತ್ತೀರಿ?",
+            }
+            transporter_ack = {
+                "en": "Got it. I'll help you as a Transporter. What would you like to do?\n\nYou can ask me to find available loads, manage your fleet, or view your earnings.",
+                "hi": "समझ गई। मैं एक ट्रांसपोर्टर के रूप में आपकी सहायता करूँगी। आप क्या करना चाहेंगे?\n\nआप मुझसे उपलब्ध ट्रिप्स खोजने, गाड़ी जोड़ने या कमाई देखने के लिए कह सकते हैं।",
+                "mr": "समजले. मी वाहतूकदार म्हणून तुम्हाला मदत करेन. तुम्हाला काय करायचे आहे?\n\nतुम्ही मला उपलब्ध फेऱ्या शोधणे, वाहने व्यवस्थापित करणे किंवा कमाई तपासण्यास सांगू शकता.",
+                "ta": "புரிந்தது. ஒரு டிரான்ஸ்போர்ட்டராக நான் உங்களுக்கு உதவுவேன். நீங்கள் என்ன செய்ய விரும்புகிறீர்கள்?",
+                "te": "అర్థమైంది. నేను మీకు రவாణాదారుగా సహాయం చేస్తాను. మీరు ఏమి చేయాలనుకుంటున్నారు?",
+                "bn": "বুঝেছি। আমি একজন পরিবহনকারী হিসেবে আপনাকে সাহায্য করব। আপনি কী করতে চান?",
+                "kn": "ತಿಳಿಯಿತು. ನಾನು ನಿಮಗೆ ಸಾರಿಗೆದಾರರಾಗಿ ಸಹಾಯ ಮಾಡುತ್ತೇನೆ. ನೀವು ಏನು ಮಾಡಲು ಬಯಸುತ್ತೀರಿ?",
+            }
+            if role == 'BUYER':
+                return buyer_ack.get(lang, buyer_ack["en"])
+            elif role == 'TRANSPORTER':
+                return transporter_ack.get(lang, transporter_ack["en"])
+            return farmer_ack.get(lang, farmer_ack["en"])
+
+        if intent == 'LOGIN_GUIDANCE':
+            role = getattr(entities, 'target_role', None) or 'FARMER'
+            return self._get_login_guidance_msg(role, lang)
+
+        if intent == 'GENERAL_HELP':
+            general_msgs = {
+                "en": "I'm ELA, your AgriRoute logistics assistant. Tell me your role (Farmer, Buyer, or Transporter) and I'll guide you from there.",
+                "hi": "मैं ELA हूँ, आपकी एग्रीरूट लॉजिस्टिक्स सहायक। मुझे बताएं कि आप किसान, खरीदार या ट्रांसपोर्टर हैं और मैं आपकी मदद करूँगी।",
+                "mr": "मी ELA, तुमची अ‍ॅग्रीरूट लॉजिस्टिक्स सहाय्यक. तुम्ही शेतकरी, खरेदीदार किंवा वाहतूकदार आहात ते सांगा म्हणजे मी मदत करेन.",
+                "ta": "நான் ELA, உங்கள் அக்ரிரூட் தளவாட உதவியாளர். நீங்கள் விவசாயியா, வாங்குபவரா அல்லது டிரான்ஸ்போர்ட்டரா என்று கூறுங்கள்.",
+                "te": "నేను ELA, మీ అగ్రిరూట్ లాజిస్టిక్స్ అసిస్టెంట్. మీరు రైతు, కొనుగోలుదారు లేదా రవాణాదారు అని చెప్పండి.",
+                "bn": "আমি ELA, আপনার অ্যাগ্রিরুট লজিস্টিক সহকারী। আপনি কৃষক, ক্রেতা নাকি পরিবহনকারী তা আমাকে জানান।",
+                "kn": "ನಾನು ELA, ನಿಮ್ಮ ಅಗ್ರಿರೌಟ್ ಲಾಜಿಸ್ಟಿಕ್ಸ್ ಸಹಾಯಕ. ನೀವು ರೈತ, ಖರೀದಿದಾರ ಅಥವಾ ಸಾರಿಗೆದಾರ ಎಂದು ಹೇಳಿ.",
+            }
+            return general_msgs.get(lang, general_msgs["en"])
+
+        if conf_action:
+            msgs = {
+                'en': f"Processed request for **{prod}** ({qty} kg) to **{dest}**.",
+                'hi': f"आपके **{prod}** ({qty} kg) का अनुरोध संसाधित कर लिया गया है।",
+                'mr': f"आपल्या **{prod}** ({qty} kg) च्या विनंतीवर प्रक्रिया पूर्ण झाली आहे.",
+                'ta': f"**{prod}** ({qty} kg) க்கான கோரிக்கை செயலாக்கப்பட்டது.",
+                'te': f"**{prod}** ({qty} kg) అభ్యర్థన ప్రాసెస్ చేయబడింది.",
+                'bn': f"**{prod}** ({qty} kg) এর জন্য অনুরোধ প্রক্রিয়াকরণ সম্পন্ন হয়েছে।",
+                'kn': f"**{prod}** ({qty} kg) ವಿನಂತಿಯನ್ನು ಪ್ರಕ್ರಿಯೆಗೊಳಿಸಲಾಗಿದೆ.",
+            }
+            return msgs.get(lang, msgs['en'])
+
+        return "How can I help you? What would you like to do?"
 
     def _get_default_suggestions(self, role: UserRole, lang: SupportedLanguage) -> List[str]:
         if role == 'FARMER':
-            return ["Book Transport to Pune", "Check Tomato Market Demand", "Add Produce to Farm Inventory"]
+            if lang == 'mr': return ['पिके नोंदवा', 'बाजार मागणी', 'वाहतूक मागणी', 'माझी डिलिव्हरी']
+            if lang == 'hi': return ['फसल जोड़ें', 'मंडी मांग', 'गाड़ी बुक करें', 'मेरी डिलीवरी']
+            return ["List a product", "Market demand", "Book transport", "My deliveries"]
         elif role == 'BUYER':
-            return ["Create Procurement Request", "Browse Available Produce", "Track Active Orders"]
+            if lang == 'mr': return ['खरेदी मागणी नोंदवा', 'शेतमाल शोधा', 'माझ्या ऑर्डर्स']
+            if lang == 'hi': return ['खरीद मांग पोस्ट करें', 'उपज देखें', 'मेरे ऑर्डर्स']
+            return ["Post procurement", "Browse produce", "Track orders"]
         elif role == 'TRANSPORTER':
-            return ["Register Fleet Vehicle", "Discover Available Trips", "Check Corridor Earnings"]
-        return ["Talk to ELA", "Explore AgriRoute Features", "Login as Farmer"]
+            if lang == 'mr': return ['उपलब्ध फेऱ्या', 'माझी वाहने', 'माझी कमाई']
+            if lang == 'hi': return ['उपलब्ध ट्रिप्स', 'मेरी गाड़ियां', 'मेरी कमाई']
+            return ["Available trips", "Manage vehicles", "View earnings"]
+        return ["Choose Portal", "How AgriRoute Works", "Help Me Login", "What Can You Do?"]

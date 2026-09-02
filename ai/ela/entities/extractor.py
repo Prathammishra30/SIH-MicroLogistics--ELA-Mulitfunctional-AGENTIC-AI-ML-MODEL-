@@ -142,11 +142,28 @@ class EntityExtractor:
                     entities.quantity = val
                     entities.unit = 'kg'
 
-        # 3. Destination Extraction
+        # 3. Location & Destination Extraction
+        loc_matches = []
         for kw, canonical_dest in cls.DESTINATIONS.items():
-            if re.search(r'\b' + re.escape(kw) + r'\b', text, re.IGNORECASE) or kw in text:
+            for m in re.finditer(r'\b' + re.escape(kw) + r'\b', text, re.IGNORECASE):
+                loc_matches.append((m.start(), kw, canonical_dest))
+            if kw in text and not any(kw == item[1] for item in loc_matches):
+                loc_matches.append((text.find(kw), kw, canonical_dest))
+
+        loc_matches.sort(key=lambda x: x[0])
+        if len(loc_matches) >= 2:
+            entities.pickup_location = loc_matches[0][2]
+            entities.destination = loc_matches[1][2]
+        elif len(loc_matches) == 1:
+            loc_idx, kw, canonical_dest = loc_matches[0]
+            preceding_context = text[max(0, loc_idx - 10):loc_idx].lower()
+            following_context = text[loc_idx:min(len(text), loc_idx + len(kw) + 10)].lower()
+            if any(p in preceding_context for p in ['in ', 'at ', 'from ']) or any(f in following_context for f in ['से', 'हून', 'ून']):
+                entities.pickup_location = canonical_dest
                 entities.destination = canonical_dest
-                break
+            else:
+                entities.destination = canonical_dest
+                entities.pickup_location = canonical_dest
 
         # 4. Vehicle Type Extraction
         for pat, v_type in cls.VEHICLE_PATTERNS:
