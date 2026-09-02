@@ -1,7 +1,8 @@
 // ELA Message Component
-// User & Assistant Chat Bubbles with Rich Card, Confirmation, Voice Synthesis & Feedback Telemetry
+// User & Assistant Chat Bubbles with Rich Card, Confirmation, Markdown Rendering, Voice Synthesis & Feedback Telemetry
 
 import React, { useState } from 'react';
+import ReactMarkdown from 'react-markdown';
 import { Bot, User as UserIcon, AlertCircle, Volume2, ThumbsUp, ThumbsDown } from 'lucide-react';
 import type { ElaMessage as ElaMessageType, ElaConfirmationAction } from '../../services/elaApi';
 import { ElaActionCard } from './ElaActionCard';
@@ -77,7 +78,14 @@ export const ElaMessage: React.FC<ElaMessageProps> = ({
               : 'bg-white text-slate-800 border border-slate-200/80 shadow-xs rounded-tl-xs'
           }`}
         >
-          <div className="whitespace-pre-wrap break-words">{message.content}</div>
+          {/* Render markdown for assistant messages, plain text for user messages */}
+          {isUser ? (
+            <div className="whitespace-pre-wrap break-words">{message.content}</div>
+          ) : (
+            <div className="ela-markdown break-words [&_p]:my-1 [&_strong]:font-bold [&_ul]:list-disc [&_ul]:pl-4 [&_ul]:my-1 [&_ol]:list-decimal [&_ol]:pl-4 [&_ol]:my-1 [&_li]:my-0.5 [&_h1]:text-base [&_h1]:font-bold [&_h1]:my-1 [&_h2]:text-sm [&_h2]:font-bold [&_h2]:my-1 [&_h3]:text-sm [&_h3]:font-semibold [&_h3]:my-1 [&_code]:bg-slate-100 [&_code]:px-1 [&_code]:rounded [&_code]:text-xs [&_code]:font-mono [&_a]:text-emerald-600 [&_a]:underline">
+              <ReactMarkdown>{message.content}</ReactMarkdown>
+            </div>
+          )}
 
           {/* Action Card if navigation was returned */}
           {!isUser && message.navigationAction && (

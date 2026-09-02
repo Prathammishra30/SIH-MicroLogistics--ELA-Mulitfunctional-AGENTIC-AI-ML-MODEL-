@@ -2,7 +2,7 @@
 // Provides real-time microphone wave visualization and audio playback indicator
 
 import React from 'react';
-import { Mic, MicOff, Volume2, VolumeX, Sparkles } from 'lucide-react';
+import { Mic, Volume2, VolumeX, Sparkles, Square } from 'lucide-react';
 import { motion } from 'framer-motion';
 
 interface ElaVoiceVisualizerProps {
@@ -78,7 +78,7 @@ export const ElaVoiceVisualizer: React.FC<ElaVoiceVisualizerProps> = ({
       >
         {isListening ? (
           <>
-            <MicOff className="w-3.5 h-3.5" />
+            <Square className="w-3.5 h-3.5 fill-current" />
             <span>Stop</span>
           </>
         ) : (

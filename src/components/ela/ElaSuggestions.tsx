@@ -9,12 +9,12 @@ import type { UserRole } from '../../services/api';
 export function getDefaultSuggestions(role: UserRole | 'GUEST', lang: string): string[] {
   if (role === 'FARMER') {
     if (lang === 'mr') {
-      return ['पिके नोंदवा', 'बाजार मागणी', 'वाहतूक मागवा', 'माझी पिके', 'टोमॅटो भाव'];
+      return ['पिके नोंदवा', 'बाजार मागणी', 'वाहतूक मागवा', 'माझी डिलिव्हरी', 'भाव तपासा'];
     }
     if (lang === 'hi') {
-      return ['फसल जोड़ें', 'मंडी मांग देखें', 'गाड़ी बुक करें', 'मेरी फसलें', 'टमाटर का भाव'];
+      return ['फसल जोड़ें', 'मंडी मांग देखें', 'गाड़ी बुक करें', 'मेरी डिलीवरी', 'भाव देखें'];
     }
-    return ['Add Produce', 'Market Demand', 'Request Transport', 'My Products', 'Price Prediction'];
+    return ['List a product', 'Market demand', 'Book transport', 'My deliveries', 'Price check'];
   }
 
   if (role === 'BUYER') {
@@ -24,7 +24,7 @@ export function getDefaultSuggestions(role: UserRole | 'GUEST', lang: string): s
     if (lang === 'hi') {
       return ['खरीद मांग पोस्ट करें', 'फसल खोजें', 'मेरे ऑर्डर', 'डिलीवरी ट्रैक करें'];
     }
-    return ['Post Procurement', 'Find Produce', 'My Orders', 'Track Delivery'];
+    return ['Post procurement', 'Browse produce', 'My orders', 'Track delivery'];
   }
 
   if (role === 'TRANSPORTER') {
@@ -32,9 +32,9 @@ export function getDefaultSuggestions(role: UserRole | 'GUEST', lang: string): s
       return ['उपलब्ध फेऱ्या', 'माझी वाहने', 'चालू ट्रिप्स', 'माझी कमाई'];
     }
     if (lang === 'hi') {
-      return ['उपलब्ध ट्रिप्स', 'मेरी गाड़ियां', 'चालू फेरियां', 'मेरी कमाई'];
+      return ['उपलब्ध ट्रिप्स', 'मेरी गाड़ियां', 'चालू फेरियां', 'मेरी कमाई'];
     }
-    return ['Find Loads', 'My Vehicles', 'Active Trips', 'My Earnings'];
+    return ['Find loads', 'My vehicles', 'Active trips', 'My earnings'];
   }
 
   // Universal Public Landing Suggestions across all 7 Indian languages

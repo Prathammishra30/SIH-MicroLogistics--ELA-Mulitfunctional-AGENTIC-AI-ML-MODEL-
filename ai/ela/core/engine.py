@@ -352,6 +352,14 @@ class ElaIntelligenceEngine:
             elif tool == 'create_vehicle':
                 return f"I have prepared to add **{entities.vehicle_type or 'Vehicle'}** to your fleet. Please confirm."
 
+        # Role Declaration: acknowledge role switch, ask what they'd like to do
+        if intent == 'ROLE_DECLARATION':
+            return self._build_role_acknowledgment(lang, entities)
+
+        # Login Guidance: direct to appropriate auth portal
+        if intent == 'LOGIN_GUIDANCE':
+            return self._build_login_guidance(lang, entities)
+
         if intent == 'GET_FARMER_PRODUCTS':
             return "Here are your listed crops and inventory products."
         elif intent == 'GET_FARMER_DELIVERIES':
@@ -370,14 +378,80 @@ class ElaIntelligenceEngine:
             return "Here is the current APMC mandi market demand and price forecast."
         elif intent == 'EXPLAIN_PLATFORM':
             return "AgriRoute connects rural farmers directly with mandi buyers and verified transport using ELA AI intelligence."
+        elif intent == 'GENERAL_HELP':
+            general_msgs: Dict[str, str] = {
+                "en": "I'm ELA, your AgriRoute logistics assistant. Tell me your role (Farmer, Buyer, or Transporter) and I'll guide you from there.",
+                "hi": "मैं ELA हूँ, आपकी एग्रीरूट लॉजिस्टिक्स सहायक। मुझे बताएं कि आप किसान, खरीदार या ट्रांसपोर्टर हैं और मैं आपकी मदद करूँगी।",
+                "mr": "मी ELA, तुमची अ‍ॅग्रीरूट लॉजिस्टिक्स सहाय्यक. तुम्ही शेतकरी, खरेदीदार किंवा वाहतूकदार आहात ते सांगा म्हणजे मी मदत करेन.",
+            }
+            return general_msgs.get(lang, general_msgs["en"])
 
-        return "I have processed your request."
+        return "How can I help you? What would you like to do?"
+
+    def _build_role_acknowledgment(self, lang: SupportedLanguage, entities: Any) -> str:
+        """Build a proper multilingual role acknowledgment message — never claim any action was processed."""
+        role = getattr(entities, 'target_role', None) or 'FARMER'
+
+        farmer_ack: Dict[str, str] = {
+            "en": "Got it. I'll help you as a Farmer. What would you like to do?\n\nYou can ask me to list a product, check market demand, book transport, or view your deliveries.",
+            "hi": "समझ गई। मैं एक किसान के रूप में आपकी सहायता करूँगी। आप क्या करना चाहेंगे?\n\nआप मुझसे फसल जोड़ने, मंडी मांग देखने, गाड़ी बुक करने या डिलीवरी देखने के लिए कह सकते हैं।",
+            "mr": "समजले. मी शेतकरी म्हणून तुम्हाला मदत करेन. तुम्हाला काय करायचे आहे?\n\nतुम्ही मला पिके नोंदवणे, बाजार मागणी तपासणे, वाहतूक मागवणे किंवा डिलिव्हरी तपासण्यास सांगू शकता.",
+            "ta": "புரிந்தது. ஒரு விவசாயியாக நான் உங்களுக்கு உதவுவேன். நீங்கள் என்ன செய்ய விரும்புகிறீர்கள்?",
+            "te": "అర్థమైంది. నేను మీకు రైతుగా సహాయం చేస్తాను. మీరు ఏమి చేయాలనుకుంటున్నారు?",
+            "bn": "বুঝেছি। আমি একজন কৃষক হিসেবে আপনাকে সাহায্য করব। আপনি কী করতে চান?",
+            "kn": "ತಿಳಿಯಿತು. ನಾನು ನಿಮಗೆ ರೈತರಾಗಿ ಸಹಾಯ ಮಾಡುತ್ತೇನೆ. ನೀವು ಏನು ಮಾಡಲು ಬಯಸುತ್ತೀರಿ?",
+        }
+        buyer_ack: Dict[str, str] = {
+            "en": "Got it. I'll help you as a Buyer. What would you like to do?\n\nYou can ask me to post procurement demands, browse fresh produce, or track your orders.",
+            "hi": "समझ गई। मैं एक खरीदार के रूप में आपकी सहायता करूँगी। आप क्या करना चाहेंगे?\n\nआप मुझसे खरीद मांग पोस्ट करने, ताज़ा उपज देखने या ऑर्डर ट्रैक करने के लिए कह सकते हैं।",
+            "mr": "समजले. मी खरेदीदार म्हणून तुम्हाला मदत करेन. तुम्हाला काय करायचे आहे?\n\nतुम्ही मला खरेदी मागणी नोंदवणे, शेतमाल शोधणे किंवा ऑर्डर्स तपासण्यास सांगू शकता.",
+            "ta": "புரிந்தது. வாங்குபவராக நான் உங்களுக்கு உதவுவேன். நீங்கள் என்ன செய்ய விரும்புகிறீர்கள்?",
+            "te": "అర్థమైంది. నేను మీకు కొనుగోలుదారుగా సహాయం చేస్తాను. మీరు ఏమి చేయాలనుకుంటున్నారు?",
+            "bn": "বুঝেছি। আমি একজন ক্রেতা হিসেবে আপনাকে সাহায্য করব। আপনি কী করতে চান?",
+            "kn": "ತಿಳಿಯಿತು. ನಾನು ನಿಮಗೆ ಖರೀದಿದಾರರಾಗಿ ಸಹಾಯ ಮಾಡುತ್ತೇನೆ. ನೀವು ಏನು ಮಾಡಲು ಬಯಸುತ್ತೀರಿ?",
+        }
+        transporter_ack: Dict[str, str] = {
+            "en": "Got it. I'll help you as a Transporter. What would you like to do?\n\nYou can ask me to find available loads, manage your fleet, or view your earnings.",
+            "hi": "समझ गई। मैं एक ट्रांसपोर्टर के रूप में आपकी सहायता करूँगी। आप क्या करना चाहेंगे?\n\nआप मुझसे उपलब्ध ट्रिप्स खोजने, गाड़ी जोड़ने या कमाई देखने के लिए कह सकते हैं।",
+            "mr": "समजले. मी वाहतूकदार म्हणून तुम्हाला मदत करेन. तुम्हाला काय करायचे आहे?\n\nतुम्ही मला उपलब्ध फेऱ्या शोधणे, वाहने व्यवस्थापित करणे किंवा कमाई तपासण्यास सांगू शकता.",
+            "ta": "புரிந்தது. ஒரு டிரான்ஸ்போர்ட்டராக நான் உங்களுக்கு உதவுவேன். நீங்கள் என்ன செய்ய விரும்புகிறீர்கள்?",
+            "te": "అర్థమైంది. నేను మీకు రవాణాదారుగా సహాయం చేస్తాను. మీరు ఏమి చేయాలనుకుంటున్నారు?",
+            "bn": "বুঝেছি। আমি একজন পরিবহনকারী হিসেবে আপনাকে সাহায্য করব। আপনি কী করতে চান?",
+            "kn": "ತಿಳಿಯಿತು. ನಾನು ನಿಮಗೆ ಸಾರಿಗೆದಾರರಾಗಿ ಸಹಾಯ ಮಾಡುತ್ತೇನೆ. ನೀವು ಏನು ಮಾಡಲು ಬಯಸುತ್ತೀರಿ?",
+        }
+
+        if role == 'BUYER':
+            return buyer_ack.get(lang, buyer_ack["en"])
+        elif role == 'TRANSPORTER':
+            return transporter_ack.get(lang, transporter_ack["en"])
+        return farmer_ack.get(lang, farmer_ack["en"])
+
+    def _build_login_guidance(self, lang: SupportedLanguage, entities: Any) -> str:
+        """Build a login guidance message directing user to appropriate auth portal."""
+        login_msgs: Dict[str, str] = {
+            "en": "I can help you log in. Please select your role portal below to access your dashboard, or tell me if you are a Farmer, Buyer, or Transporter.",
+            "hi": "मैं लॉगिन में आपकी मदद कर सकती हूँ। कृपया नीचे अपना पोर्टल चुनें, या बताएं कि आप किसान, खरीदार या ट्रांसपोर्टर हैं।",
+            "mr": "मी लॉगिन करण्यात मदत करू शकते. कृपया खाली तुमचे पोर्टल निवडा किंवा तुम्ही शेतकरी, खरेदीदार किंवा वाहतूकदार आहात ते सांगा.",
+        }
+        return login_msgs.get(lang, login_msgs["en"])
 
     def _get_default_suggestions(self, role: UserRole, lang: SupportedLanguage) -> List[str]:
         if role == 'FARMER':
-            return ["Add 500 kg Tomatoes", "Check Market Demand", "Request Transport to Pune", "My Deliveries"]
+            if lang == 'hi':
+                return ["फसल जोड़ें", "मंडी मांग देखें", "गाड़ी बुक करें", "मेरी डिलीवरी"]
+            if lang == 'mr':
+                return ["पिके नोंदवा", "बाजार मागणी", "वाहतूक मागवा", "माझी डिलिव्हरी"]
+            return ["List a product", "Check market demand", "Book transport", "My deliveries"]
         elif role == 'BUYER':
-            return ["Browse Produce", "Post Procurement Demand", "My Orders", "Price Forecast"]
+            if lang == 'hi':
+                return ["खरीद मांग पोस्ट करें", "उपज देखें", "मेरे ऑर्डर", "डिलीवरी ट्रैक करें"]
+            if lang == 'mr':
+                return ["खरेदी मागणी नोंदवा", "शेतमाल शोधा", "माझ्या ऑर्डर्स", "डिलिव्हरी तपासा"]
+            return ["Post procurement", "Browse produce", "My orders", "Track delivery"]
         elif role == 'TRANSPORTER':
-            return ["Find Available Loads", "My Vehicles", "My Earnings", "Active Trips"]
+            if lang == 'hi':
+                return ["उपलब्ध ट्रिप्स", "मेरी गाड़ियां", "चालू फेरियां", "मेरी कमाई"]
+            if lang == 'mr':
+                return ["उपलब्ध फेऱ्या", "माझी वाहने", "चालू ट्रिप्स", "माझी कमाई"]
+            return ["Find loads", "My vehicles", "Active trips", "My earnings"]
         return ["I am a Farmer", "I am a Buyer", "I am a Transporter", "How AgriRoute Works"]

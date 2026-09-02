@@ -2,7 +2,7 @@
 // Real-time voice capture with pulsing listening wave
 
 import React from 'react';
-import { Mic, MicOff } from 'lucide-react';
+import { Mic, Square } from 'lucide-react';
 import { useEla } from '../../context/ElaContext';
 import { useLanguage } from '../../context/LanguageContext';
 
@@ -39,13 +39,13 @@ export const ElaVoiceInput: React.FC<ElaVoiceInputProps> = ({ onTranscript, disa
       title={isListening ? 'Stop listening' : t('ela.voicePrompt') || 'Speak to ELA'}
       className={`relative p-2.5 rounded-xl flex items-center justify-center transition-all cursor-pointer ${
         isListening
-          ? 'bg-rose-500 text-white shadow-md shadow-rose-500/30 animate-pulse'
+          ? 'bg-rose-500 text-white shadow-md shadow-rose-500/30'
           : 'bg-slate-100 hover:bg-slate-200 text-slate-600 hover:text-slate-900 active:scale-95'
       } disabled:opacity-40 disabled:cursor-not-allowed`}
     >
       {isListening ? (
         <>
-          <MicOff className="w-4 h-4" />
+          <Square className="w-4 h-4 fill-current animate-pulse" />
           <span className="absolute -top-1 -right-1 flex h-2.5 w-2.5">
             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-rose-400 opacity-75" />
             <span className="relative inline-flex rounded-full h-2.5 w-2.5 bg-rose-500" />

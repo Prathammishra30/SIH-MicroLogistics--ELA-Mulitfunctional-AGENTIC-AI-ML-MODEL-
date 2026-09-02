@@ -1,5 +1,6 @@
 // ELA Chat Window Component (Phase 4 Universal Project-Level Architecture)
 // AgriRoute / RuralFlow Universal Multilingual Logistics Intelligence Assistant
+// Supports both standalone and transcript mode (embedded below voice orb)
 
 import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { Sparkles, X, RefreshCw, Bot } from 'lucide-react';
@@ -22,12 +23,14 @@ import { ElaVoiceVisualizer } from './ElaVoiceVisualizer';
 
 interface ElaChatProps {
   onClose: () => void;
+  transcriptMode?: boolean;
+  onOrbResponse?: (message: string) => void;
 }
 
-export const ElaChat: React.FC<ElaChatProps> = ({ onClose }) => {
+export const ElaChat: React.FC<ElaChatProps> = ({ onClose, transcriptMode = false, onOrbResponse }) => {
   const { state, loadUserBusinessData } = useSharedContext();
   const { language, t } = useLanguage();
-  const { isListening, isSpeaking, startVoiceInput, stopVoiceInput, speakResponse, stopSpeaking } = useEla();
+  const { isListening, isSpeaking, startVoiceInput, stopVoiceInput, speakResponse, stopSpeaking, isMuted } = useEla();
   const location = useLocation();
   const navigate = useNavigate();
   const messagesEndRef = useRef<HTMLDivElement>(null);
@@ -120,135 +123,171 @@ export const ElaChat: React.FC<ElaChatProps> = ({ onClose }) => {
     }
   }, [messages, storageKey]);
 
-  const handleSendMessage = async (text: string, isVoiceSource = false) => {
-    const trimmed = text.trim();
-    if (!trimmed) return;
+  const handleSendMessage = useCallback(
+    async (text: string, isVoiceSource = false) => {
+      const trimmed = text.trim();
+      if (!trimmed) return;
 
-    // Client-side Credential Shield: Intercept raw passwords/OTPs before storing or sending
-    if (/\b(password|passcode|secret|otp|verification code|pin|123456|cvv)\b/i.test(trimmed)) {
-      const shieldMsg: ElaMessageType = {
-        id: `shield-${Date.now()}`,
-        role: 'assistant',
-        content:
-          t('ela.sensitiveCredentialShield') ||
-          'Please enter your password, OTP, or verification code directly into the secure login form. For your protection, ELA never processes, stores, or transmits authentication secrets.',
+      // Client-side Credential Shield: Intercept raw passwords/OTPs before storing or sending
+      if (/\b(password|passcode|secret|otp|verification code|pin|123456|cvv)\b/i.test(trimmed)) {
+        const shieldMsg: ElaMessageType = {
+          id: `shield-${Date.now()}`,
+          role: 'assistant',
+          content:
+            t('ela.sensitiveCredentialShield') ||
+            'Please enter your password, OTP, or verification code directly into the secure login form. For your protection, ELA never processes, stores, or transmits authentication secrets.',
+          timestamp: new Date().toISOString(),
+        };
+        setMessages((prev) => [
+          ...prev,
+          { id: `user-${Date.now()}`, role: 'user', content: '[Sensitive Credential Shielded]', timestamp: new Date().toISOString() },
+          shieldMsg,
+        ]);
+        return;
+      }
+
+      const userMsg: ElaMessageType = {
+        id: `user-${Date.now()}`,
+        role: 'user',
+        content: trimmed,
         timestamp: new Date().toISOString(),
       };
-      setMessages((prev) => [
-        ...prev,
-        { id: `user-${Date.now()}`, role: 'user', content: '[Sensitive Credential Shielded]', timestamp: new Date().toISOString() },
-        shieldMsg,
-      ]);
-      return;
-    }
 
-    const userMsg: ElaMessageType = {
-      id: `user-${Date.now()}`,
-      role: 'user',
-      content: trimmed,
-      timestamp: new Date().toISOString(),
-    };
+      setMessages((prev) => [...prev, userMsg]);
+      setIsLoading(true);
 
-    setMessages((prev) => [...prev, userMsg]);
-    setIsLoading(true);
+      // Voice lifecycle progression
+      setAgentStage('LANGUAGE_DETECTED');
+      setAgentStatusMsg('Recognizing language and semantic script...');
 
-    // Voice lifecycle progression
-    setAgentStage('LANGUAGE_DETECTED');
-    setAgentStatusMsg('Recognizing language and semantic script...');
-
-    setTimeout(() => {
-      setAgentStage('UNDERSTANDING');
-      setAgentStatusMsg('Understanding semantic intent & entities...');
-    }, 200);
-
-    setTimeout(() => {
-      setAgentStage('PLANNING');
-      setAgentStatusMsg('Planning multi-agent delegation & goal execution...');
-    }, 450);
-
-    try {
-      const historyPayload = messages
-        .filter((m) => m.role === 'user' || m.role === 'assistant')
-        .slice(-6)
-        .map((m) => ({
-          role: m.role as 'user' | 'assistant',
-          content: m.content,
-        }));
-
-      const response = await sendElaChatMessage(trimmed, historyPayload, {
-        role: conversationalRole,
-        language,
-        currentPage: location.pathname,
-        userName: currentUserName,
-      });
-
-      // Dynamically update conversational role if detected from natural language
-      if (response.detectedRole && response.detectedRole !== 'GUEST') {
-        const detected = response.detectedRole as UserRole;
-        setConversationalRole(detected);
-      }
-
-      if (response.confirmationAction) {
-        setAgentStage('CONFIRMATION_REQUIRED');
-        setAgentStatusMsg('Action staged — awaiting confirmation...');
-      } else {
-        setAgentStage('RESPONDING');
-        setAgentStatusMsg('Generated decision response...');
-      }
-
-      const assistantMsg: ElaMessageType = {
-        id: `ela-${Date.now()}`,
-        role: 'assistant',
-        content: response.message,
-        timestamp: response.timestamp || new Date().toISOString(),
-        navigationAction: response.navigationAction || null,
-        confirmationAction: response.confirmationAction || null,
-        suggestions: response.suggestions || [],
-      };
-
-      setMessages((prev) => [...prev, assistantMsg]);
-      if (response.suggestions && response.suggestions.length > 0) {
-        setCurrentSuggestions(response.suggestions);
-      } else if (response.detectedRole) {
-        setCurrentSuggestions(getDefaultSuggestions(response.detectedRole as UserRole | 'GUEST', language));
-      }
-
-      // If navigation action present (e.g. login routing)
-      if (response.navigationAction?.route) {
-        setTimeout(() => {
-          navigate(response.navigationAction!.route);
-        }, 1200);
-      }
-
-      // Voice synthesis response if user used voice or TTS active
-      if (isVoiceSource || isSpeaking) {
-        setAgentStage('SPEAKING');
-        setAgentStatusMsg('Speaking response in your language...');
-        speakResponse(response.message);
-      }
-    } catch (error) {
-      setAgentStage('ERROR');
-      setAgentStatusMsg('Failed to process message.');
-      const errorMsg: ElaMessageType = {
-        id: `err-${Date.now()}`,
-        role: 'assistant',
-        content:
-          error instanceof Error
-            ? error.message
-            : t('ela.error') || 'Sorry, I encountered an issue. Please try again.',
-        timestamp: new Date().toISOString(),
-        isError: true,
-      };
-      setMessages((prev) => [...prev, errorMsg]);
-    } finally {
-      setIsLoading(false);
       setTimeout(() => {
-        if (agentStage !== 'CONFIRMATION_REQUIRED' && agentStage !== 'WAITING_FOR_CONFIRMATION') {
-          setAgentStage('IDLE');
+        setAgentStage('UNDERSTANDING');
+        setAgentStatusMsg('Understanding semantic intent & entities...');
+      }, 200);
+
+      setTimeout(() => {
+        setAgentStage('PLANNING');
+        setAgentStatusMsg('Planning multi-agent delegation & goal execution...');
+      }, 450);
+
+      try {
+        const historyPayload = messages
+          .filter((m) => m.role === 'user' || m.role === 'assistant')
+          .slice(-6)
+          .map((m) => ({
+            role: m.role as 'user' | 'assistant',
+            content: m.content,
+          }));
+
+        const response = await sendElaChatMessage(trimmed, historyPayload, {
+          role: conversationalRole,
+          language,
+          currentPage: location.pathname,
+          userName: currentUserName,
+        });
+
+        // Dynamically update conversational role if detected from natural language
+        if (response.detectedRole && response.detectedRole !== 'GUEST') {
+          const detected = response.detectedRole as UserRole;
+          setConversationalRole(detected);
         }
-      }, 2500);
-    }
-  };
+
+        if (response.confirmationAction) {
+          setAgentStage('CONFIRMATION_REQUIRED');
+          setAgentStatusMsg('Action staged — awaiting confirmation...');
+        } else {
+          setAgentStage('RESPONDING');
+          setAgentStatusMsg('Generated decision response...');
+        }
+
+        const assistantMsg: ElaMessageType = {
+          id: `ela-${Date.now()}`,
+          role: 'assistant',
+          content: response.message,
+          timestamp: response.timestamp || new Date().toISOString(),
+          navigationAction: response.navigationAction || null,
+          confirmationAction: response.confirmationAction || null,
+          suggestions: response.suggestions || [],
+        };
+
+        setMessages((prev) => [...prev, assistantMsg]);
+        if (response.suggestions && response.suggestions.length > 0) {
+          setCurrentSuggestions(response.suggestions);
+        } else if (response.detectedRole) {
+          setCurrentSuggestions(getDefaultSuggestions(response.detectedRole as UserRole | 'GUEST', language));
+        }
+
+        // Dispatch response to orb caption
+        window.dispatchEvent(
+          new CustomEvent('ela-response', { detail: { message: response.message } })
+        );
+        onOrbResponse?.(response.message);
+
+        // If navigation action present (e.g. login routing)
+        if (response.navigationAction?.route) {
+          setTimeout(() => {
+            navigate(response.navigationAction!.route);
+          }, 1200);
+        }
+
+        // Voice synthesis response — auto-speak if voice source or in orb mode
+        if ((isVoiceSource || transcriptMode) && !isMuted) {
+          setAgentStage('SPEAKING');
+          setAgentStatusMsg('Speaking response in your language...');
+          speakResponse(response.message);
+        }
+      } catch (error) {
+        setAgentStage('ERROR');
+        setAgentStatusMsg('Failed to process message.');
+        const errorMsg: ElaMessageType = {
+          id: `err-${Date.now()}`,
+          role: 'assistant',
+          content:
+            error instanceof Error
+              ? error.message
+              : t('ela.error') || 'Sorry, I encountered an issue. Please try again.',
+          timestamp: new Date().toISOString(),
+          isError: true,
+        };
+        setMessages((prev) => [...prev, errorMsg]);
+      } finally {
+        setIsLoading(false);
+        setTimeout(() => {
+          setAgentStage((currentStage) => {
+            if (currentStage !== 'CONFIRMATION_REQUIRED' && currentStage !== 'WAITING_FOR_CONFIRMATION') {
+              return 'IDLE';
+            }
+            return currentStage;
+          });
+        }, 2500);
+      }
+    },
+    [
+      messages,
+      conversationalRole,
+      language,
+      location.pathname,
+      currentUserName,
+      navigate,
+      isMuted,
+      transcriptMode,
+      speakResponse,
+      onOrbResponse,
+      t,
+    ]
+  );
+
+  // Listen for voice transcripts from the orb
+  useEffect(() => {
+    const handleVoiceTranscript = (e: Event) => {
+      const detail = (e as CustomEvent).detail;
+      if (detail?.transcript) {
+        handleSendMessage(detail.transcript, true);
+      }
+    };
+    window.addEventListener('ela-voice-transcript', handleVoiceTranscript);
+    return () => window.removeEventListener('ela-voice-transcript', handleVoiceTranscript);
+  }, [handleSendMessage]);
 
   const handleVoiceToggle = () => {
     if (isListening) {
@@ -257,17 +296,11 @@ export const ElaChat: React.FC<ElaChatProps> = ({ onClose }) => {
     } else {
       setAgentStage('LISTENING');
       setAgentStatusMsg('Listening to your voice...');
-      startVoiceInput(
-        (transcript) => {
-          setAgentStage('TRANSCRIBING');
-          setAgentStatusMsg('Transcribing voice input...');
-          handleSendMessage(transcript, true);
-        },
-        () => {
-          setAgentStage('SPEECH_DETECTED');
-          setAgentStatusMsg('Speech detected...');
-        }
-      );
+      startVoiceInput((transcript) => {
+        setAgentStage('TRANSCRIBING');
+        setAgentStatusMsg('Transcribing voice input...');
+        handleSendMessage(transcript, true);
+      });
     }
   };
 
@@ -335,6 +368,55 @@ export const ElaChat: React.FC<ElaChatProps> = ({ onClose }) => {
     setAgentStage('IDLE');
   };
 
+  // In transcript mode, render a compact view without the outer shell
+  if (transcriptMode) {
+    return (
+      <div className="flex flex-col h-full bg-slate-950/60">
+        {/* Role & Context State Badge */}
+        <ElaContextBadge role={conversationalRole} isAuthenticated={Boolean(state.auth.isAuthenticated && isInsideDashboard)} />
+
+        {/* Real Agent Lifecycle Status Banner */}
+        {agentStage !== 'IDLE' && (
+          <div className="px-3 py-1.5 bg-slate-900/90 border-b border-slate-800">
+            <ElaAgentStatus stage={agentStage} customMessage={agentStatusMsg} />
+          </div>
+        )}
+
+        {/* Message Stream */}
+        <div className="flex-1 p-3.5 overflow-y-auto space-y-3">
+          {messages.map((msg) => (
+            <ElaMessage
+              key={msg.id}
+              message={msg}
+              onConfirmAction={handleConfirmAction}
+              onCancelAction={handleCancelAction}
+            />
+          ))}
+          <div ref={messagesEndRef} />
+        </div>
+
+        {/* Contextual Suggestions Carousel */}
+        <div className="shrink-0 bg-slate-900/60 border-t border-slate-800/80">
+          <ElaSuggestions
+            suggestions={currentSuggestions}
+            onSelectSuggestion={handleSendMessage}
+            disabled={isLoading || isListening}
+          />
+        </div>
+
+        {/* Input Box */}
+        <div className="p-3 bg-slate-900/90 border-t border-slate-800 shrink-0">
+          <ElaInput
+            onSendMessage={handleSendMessage}
+            isLoading={isLoading || isListening}
+            autoFocus={false}
+          />
+        </div>
+      </div>
+    );
+  }
+
+  // Standalone mode (full panel — used when ElaChat is rendered directly without ElaWidget orb)
   return (
     <div className="w-[380px] sm:w-[430px] h-[600px] max-h-[85vh] bg-slate-950/95 backdrop-blur-xl border border-slate-800 rounded-2xl shadow-2xl flex flex-col overflow-hidden font-sans">
       {/* Header */}
