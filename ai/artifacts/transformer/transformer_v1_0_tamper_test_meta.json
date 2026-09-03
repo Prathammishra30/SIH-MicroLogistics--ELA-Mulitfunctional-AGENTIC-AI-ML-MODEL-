@@ -1,0 +1,25 @@
+{
+  "model_name": "ElaTransformerNeuralCore",
+  "version": "v1.0-tamper-test",
+  "architecture_version": "ela-transformer-v1",
+  "config": {
+    "vocab_size": 256,
+    "d_model": 64,
+    "n_heads": 4,
+    "num_layers": 2,
+    "d_ff": 128,
+    "max_seq_len": 32,
+    "dropout": 0.1,
+    "num_intents": 16,
+    "model_version": "v1.0-transformer-core",
+    "architecture_version": "ela-transformer-v1",
+    "device": "cpu",
+    "seed": 42
+  },
+  "parameter_count": 86609,
+  "weights_path": "C:\\SIH-MicroLogistics\\ai\\artifacts\\transformer\\transformer_v1_0_tamper_test_weights.pt",
+  "artifact_checksum": "05e5a66cc0b83221079b649268cd919f720e8cb8c1e3a7c07faa57e31dc03dea",
+  "metrics": {},
+  "provenance": null,
+  "saved_at": "2026-09-03T23:03:28.099229"
+}

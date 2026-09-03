@@ -137,6 +137,8 @@ class AgentExecutionTrace(BaseModel):
     model_provider: str = 'PythonRuleBasedCanonicalProvider'
     model_version: str = 'ela-py-v8.1'
     total_latency_ms: float = 0.0
+    transformer: Optional[Dict[str, Any]] = None
+    memory: Optional[Dict[str, Any]] = None
     final_outcome: AgentOutcome = 'SUCCESS'
     timestamp: str = Field(default_factory=lambda: datetime.now().isoformat())
 

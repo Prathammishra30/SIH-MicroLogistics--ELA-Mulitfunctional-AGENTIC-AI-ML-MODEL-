@@ -40,12 +40,16 @@ from ai.ela.providers.speech import NativeMockSTTProvider, NativeMockTTSProvider
 from ai.ela.app.config import config
 from ai.ela.agent.brain import ElaUniversalBrain
 
+from ai.ela.neural.transformer.inference import TransformerNeuralCore
+from ai.ela.neural.transformer.embeddings import ElaNeuralInput
+
 router = APIRouter(prefix="/v1/ela", tags=["ELA Universal Intelligence"])
 intelligence_engine = ElaIntelligenceEngine()
 universal_brain = ElaUniversalBrain()
 fusion_engine = IntelligenceFusionEngine()
 stt_provider = NativeMockSTTProvider()
 tts_provider = NativeMockTTSProvider()
+transformer_core = TransformerNeuralCore.get_instance()
 
 # Active Models in Registry
 demand_model = DemandPredictionModel()
@@ -65,6 +69,7 @@ ModelRegistry.register_model(match_model, "production")
 ModelRegistry.register_model(delay_model, "production")
 ModelRegistry.register_model(cancel_model, "production")
 ModelRegistry.register_model(success_model, "production")
+ModelRegistry.register_model(transformer_core, "production")
 
 
 class NodeBridgeChatPayload(BaseModel):
@@ -118,6 +123,12 @@ async def health_check():
             "embedder": "DistilledSemanticNeuralProvider (dim=64)",
             "route_delay_learner": "NeuralRouteDelayLearner (MLP 6x16x8x1)",
             "reliability_scorer": "NeuralTransporterReliabilityScorer",
+            "transformer_core": {
+                "version": transformer_core.current_version,
+                "parameter_count": transformer_core.parameter_count,
+                "status": transformer_core.status,
+                "backend": "PyTorch" if transformer_core.is_torch_active else "NumPy",
+            },
         },
         "learning": {
             "events_recorded": len(FeedbackCollector.get_all_learning_events()),
@@ -482,3 +493,33 @@ async def predict_delivery_success(features: DeliverySuccessFeatures):
 async def diagnose_error(discrepancy: OperationalDiscrepancy):
     diag = ErrorAnalysisEngine.diagnose_error(discrepancy)
     return diag.model_dump()
+
+
+# ----------------------------------------------------------------------------
+# PHASE 12.1 TRANSFORMER NEURAL CORE INTERNAL ENDPOINTS
+# ----------------------------------------------------------------------------
+
+@router.post("/internal/neural/transformer/infer")
+async def transformer_infer(payload: ElaNeuralInput):
+    """
+    Executes real tensor inference through the ELA Transformer Neural Core.
+    Returns contextual representation summary, intent predictions, and decision readiness score.
+    """
+    state = transformer_core.encode(payload)
+    return state.model_dump()
+
+
+@router.get("/internal/neural/transformer/info")
+async def transformer_info():
+    """
+    Returns model metadata, configuration, parameter count, and cryptographic checksum.
+    """
+    return transformer_core.model_info()
+
+
+@router.get("/internal/neural/transformer/health")
+async def transformer_health():
+    """
+    Returns active runtime health, backend status (PyTorch vs NumPy), and parameter accounting.
+    """
+    return transformer_core.health()

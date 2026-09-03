@@ -93,9 +93,11 @@ class IntelligenceFusionEngine:
         self.domain_adapter = AgriRouteDomainAdapter()
         
         # 2. Neural Intelligence Subsystems
+        from ai.ela.neural.transformer.inference import TransformerNeuralCore
         self.neural_embedder = DistilledSemanticNeuralProvider()
         self.neural_delay_learner = NeuralRouteDelayLearner()
         self.neural_reliability_scorer = NeuralTransporterReliabilityScorer()
+        self.transformer_core = TransformerNeuralCore.get_instance()
 
         # 3. Machine Learning Predictive Subsystems
         self.demand_model = DemandPredictionModel()
@@ -274,10 +276,27 @@ class IntelligenceFusionEngine:
                     "delivery_success": success_pred.prediction.model_dump(),
                 }
 
+                from ai.ela.neural.transformer.embeddings import ElaNeuralInput
+                transformer_res = self.transformer_core.infer(ElaNeuralInput(
+                    session_id=session_id,
+                    language=lang,
+                    role=effective_role,
+                    intent=canonical.intent,
+                    raw_text=raw_message,
+                    operational_features={"weight_kg": weight_kg, "distance_km": 210.0},
+                ))
+
                 neural_insights = {
                     "neural_expected_corridor_delay_mins": round(neural_delay, 1),
                     "neural_transporter_reliability_score": neural_reliability,
                     "semantic_embedding_dimension": 64,
+                    "transformer": {
+                        "model_version": transformer_res.get("model_version"),
+                        "decision_score": transformer_res.get("decision_score"),
+                        "parameter_count": transformer_res.get("parameter_count"),
+                        "status": transformer_res.get("status"),
+                        "neural_signal_used": transformer_res.get("neural_signal_used"),
+                    },
                 }
 
                 options = [opt.model_dump() for opt in decision_res.all_ranked_options]

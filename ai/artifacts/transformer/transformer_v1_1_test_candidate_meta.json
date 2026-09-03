@@ -1,0 +1,70 @@
+{
+  "model_name": "ElaTransformerNeuralCore",
+  "version": "v1.1-test-candidate",
+  "architecture_version": "ela-transformer-v1",
+  "config": {
+    "vocab_size": 256,
+    "d_model": 64,
+    "n_heads": 4,
+    "num_layers": 2,
+    "d_ff": 128,
+    "max_seq_len": 32,
+    "dropout": 0.1,
+    "num_intents": 16,
+    "model_version": "v1.0-transformer-core",
+    "architecture_version": "ela-transformer-v1",
+    "device": "cpu",
+    "seed": 42
+  },
+  "parameter_count": 86609,
+  "weights_path": "C:\\SIH-MicroLogistics\\ai\\artifacts\\transformer\\transformer_v1_1_test_candidate_weights.pt",
+  "artifact_checksum": "45b67333ca5542d6ae54588a6a764903a997665fbccbd0660934ddcb5525effd",
+  "metrics": {
+    "loss": 2.054206218570471,
+    "intent_loss": 2.0165183544158936,
+    "decision_loss": 0.07537572830915451,
+    "intent_accuracy": 0.5,
+    "decision_mae": 0.27383992075920105,
+    "decision_rmse": 0.27454641461372375,
+    "mean_attention_entropy": 2.9413442611694336,
+    "sample_count": 26,
+    "parameter_count": 86609,
+    "inference_latency_ms": 1.5,
+    "evaluated_at": "2026-09-03T23:03:28.068532"
+  },
+  "provenance": {
+    "provenance_id": "prov-1788456808068",
+    "dataset_id": "test-synthetic-benchmark",
+    "dataset_provenance": "SYNTHETIC_TEST",
+    "sample_count": 26,
+    "train_samples": 20,
+    "val_samples": 6,
+    "holdout_samples": 0,
+    "feature_version": "v1.0-transformer-features",
+    "preprocessing_version": "v1.0-standard-vectorizer",
+    "model_version": "v1.1-test-candidate",
+    "random_seed": 42,
+    "training_config": {
+      "epochs": 3,
+      "lr": 0.002,
+      "d_model": 64
+    },
+    "evaluation_metrics": {
+      "loss": 2.054206218570471,
+      "intent_loss": 2.0165183544158936,
+      "decision_loss": 0.07537572830915451,
+      "intent_accuracy": 0.5,
+      "decision_mae": 0.27383992075920105,
+      "decision_rmse": 0.27454641461372375,
+      "mean_attention_entropy": 2.9413442611694336,
+      "sample_count": 26,
+      "parameter_count": 86609,
+      "inference_latency_ms": 1.5,
+      "evaluated_at": "2026-09-03T23:03:28.068532"
+    },
+    "audit_passed": true,
+    "audit_findings": [],
+    "created_at": "2026-09-03T23:03:28.068618"
+  },
+  "saved_at": "2026-09-03T23:03:28.075574"
+}
