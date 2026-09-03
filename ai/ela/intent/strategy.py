@@ -81,7 +81,7 @@ class StrategyExtractor:
     # 4. MAX EARNINGS Strategy Patterns
     MAX_EARNINGS_PATTERNS = [
         # English
-        r'\b(?:maximum\s*earnings|max\s*profit|best\s*price|highest\s*profit|max\s*revenue|higher\s*income|best\s*rate)\b',
+        r'\b(?:maximum\s*earnings|maximize(?:\s+my)?\s*(?:earnings|profit)|max\s*profit|best\s*price|highest\s*profit|max\s*revenue|higher\s*income|best\s*rate|profit\s*and\s*earnings)\b',
         # Hinglish / Latin
         r'\b(?:jyada\s*kamai|jyada\s*munafa|jyada\s*fayda|max\s*kamai|zyada\s*kamai|jyada\s*paisa)\b',
         # Hindi (Devanagari)

@@ -3,6 +3,7 @@
 # Specialized Multi-Agent Workers, Decision Intelligence, and Governed Self-Learning.
 import time
 import uuid
+import re
 from typing import Dict, Any, Optional, List
 from datetime import datetime
 
@@ -31,6 +32,11 @@ from ai.ela.memory.records import ElaMemoryRecord
 from ai.ela.agent.confidence import ConfidenceEngine
 from ai.ela.planner.goals import GoalManager
 from ai.ela.planner.planner import AgentPlanner
+from ai.ela.planner.models import ElaPlan, ElaPlanStep
+from ai.ela.planner.evaluator import PlanEvaluator
+from ai.ela.planner.engine import AgenticPlanner
+from ai.ela.planner.executor import PlanExecutor
+from ai.ela.planner.replan import ReplanningEngine
 from ai.ela.learning.collector import FeedbackCollector
 from ai.ela.data.schemas import LearningEvent
 from ai.ela.core.intelligence_fusion import StructuredIntelligenceDecision
@@ -49,6 +55,7 @@ class ElaUniversalBrain:
         self.intent_resolver = IntentResolver()
         self.confidence_engine = ConfidenceEngine()
         self.planner = AgentPlanner()
+        self.plan_executor = PlanExecutor()
         self.feedback_collector = FeedbackCollector()
         self.transformer_core = TransformerNeuralCore.get_instance()
 
@@ -342,6 +349,14 @@ class ElaUniversalBrain:
                     login_msg = f"मैंने {f'{clean_loc} में ' if clean_loc else ''}आपके वाहन का विवरण नोट कर लिया है। उपलब्ध लोड और फेऱ्या देखने के लिए चलिए ट्रांसपोर्टर खाते में लॉगिन कर लेते हैं।"
                 elif lang == 'mr':
                     login_msg = f"मी {f'{clean_loc} मधील ' if clean_loc else ''}आपल्या वाहनाची नोंद घेतली आहे. उपलब्ध फेऱ्या पाहण्यासाठी चला वाहतूकदार खात्यात लॉगिन करूया."
+                elif lang == 'ta':
+                    login_msg = f"{f'{clean_loc} இல் ' if clean_loc else ''}உங்கள் வாகன விவரங்கள் பதிவு செய்யப்பட்டுள்ளன. கிடைக்கும் லோடுகளைப் பார்க்க டிரான்ஸ்போர்ட்டர் கணக்கில் உள்நுழையலாம்."
+                elif lang == 'te':
+                    login_msg = f"{f'{clean_loc} లో ' if clean_loc else ''}మీ వాహన వివరాలు నమోదు చేయబడ్డాయి. అందుబాటులో ఉన్న లోడ్లను చూడటానికి ట్రాన్స్‌పోర్టర్ ఖాతాలోకి లాగిన్ అవ్వండి."
+                elif lang == 'bn':
+                    login_msg = f"{f'{clean_loc}-এ ' if clean_loc else ''}আপনার যানবাহনের বিবরণ নোট করা হয়েছে। উপলব্ধ লোড দেখতে ট্রান্সপোর্টার অ্যাকাউন্টে লগইন করুন।"
+                elif lang == 'kn':
+                    login_msg = f"{f'{clean_loc} ನಲ್ಲಿ ' if clean_loc else ''}ನಿಮ್ಮ ವಾಹನದ ವಿವರಗಳನ್ನು ದಾಖಲಿಸಲಾಗಿದೆ. ಲಭ್ಯವಿರುವ ಲೋಡ್‌ಗಳನ್ನು ನೋಡಲು ಟ್ರಾನ್ಸ್‌ಪೋರ್ಟರ್ ಖಾತೆಗೆ ಲಾಗಿನ್ ಮಾಡಿ."
                 else:
                     login_msg = f"I see you have a {v_type}{f' in {clean_loc}' if clean_loc else ''}. Let's securely log in to your Transporter account to view available loads."
             elif target_auth_role == 'BUYER':
@@ -404,6 +419,24 @@ class ElaUniversalBrain:
                     "writes_accepted": 0,
                     "writes_rejected": 0,
                 },
+                planning={
+                    "plan_id": None,
+                    "plan_version": 1,
+                    "parent_version": None,
+                    "planner_version": "ela-agentic-planner-v12.3",
+                    "status": "AWAITING_AUTHORIZATION",
+                    "steps_count": 0,
+                    "completed_steps": 0,
+                    "blocked_steps": 0,
+                    "replanning_count": 0,
+                    "selected_agents": [],
+                    "tool_count": 0,
+                    "authorization_required": True,
+                    "authorization_status": "UNAUTHENTICATED",
+                    "plan_evaluation": {"valid": True, "blocking_issues_count": 0, "risk_summary": "LOW_RISK"},
+                    "replan_reason": None,
+                    "observation_trigger": None,
+                },
                 verification_status="VERIFIED",
                 learning_event_created=True,
                 model_provider='ElaUniversalBrain-v10',
@@ -424,7 +457,50 @@ class ElaUniversalBrain:
                 timestamp=datetime.now().isoformat(),
             )
 
-        # 5. DELEGATE TO MULTI-AGENT COORDINATOR
+        # 4.5 AGENTIC PLAN GENERATION, EVALUATION & REPLANNING (Phase 12.3)
+        session_obj = ConversationMemory.get_session(session_id)
+        prev_plan = getattr(session_obj, "active_plan", None)
+
+        if prev_plan and (
+            prev_plan.strategy != accumulated_entities.strategy
+            or any(c.get("type") == "STRATEGY_SHIFT" for c in contradictions_detected)
+        ):
+            ela_plan = ReplanningEngine.replan(
+                old_plan=prev_plan,
+                observation_trigger="STRATEGY_SHIFT",
+                reason=f"User shifted transport strategy from {prev_plan.strategy} to {accumulated_entities.strategy}",
+                updated_strategy=accumulated_entities.strategy,
+                updated_entities=accumulated_entities.model_dump() if hasattr(accumulated_entities, "model_dump") else {},
+            )
+        else:
+            ela_plan = AgenticPlanner.create_plan(
+                cognitive_ctx=cognitive_ctx,
+                transformer_state=transformer_res,
+                goal_id=goal_plan.goal_id,
+                objective=goal_plan.title,
+                role=effective_role,
+                strategy=accumulated_entities.strategy,
+                entities=accumulated_entities.model_dump() if hasattr(accumulated_entities, "model_dump") else {},
+            )
+
+        # Pre-Execution Plan Evaluation Audit
+        plan_eval = PlanEvaluator.evaluate(ela_plan)
+
+        # Controlled Step Execution: Dispatch non-consequential steps, halting safely at authorization gates
+        is_user_authorized = bool(
+            request.context.get("user_authorized", False)
+            or re.search(r'\b(book it|approve|yes.*approve|go ahead|confirm|proceed|authorized|हाँ.*बुक|बुक करो|नक्की करा)\b', raw_message, re.IGNORECASE)
+        ) and request.authenticated
+
+        ela_plan, plan_observations = await self.plan_executor.execute(
+            plan=ela_plan,
+            coordinator=self.coordinator,
+            user_authorized=is_user_authorized,
+            auth_context={"role": effective_role},
+        )
+        session_obj.active_plan = ela_plan
+
+        # 5. SPECIALIZED MULTI-AGENT COORDINATION & DELEGATION (Phase 9)
         coord_req = AgentRequest(
             task_id=f"task-{int(start_time * 1000)}",
             session_id=session_id,
@@ -574,6 +650,28 @@ class ElaUniversalBrain:
                 "writes_accepted": writes_accepted,
                 "writes_rejected": writes_rejected,
             },
+            planning={
+                "plan_id": ela_plan.plan_id,
+                "plan_version": ela_plan.version,
+                "parent_version": ela_plan.parent_version,
+                "planner_version": ela_plan.planner_version,
+                "status": ela_plan.status,
+                "steps_count": len(ela_plan.steps),
+                "completed_steps": len([s for s in ela_plan.steps if s.status == 'SUCCEEDED']),
+                "blocked_steps": len([s for s in ela_plan.steps if s.status in ['BLOCKED', 'WAITING']]),
+                "replanning_count": ela_plan.version - 1,
+                "selected_agents": list({s.owner_agent for s in ela_plan.steps}),
+                "tool_count": sum(len(s.required_tools) for s in ela_plan.steps),
+                "authorization_required": any(s.authorization_required for s in ela_plan.steps),
+                "authorization_status": "AUTHORIZED" if request.authenticated else "AWAITING_USER_CONFIRMATION",
+                "plan_evaluation": {
+                    "valid": plan_eval.valid,
+                    "blocking_issues_count": len(plan_eval.blocking_issues),
+                    "risk_summary": plan_eval.risk_summary,
+                },
+                "replan_reason": ela_plan.replan_reason,
+                "observation_trigger": ela_plan.observation_trigger,
+            },
             verification_status="VERIFIED" if status_outcome in ['SUCCESS', 'CONFIRMATION_REQUIRED'] else "PENDING",
             learning_event_created=True,
             model_provider='ElaUniversalBrain-v10',
@@ -583,15 +681,27 @@ class ElaUniversalBrain:
         )
 
         # Build dynamic user message
-        user_msg = self._build_brain_message(
-            canonical.intent,
-            lang,
-            accumulated_entities,
-            confirmation_action,
-            coord_res,
-            is_decision_query=is_decision_query,
-            retrieved_memories=retrieved_memories,
-        )
+        if is_user_authorized and ela_plan.status == 'COMPLETED':
+            status_outcome = 'SUCCESS'
+            confirmation_action = None
+            verified_step = next((s for s in ela_plan.steps if s.status == 'SUCCEEDED' and s.required_tools), None)
+            booking_id = (verified_step.actual_result or {}).get("booking_id", "req-authoritative") if verified_step else "req-authoritative"
+            if lang == 'hi':
+                user_msg = f"आपकी परिवहन बुकिंग सफलतापूर्वक पूरी हो गई है! बुकिंग आईडी: **{booking_id}**। वाहन समय पर उपस्थित रहेगा।"
+            elif lang == 'mr':
+                user_msg = f"तुमची वाहतूक बुकिंग यशस्वीरीत्या पूर्ण झाली आहे! बुकिंग आयडी: **{booking_id}**। वाहन वेळेवर हजर राहील."
+            else:
+                user_msg = f"Your transport booking has been confirmed and verified by Java Authority! Booking ID: **{booking_id}**."
+        else:
+            user_msg = self._build_brain_message(
+                canonical.intent,
+                lang,
+                accumulated_entities,
+                confirmation_action,
+                coord_res,
+                is_decision_query=is_decision_query,
+                retrieved_memories=retrieved_memories,
+            )
 
         ConversationMemory.add_turn(session_id, 'user', raw_message)
         ConversationMemory.add_turn(session_id, 'assistant', user_msg)

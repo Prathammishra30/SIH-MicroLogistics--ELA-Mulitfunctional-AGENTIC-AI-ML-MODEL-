@@ -31,14 +31,14 @@ class IntentResolver:
         )
         is_login_req = bool(
             re.search(
-                r'login|sign in|auth|प्रवेश|नोंदणी|खाते|लॉगिन|लॉगइन|लॉग इन|लागिन|உள்நுழை|வேண்டும்|లాగిన్|লগইন|ಲಾಗಿನ್',
+                r'login|sign in|auth|प्रवेश|नोंदणी|खाते|लॉगिन|लॉगइन|लॉग इन|लागिन|உள்நுழை|లాగిన్|লগইন|ಲಾಗಿನ್',
                 norm,
                 re.IGNORECASE,
             )
         )
 
         if re.search(
-            r'(i am a farmer|i\'m a farmer|im a farmer|main farmer|main kisan|kisan hoon|shetkari aahe|मी शेतकरी|मैं किसान|நான்.*விவசாயி|விவசாயி நான்|రైతును|কৃষক|ರೈತ|actually.*farmer|switch to farmer)',
+            r'(i am a farmer|i\'m a farmer|im a farmer|main farmer|main kisan|kisan hoon|shetkari aahe|मी शेतकरी|मैं किसान|நான்.*விவசாயி|விவசாயி நான்|రైతును|రైతు|কৃষক|ರೈತ|actually.*farmer|switch to farmer)',
             norm,
             re.IGNORECASE,
         ):
@@ -68,7 +68,7 @@ class IntentResolver:
                     confidence=0.95,
                 )
         elif re.search(
-            r'(i am a transporter|i\'m a transporter|im a transporter|main transporter|transporter hoon|driver|मी वाहतूकदार|मैं ट्रांसपोर्टर|माझ्याकडे.*ट्रक|ट्रक आहे|उपलब्ध फेऱ्या|போக்குவரத்து|రవాణాదారు|পরিবহনকারী|ಸಾರಿಗೆದಾರ|actually.*transporter|switch to transporter|\b(?:i have|mere paas|my)\s+(?:a\s+)?(?:\d+\s*(?:ton|tonne|tonnes|kg)\s*)?(?:truck|pickup|lorry|mini truck|gadi|gaadi|वाहन|गाडी|गाड़ी|ट्रक)\b)',
+            r'(i am a transporter|i\'m a transporter|im a transporter|main transporter|transporter hoon|driver|मी वाहतूकदार|मैं ट्रांसपोर्टर|माझ्याकडे.*(?:ट्रक|गाडी|वाहन)|(?:ट्रक|गाडी|वाहन)\s*आहे|उपलब्ध फेऱ्या|போக்குவரத்து|ரவாణాదారు|రవాణా|পরিবহনকারী|ಸಾರಿಗೆದಾರ|actually.*transporter|switch to transporter|(?:i have|mere paas|मेरे पास|माझ्याकडे|my|என்னிடம்|నా దగ్గర|আমার কাছে|ನನ್ನ ಬಳಿ).*?(?:truck|pickup|lorry|mini truck|gadi|gaadi|वाहन|गाडी|गाड़ी|ट्रक|லாரி|டிரக்|ట్రక్|లారీ|ట్రక్కు|ট্রাক|গাড়ি|ಟ್ರಕ್|ಲಾರಿ|ಗಾಡಿ)|(?:truck|pickup|lorry|mini truck|gadi|gaadi|वाहन|गाडी|गाड़ी|ट्रक|லாரி|டிரக்|ట్రక్|లారీ|ట్రక్కు|ট্রাক|গাড়ি|ಟ್ರಕ್|ಲಾರಿ|ಗಾಡಿ).*?(?:available|उपलब्ध|आहे|உள்ளது|ఉంది|আছে|ಇದೆ))',
             norm,
             re.IGNORECASE,
         ):
@@ -125,14 +125,6 @@ class IntentResolver:
             confidence = 0.92
 
         # 4. Transporter Domain Specific Matching
-        elif re.search(
-            r'available trips|trips|loads|available loads|उपलब्ध भाडी|उपलब्ध फेऱ्या|फेऱ्या|भाडी|ट्रिप्स|ट्रिप|लोड|खोजें|माल शोधा|கிடைக்கும் பயணங்கள்|ట్రిప్పులు|উপলব্ধ ট্রিপ|ಲಭ್ಯವಿರುವ ಟ್ರಿಪ್ಗಳು|\b(?:i have|mere paas|माझ्याकडे|my)\s+(?:a\s+)?(?:\d+\s*(?:ton|tonne|tonnes|kg)\s*)?(?:truck|pickup|lorry|mini truck|gadi|gaadi|वाहन|गाडी|गाड़ी|ट्रक)\b',
-            norm,
-            re.IGNORECASE,
-        ):
-            intent = 'GET_AVAILABLE_TRIPS'
-            target_role = 'TRANSPORTER'
-            confidence = 0.95
         elif (
             re.search(
                 r'my vehicles|vehicles|trucks|fleet|registered (trucks|vehicles)|माझी वाहने|वाहने|गाड्या|मेरी गाड़ियां|गाड़ियां|வாகனங்கள்|వాహనాలు|truck.*list|gaadi.*list|गाड़ी.*लिस्ट',
@@ -142,6 +134,14 @@ class IntentResolver:
             and not re.search(r'\b(add|register|insert|naya|नवीन|जोडा|जोड़ें)\b', norm, re.IGNORECASE)
         ):
             intent = 'GET_VEHICLES'
+            target_role = 'TRANSPORTER'
+            confidence = 0.95
+        elif re.search(
+            r'available trips|trips|loads|available loads|उपलब्ध भाडी|उपलब्ध फेऱ्या|फेऱ्या|भाडी|ट्रिप्स|ट्रिप|लोड|खोजें|माल शोधा|கிடைக்கும் பயணங்கள்|ట్రిప్పులు|উপলব্ধ ট্রিপ|ಲಭ್ಯವಿರುವ ಟ್ರಿಪ್ಗಳು|(?:i have|mere paas|मेरे पास|माझ्याकडे|என்னிடம்|నా దగ్గర|আমার কাছে|ನನ್ನ ಬಳಿ).*?(?:truck|pickup|lorry|mini truck|gadi|gaadi|वाहन|गाडी|गाड़ी|ट्रक|லாரி|டிரக்|ట్రక్|లారీ|ట్రక్కు|ট্রাক|গাড়ি|ಟ್ರಕ್|ಲಾರಿ|ಗಾಡಿ)|(?:truck|pickup|lorry|mini truck|gadi|gaadi|वाहन|गाडी|गाड़ी|ट्रक|லாரி|டிரக்|ట్రక్|లారీ|ట్రక్కు|ট্রাক|গাড়ি|ಟ್ರಕ್|ಲಾರಿ|ಗಾಡಿ).*?(?:available|उपलब्ध|आहे|உள்ளது|ఉంది|আছে|ಇದೆ)',
+            norm,
+            re.IGNORECASE,
+        ):
+            intent = 'GET_AVAILABLE_TRIPS'
             target_role = 'TRANSPORTER'
             confidence = 0.95
         elif re.search(
@@ -159,13 +159,13 @@ class IntentResolver:
 
         # 5. Buyer Domain Specific Matching
         elif re.search(
-            r'(kharidna|kharidne|procurement|buy|purchase|procure|find).*(\d+|kg|ton|tonne|tonnes|mt|tomato|tomatoes|tamatar|onion|onions|wheat|potato|potatoes|vegetable|produce|crop|mal)|(tomato|tomatoes|tamatar|onion|onions|wheat|potato|potatoes|माल|फसल|उपज).*(kharidna|kharidne|खरेदी करायची|हवे आहेत|buy|purchase|procure|procurement)',
+            r'(?:kharidna|kharidne|kharid|खरीदना|खरीदने|खरीद|खरेदी|हवे आहेत|हवे|पाहिजे|வாங்க|வாங்க வேண்டும்|வாங்கணும்|కొనాలి|కొనుగోలు|కొనడానికి|কিনতে|কিনতে চাই|কেনা|ಖರೀದಿಸಬೇಕು|ಖರೀದಿ|ಕೊಳ್ಳಬೇಕು|procurement|buy|purchase|procure|want to buy).*?(?:\d+|kg|ton|tonne|tonnes|mt|tomato|tomatoes|tamatar|onion|onions|pyaz|pyaaz|kanda|wheat|potato|potatoes|aloo|vegetable|produce|crop|mal|टमाटर|टोमॅटो|कांदा|कांदे|प्याज़|प्याज|आलू|बटाटा|माल|फसल|उपज|தக்காளி|வெங்காயம்|உருளைக்கிழங்கு|காய்கறி|టమాటాలు|ఉల్లిపాయలు|ఉల్లిపాయ|బంగాళాదుంప|కూరగాయలు|টমেটো|পেঁয়াজ|আলু|সবজি|ಟೊಮೆಟೊ|ಈರುಳ್ಳಿ|ಆಲೂಗಡ್ಡೆ|ತರಕಾರಿ)|(?:\d+|kg|ton|tonne|tonnes|mt|tomato|tomatoes|tamatar|onion|onions|pyaz|pyaaz|kanda|wheat|potato|potatoes|aloo|vegetable|produce|crop|mal|टमाटर|टोमॅटो|कांदा|कांदे|प्याज़|प्याज|आलू|बटाटा|माल|फसल|उपज|தக்காளி|வெங்காயம்|உருளைக்கிழங்கு|காய்கறி|టమాటాలు|ఉల్లిపాయలు|ఉల్లిపాయ|బంగాళాదుంప|కూరగాయలు|টমেটো|পেঁয়াজ|আলু|সবজি|ಟೊಮೆಟೊ|ಈರುಳ್ಳಿ|ಆಲೂಗಡ್ಡೆ|ತರಕಾರಿ).*?(?:kharidna|kharidne|kharid|खरीदना|खरीदने|खरीद|खरेदी|हवे आहेत|हवे|पाहिजे|வாங்க|வாங்க வேண்டும்|வாங்கணும்|కొనాలి|కొనుగోలు|కొనడానికి|কিনতে|কিনতে চাই|কেনা|ಖರೀದಿಸಬೇಕು|ಖರೀದಿ|ಕೊಳ್ಳಬೇಕು|procurement|buy|purchase|procure)',
             norm,
             re.IGNORECASE,
         ):
             intent = 'CREATE_PROCUREMENT_WORKFLOW'
             target_role = 'BUYER'
-            confidence = 0.94
+            confidence = 0.95
         elif re.search(
             r'produce catalog|browse farmers|available produce|शेतमालाची यादी|शेतमाल|उपलब्ध माल|fasal dekho|किसान उपज|పంటల జాబితా|பொருட்களின் பட்டியல்|விளைபொருட்களை|விவசாயிகளின்',
             norm,
@@ -186,7 +186,7 @@ class IntentResolver:
         elif re.search(r'price.*(forecast|prediction|bhavishya|अंदाज)|भाव अंदाज|भाव काय|expected price|rate prediction|expected market price', norm, re.IGNORECASE):
             intent = 'GET_MARKET_DEMAND'
             confidence = 0.91
-        elif re.search(r'eta|arrival time|delivery time|kab tak|पोहोचेल|ఎప్పుడు చేరుతుంది|எப்போது வரும்', norm, re.IGNORECASE):
+        elif re.search(r'\beta\b|arrival time|delivery time|kab tak|पोहोचेल|ఎప్పుడు చేరుతుంది|எப்போது வரும்', norm, re.IGNORECASE):
             intent = 'GET_FARMER_DELIVERIES'
             confidence = 0.90
         elif re.search(r'\b(recommend\s+(?:crop|crop\s+to\s+grow|what\s+to\s+grow|produce\s+to\s+grow)|kya\s+(?:ugaye|ugana|bechna|kharidna)|best\s+crop|best\s+load|काय\s+पिकवावे|काय\s+विकावे)\b', norm, re.IGNORECASE):
@@ -194,6 +194,14 @@ class IntentResolver:
             confidence = 0.88
 
         # 7. Farmer Domain Intents
+        elif re.search(
+            r'(add|register|list|inventory).*(tomato|onion|potato|wheat|rice|produce|crop|mal|fasal|फसल|टमाटर|कांदा|बटाटा|गहू|गेहूँ|भाजीपाला)|(tomato|onion|potato|wheat|rice|टमाटर|कांदा|टोमॅटो|उत्पादन|पीक|crop|fasal|फसल).*(add|inventory|जोडा|जोड़ें|bechna|विकायचे)',
+            norm,
+            re.IGNORECASE,
+        ):
+            intent = 'CREATE_PRODUCT_WORKFLOW'
+            target_role = 'FARMER'
+            confidence = 0.94
         elif (
             re.search(
                 r'\b(?:i have|mere paas|माझ्याकडे|we have|got)\b.*(?:\d+\s*(?:kg|ton|quintal|किलो|टन))?.*(?:tomato|tomatoes|tamatar|onion|onions|potato|potatoes|wheat|rice|produce|crop|mal|fasal|फसल|टमाटर|कांदा|टोमॅटो|आलू|बटाटा|गहू|गेहूं)',
@@ -203,18 +211,10 @@ class IntentResolver:
             or (
                 entities.commodity
                 and entities.quantity
-                and not re.search(r'\b(?:buy|purchase|procure|खरीद|हवे|order)\b', norm, re.IGNORECASE)
+                and not re.search(r'\b(?:buy|purchase|procure|खरीद|हवे|order|inventory|register|list|add|जोडा|जोड़ें)\b', norm, re.IGNORECASE)
             )
         ):
             intent = 'CREATE_LOGISTICS_WORKFLOW'
-            target_role = 'FARMER'
-            confidence = 0.94
-        elif re.search(
-            r'(add|register|list).*(tomato|onion|potato|wheat|rice|produce|crop|mal|fasal|फसल|टमाटर|कांदा|बटाटा|गहू|गेहूँ|भाजीपाला)|(tomato|onion|potato|wheat|rice|टमाटर|कांदा|टोमॅटो|उत्पादन|पीक|crop|fasal|फसल).*(add|जोडा|जोड़ें|bechna|विकायचे)',
-            norm,
-            re.IGNORECASE,
-        ):
-            intent = 'CREATE_PRODUCT_WORKFLOW'
             target_role = 'FARMER'
             confidence = 0.94
         elif re.search(
