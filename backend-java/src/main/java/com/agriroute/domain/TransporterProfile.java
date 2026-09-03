@@ -30,18 +30,22 @@ public class TransporterProfile {
     @Column(name = "\"fullName\"", length = 255)
     private String fullName;
 
+    @Builder.Default
     @Column(name = "\"vehicleType\"", length = 255)
     private String vehicleType = "Pickup (1.5 - 2.5 MT)";
 
     @Column(name = "\"vehicleRegNo\"", length = 50)
     private String vehicleRegNo;
 
+    @Builder.Default
     @Column(name = "capacity", length = 50)
     private String capacity = "2.0 MT";
 
+    @Builder.Default
     @Column(name = "\"operatingRegion\"", length = 255)
     private String operatingRegion = "Western Maharashtra (Pune - Satara - Kolhapur)";
 
+    @Builder.Default
     @Column(name = "ownership", length = 255)
     private String ownership = "Driver & Owner";
 
@@ -56,10 +60,12 @@ public class TransporterProfile {
     @Column(name = "\"updatedAt\"", nullable = false)
     private LocalDateTime updatedAt;
 
+    @Builder.Default
     @JsonIgnore
     @OneToMany(mappedBy = "transporter", cascade = CascadeType.ALL, orphanRemoval = true)
     private java.util.List<TransporterVehicle> vehicles = new java.util.ArrayList<>();
 
+    @Builder.Default
     @JsonIgnore
     @OneToMany(mappedBy = "transporter")
     private java.util.List<LogisticsRequest> assignedTrips = new java.util.ArrayList<>();

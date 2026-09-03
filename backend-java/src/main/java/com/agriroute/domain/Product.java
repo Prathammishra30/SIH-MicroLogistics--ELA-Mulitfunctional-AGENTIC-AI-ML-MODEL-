@@ -41,6 +41,7 @@ public class Product {
     @Column(name = "\"harvestDate\"", nullable = false, length = 20)
     private String harvestDate;
 
+    @Builder.Default
     @Column(name = "status", nullable = false, length = 50)
     private String status = "Available";
 
@@ -52,6 +53,7 @@ public class Product {
     @Column(name = "\"updatedAt\"", nullable = false)
     private LocalDateTime updatedAt;
 
+    @Builder.Default
     @JsonIgnore
     @OneToMany(mappedBy = "product")
     private java.util.List<LogisticsRequest> logisticsRequests = new java.util.ArrayList<>();

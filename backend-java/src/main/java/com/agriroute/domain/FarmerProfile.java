@@ -36,12 +36,15 @@ public class FarmerProfile {
     @Column(name = "district", length = 255)
     private String district;
 
+    @Builder.Default
     @Column(name = "state", length = 255)
     private String state = "Maharashtra";
 
+    @Builder.Default
     @Column(name = "\"producerType\"", length = 255)
     private String producerType = "Farmer";
 
+    @Builder.Default
     @Column(name = "category", length = 255)
     private String category = "Fresh Vegetables & Fruits";
 
@@ -56,10 +59,12 @@ public class FarmerProfile {
     @Column(name = "\"updatedAt\"", nullable = false)
     private LocalDateTime updatedAt;
 
+    @Builder.Default
     @JsonIgnore
     @OneToMany(mappedBy = "farmer", cascade = CascadeType.ALL, orphanRemoval = true)
     private java.util.List<Product> products = new java.util.ArrayList<>();
 
+    @Builder.Default
     @JsonIgnore
     @OneToMany(mappedBy = "farmer", cascade = CascadeType.ALL, orphanRemoval = true)
     private java.util.List<LogisticsRequest> logisticsRequests = new java.util.ArrayList<>();

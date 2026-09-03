@@ -35,6 +35,7 @@ public class Session {
     @Column(name = "\"revokedAt\"")
     private LocalDateTime revokedAt;
 
+    @Builder.Default
     @Column(name = "\"lastUsedAt\"", nullable = false)
     private LocalDateTime lastUsedAt = LocalDateTime.now();
 

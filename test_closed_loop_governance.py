@@ -126,7 +126,7 @@ async def demonstrate_complete_closed_loop():
         report = await GovernedModelEvaluator.compare_models(
             active_model=active_demand_model,
             candidate_model=candidate_demand_model,
-            test_dataset=val_dataset
+            holdout_dataset=val_dataset
         )
         print(f"  ✓ Active Version: {report.active_model_version} (MAE: {report.active_metrics.mae:.2f})")
         print(f"  ✓ Candidate Version: {report.candidate_model_version} (MAE: {report.candidate_metrics.mae:.2f})")

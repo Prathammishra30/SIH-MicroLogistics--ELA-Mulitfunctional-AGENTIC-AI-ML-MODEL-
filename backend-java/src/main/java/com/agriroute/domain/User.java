@@ -41,6 +41,7 @@ public class User {
     @Column(name = "role", nullable = false, columnDefinition = "\"Role\"")
     private UserRole role;
 
+    @Builder.Default
     @Column(name = "\"isActive\"", nullable = false)
     private Boolean isActive = true;
 
@@ -64,6 +65,7 @@ public class User {
     @OneToOne(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     private TransporterProfile transporterProfile;
 
+    @Builder.Default
     @JsonIgnore
     @OneToMany(mappedBy = "user", cascade = CascadeType.ALL, orphanRemoval = true)
     private java.util.List<Session> sessions = new java.util.ArrayList<>();

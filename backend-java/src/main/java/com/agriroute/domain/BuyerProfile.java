@@ -33,9 +33,11 @@ public class BuyerProfile {
     @Column(name = "\"contactPerson\"", length = 255)
     private String contactPerson;
 
+    @Builder.Default
     @Column(name = "\"businessType\"", length = 255)
     private String businessType = "APMC Licensed Commission Agent & Trader";
 
+    @Builder.Default
     @Column(name = "location", length = 255)
     private String location = "Navi Mumbai APMC Mandi";
 
@@ -53,6 +55,7 @@ public class BuyerProfile {
     @Column(name = "\"updatedAt\"", nullable = false)
     private LocalDateTime updatedAt;
 
+    @Builder.Default
     @JsonIgnore
     @OneToMany(mappedBy = "buyer", cascade = CascadeType.ALL, orphanRemoval = true)
     private java.util.List<ProcurementRequest> procurements = new java.util.ArrayList<>();

@@ -11,6 +11,7 @@ import java.util.UUID;
 
 @Service
 @Transactional
+@SuppressWarnings("null")
 public class BuyerBusinessService {
     private final BuyerProfileRepository buyerProfileRepository;
     private final ProcurementRequestRepository procurementRequestRepository;

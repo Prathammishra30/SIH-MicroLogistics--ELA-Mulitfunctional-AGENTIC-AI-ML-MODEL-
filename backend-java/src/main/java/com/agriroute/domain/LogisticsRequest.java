@@ -53,6 +53,7 @@ public class LogisticsRequest {
     @Column(name = "\"estimatedEarnings\"", length = 100)
     private String estimatedEarnings;
 
+    @Builder.Default
     @Column(name = "status", nullable = false, length = 50)
     private String status = "Searching";
 

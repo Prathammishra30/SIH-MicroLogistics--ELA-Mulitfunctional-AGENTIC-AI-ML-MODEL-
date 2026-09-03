@@ -14,6 +14,7 @@ import java.util.UUID;
 
 @Service
 @Transactional
+@SuppressWarnings("null")
 public class FarmerBusinessService {
     private final FarmerProfileRepository farmerProfileRepository;
     private final LogisticsRequestRepository logisticsRequestRepository;

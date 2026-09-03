@@ -38,9 +38,11 @@ class GovernedModelEvaluator:
         cls,
         active_model: Any,
         candidate_model: Any,
-        holdout_dataset: List[Dict[str, Any]],
+        holdout_dataset: Optional[List[Dict[str, Any]]] = None,
+        test_dataset: Optional[List[Dict[str, Any]]] = None,
     ) -> ModelEvaluationReport:
-        if len(holdout_dataset) < cls.MIN_HOLDOUT_SAMPLES:
+        dataset = holdout_dataset if holdout_dataset is not None else (test_dataset or [])
+        if len(dataset) < cls.MIN_HOLDOUT_SAMPLES:
             return ModelEvaluationReport(
                 active_model_name=active_model.model_name,
                 active_model_version=active_model.current_version,
@@ -50,17 +52,17 @@ class GovernedModelEvaluator:
                 candidate_metrics=ModelMetrics(),
                 mae_improvement_pct=0.0,
                 rmse_improvement_pct=0.0,
-                holdout_sample_count=len(holdout_dataset),
+                holdout_sample_count=len(dataset),
                 recommendation='INSUFFICIENT_DATA',
-                decision_reason=f'Holdout evaluation dataset is too small ({len(holdout_dataset)}/{cls.MIN_HOLDOUT_SAMPLES} required).',
+                decision_reason=f'Holdout evaluation dataset is too small ({len(dataset)}/{cls.MIN_HOLDOUT_SAMPLES} required).',
             )
 
-        active_metrics = await active_model.evaluate(holdout_dataset)
-        candidate_metrics = await candidate_model.evaluate(holdout_dataset)
+        active_metrics = await active_model.evaluate(dataset)
+        candidate_metrics = await candidate_model.evaluate(dataset)
 
         baseline_metrics = None
         if hasattr(active_model, "evaluate_baseline"):
-            baseline_metrics = await active_model.evaluate_baseline(holdout_dataset)
+            baseline_metrics = await active_model.evaluate_baseline(dataset)
 
         mae_improvement_pct = 0.0
         if active_metrics.mae > 0:
@@ -75,7 +77,7 @@ class GovernedModelEvaluator:
             recommendation = 'PROMOTE_CANDIDATE'
             reason = (
                 f"Candidate achieved {mae_improvement_pct:.2f}% MAE improvement "
-                f"({candidate_metrics.mae:.2f} vs {active_metrics.mae:.2f}) on {len(holdout_dataset)} holdout samples."
+                f"({candidate_metrics.mae:.2f} vs {active_metrics.mae:.2f}) on {len(dataset)} holdout samples."
             )
         else:
             recommendation = 'REJECT_CANDIDATE'

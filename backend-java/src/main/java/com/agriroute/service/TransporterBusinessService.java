@@ -14,6 +14,7 @@ import java.util.UUID;
 
 @Service
 @Transactional
+@SuppressWarnings("null")
 public class TransporterBusinessService {
     private final TransporterProfileRepository transporterProfileRepository;
     private final TransporterVehicleRepository transporterVehicleRepository;

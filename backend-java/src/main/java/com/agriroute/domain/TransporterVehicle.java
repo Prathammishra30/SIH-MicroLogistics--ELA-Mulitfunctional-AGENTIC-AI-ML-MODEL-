@@ -35,12 +35,15 @@ public class TransporterVehicle {
     @Column(name = "capacity", nullable = false, length = 50)
     private String capacity;
 
+    @Builder.Default
     @Column(name = "\"capacityKg\"", nullable = false)
     private Integer capacityKg = 0;
 
+    @Builder.Default
     @Column(name = "status", nullable = false, length = 50)
     private String status = "Available";
 
+    @Builder.Default
     @Column(name = "utilization", nullable = false)
     private Integer utilization = 0;
 
@@ -52,6 +55,7 @@ public class TransporterVehicle {
     @Column(name = "\"updatedAt\"", nullable = false)
     private LocalDateTime updatedAt;
 
+    @Builder.Default
     @JsonIgnore
     @OneToMany(mappedBy = "vehicleRef")
     private java.util.List<LogisticsRequest> logisticsRequests = new java.util.ArrayList<>();

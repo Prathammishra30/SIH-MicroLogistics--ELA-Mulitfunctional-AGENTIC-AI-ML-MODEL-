@@ -47,6 +47,7 @@ public class ProcurementRequest {
     @Column(name = "\"farmerName\"", length = 255)
     private String farmerName;
 
+    @Builder.Default
     @Column(name = "status", nullable = false, length = 50)
     private String status = "Open";
 
@@ -61,6 +62,7 @@ public class ProcurementRequest {
     @Column(name = "\"updatedAt\"", nullable = false)
     private LocalDateTime updatedAt;
 
+    @Builder.Default
     @JsonIgnore
     @OneToMany(mappedBy = "procurementRequest")
     private java.util.List<LogisticsRequest> logisticsRequests = new java.util.ArrayList<>();

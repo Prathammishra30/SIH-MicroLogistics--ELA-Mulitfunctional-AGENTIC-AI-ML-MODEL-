@@ -60,7 +60,6 @@ public class ElaToolController {
 
         try {
             String tool = request.getToolName();
-            String roleStr = request.getRole() != null ? request.getRole().toUpperCase() : "GUEST";
             Map<String, Object> params = request.getParams() != null ? request.getParams() : Map.of();
 
             // Check if confirmed for consequential operations

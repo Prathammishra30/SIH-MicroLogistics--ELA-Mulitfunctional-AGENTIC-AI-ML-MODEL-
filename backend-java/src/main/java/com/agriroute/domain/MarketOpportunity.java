@@ -35,9 +35,11 @@ public class MarketOpportunity {
     @Column(name = "distance", nullable = false, length = 100)
     private String distance;
 
+    @Builder.Default
     @Column(name = "\"logisticsAvailable\"", nullable = false)
     private Boolean logisticsAvailable = true;
 
+    @Builder.Default
     @Column(name = "\"matchScore\"", nullable = false)
     private Integer matchScore = 90;
 
