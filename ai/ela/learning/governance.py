@@ -29,6 +29,10 @@ class GovernanceAuditReport(BaseModel):
     def final_decision(self) -> str:
         return self.decision
 
+    @property
+    def promotable(self) -> bool:
+        return self.decision == "APPROVE"
+
 
 class ModelGovernanceGate:
     """

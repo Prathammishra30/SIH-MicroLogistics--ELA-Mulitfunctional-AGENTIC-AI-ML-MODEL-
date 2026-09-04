@@ -197,3 +197,74 @@ class TransformerNeuralCore:
             "checksum": self._cached_checksum,
             "supported_tasks": ["contextual_representation", "intent_representation", "decision_scoring"],
         }
+
+    async def evaluate(self, dataset: List[Dict[str, Any]]) -> Any:
+        from ai.ela.ml.types import ModelMetrics
+        if not dataset:
+            return ModelMetrics(sample_count=0)
+        errors = []
+        for r in dataset:
+            inp = r.get("neural_input")
+            if not inp:
+                features = r.get("features", {})
+                inp = ElaNeuralInput(
+                    session_id=features.get("session_id", "eval-sess"),
+                    role=features.get("role", "FARMER"),
+                    language=features.get("language", "en"),
+                    intent=features.get("intent", "GENERAL_HELP"),
+                    entities={
+                        "commodity": features.get("commodity", "Tomatoes"),
+                        "weight_kg": float(features.get("weight_kg", 500.0)),
+                        "origin": features.get("origin", "Nashik"),
+                        "destination": features.get("destination", "Pune"),
+                    },
+                )
+            elif isinstance(inp, dict):
+                inp = ElaNeuralInput(**inp)
+            res = self.encode(inp)
+            target = float(r.get("actual_value", r.get("decision_target", 0.8)))
+            pred = float(res.decision_score)
+            errors.append(abs(pred - target))
+        mae = float(np.mean(errors)) if errors else 0.0
+        rmse = float(np.sqrt(np.mean(np.square(errors)))) if errors else 0.0
+        return ModelMetrics(mae=round(mae, 4), rmse=round(rmse, 4), sample_count=len(dataset))
+
+    async def train(self, dataset: List[Dict[str, Any]]) -> Dict[str, Any]:
+        from ai.ela.neural.transformer.training import TransformerTrainer
+        trainer = TransformerTrainer(config=self.config)
+        formatted = []
+        for r in dataset:
+            if "neural_input" in r:
+                formatted.append(r)
+            else:
+                features = r.get("features", {})
+                formatted.append({
+                    "neural_input": ElaNeuralInput(
+                        session_id=features.get("session_id", "train-sess"),
+                        role=features.get("role", "FARMER"),
+                        language=features.get("language", "en"),
+                        intent=features.get("intent", "CREATE_LOGISTICS_WORKFLOW"),
+                        entities={
+                            "commodity": features.get("commodity", "Tomatoes"),
+                            "weight_kg": float(features.get("weight_kg", 500.0)),
+                            "origin": features.get("origin", "Nashik"),
+                            "destination": features.get("destination", "Pune"),
+                        },
+                    ),
+                    "intent_target": 1,
+                    "decision_target": float(r.get("actual_value", 0.85)),
+                })
+        if formatted:
+            try:
+                model, metrics, prov, _ = trainer.train_supervised(
+                    dataset=formatted,
+                    epochs=2,
+                    candidate_version=self.current_version,
+                )
+                self.model = model
+                self._cached_checksum = self._compute_active_checksum()
+                return metrics.to_dict()
+            except Exception as e:
+                return {"status": "FAILED", "error": str(e)}
+        return {"status": "EMPTY_DATASET"}
+

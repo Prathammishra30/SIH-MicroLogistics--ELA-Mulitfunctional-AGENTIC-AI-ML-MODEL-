@@ -107,6 +107,11 @@ class ModelRegistry:
             cls.register_model(DelayProbabilityModel(version="v1.0-delay-risk", status="production"), status="production")
             cls.register_model(CancellationProbabilityModel(version="v1.0-cancel-risk", status="production"), status="production")
             cls.register_model(DeliverySuccessProbabilityModel(version="v1.0-success-risk", status="production"), status="production")
+            try:
+                from ai.ela.neural.transformer.inference import TransformerNeuralCore
+                cls.register_model(TransformerNeuralCore.get_instance(), status="production")
+            except Exception:
+                pass
 
     @classmethod
     def get_active_model(cls, model_name: str) -> Optional[Any]:
@@ -183,6 +188,7 @@ class ModelRegistry:
             "model_name": model_name,
             "from_version": current_ver,
             "to_version": target_version,
+            "rolled_back_to": target_version,
             "timestamp": datetime.now().isoformat(),
             "status": "ROLLBACK_EXECUTED",
         }
@@ -192,10 +198,41 @@ class ModelRegistry:
         if current_active:
             if hasattr(current_active, "_version"):
                 current_active._version = target_version
+            elif hasattr(current_active, "version"):
+                current_active.version = target_version
+            elif hasattr(current_active, "current_version"):
+                try:
+                    current_active.current_version = target_version
+                except AttributeError:
+                    pass
             if hasattr(current_active, "_status"):
                 current_active._status = "production"
+            elif hasattr(current_active, "status"):
+                try:
+                    current_active.status = "production"
+                except AttributeError:
+                    pass
 
         return True
+
+    @classmethod
+    def rollback_model(cls, model_name: str, target_version: str) -> Optional[ModelMetadata]:
+        success = cls.rollback(model_name, target_version)
+        if not success:
+            return None
+        versions = cls.get_model_versions(model_name)
+        for v in versions:
+            if v.version == target_version:
+                return v
+        meta = ModelMetadata(
+            model_id=f"{model_name}-{target_version}",
+            model_name=model_name,
+            version=target_version,
+            status="production",
+            algorithm=model_name,
+            promotion_decision="ROLLED_BACK",
+        )
+        return meta
 
     @classmethod
     def get_rollback_audit_log(cls) -> List[Dict[str, Any]]:

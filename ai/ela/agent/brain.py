@@ -39,6 +39,7 @@ from ai.ela.planner.executor import PlanExecutor
 from ai.ela.planner.replan import ReplanningEngine
 from ai.ela.learning.collector import FeedbackCollector
 from ai.ela.data.schemas import LearningEvent
+from ai.ela.learning.adaptation import AdaptationEngine
 from ai.ela.core.intelligence_fusion import StructuredIntelligenceDecision
 
 
@@ -419,6 +420,10 @@ class ElaUniversalBrain:
                     "writes_accepted": 0,
                     "writes_rejected": 0,
                 },
+                learning={
+                    "status": "GUEST_NAVIGATING",
+                    "corridor_adjustment_applied": False,
+                },
                 planning={
                     "plan_id": None,
                     "plan_version": 1,
@@ -457,6 +462,16 @@ class ElaUniversalBrain:
                 timestamp=datetime.now().isoformat(),
             )
 
+        # 4.4 CORRIDOR ADAPTATION SIGNAL CHECK (Phase 12.4 Closed-Loop Learning)
+        clean_orig = (accumulated_entities.pickup_location or "").strip()
+        clean_dest = (accumulated_entities.destination or "").strip()
+        corridor_key = f"{clean_orig}-{clean_dest}" if clean_orig and clean_dest else None
+        corridor_sig = AdaptationEngine.get_corridor_signal(corridor_key) if corridor_key else None
+
+        plan_entities = accumulated_entities.model_dump() if hasattr(accumulated_entities, "model_dump") else {}
+        if corridor_sig:
+            plan_entities["corridor_adjustment"] = corridor_sig.model_dump()
+
         # 4.5 AGENTIC PLAN GENERATION, EVALUATION & REPLANNING (Phase 12.3)
         session_obj = ConversationMemory.get_session(session_id)
         prev_plan = getattr(session_obj, "active_plan", None)
@@ -470,7 +485,7 @@ class ElaUniversalBrain:
                 observation_trigger="STRATEGY_SHIFT",
                 reason=f"User shifted transport strategy from {prev_plan.strategy} to {accumulated_entities.strategy}",
                 updated_strategy=accumulated_entities.strategy,
-                updated_entities=accumulated_entities.model_dump() if hasattr(accumulated_entities, "model_dump") else {},
+                updated_entities=plan_entities,
             )
         else:
             ela_plan = AgenticPlanner.create_plan(
@@ -480,7 +495,7 @@ class ElaUniversalBrain:
                 objective=goal_plan.title,
                 role=effective_role,
                 strategy=accumulated_entities.strategy,
-                entities=accumulated_entities.model_dump() if hasattr(accumulated_entities, "model_dump") else {},
+                entities=plan_entities,
             )
 
         # Pre-Execution Plan Evaluation Audit
@@ -520,6 +535,7 @@ class ElaUniversalBrain:
                 "transformer_state": transformer_res,
                 "cognitive_context": cognitive_ctx.model_dump(),
                 "retrieved_memories": [m.model_dump() for m in retrieved_memories],
+                "corridor_adjustment": corridor_sig.model_dump() if corridor_sig else None,
             },
         )
 
@@ -671,6 +687,15 @@ class ElaUniversalBrain:
                 },
                 "replan_reason": ela_plan.replan_reason,
                 "observation_trigger": ela_plan.observation_trigger,
+            },
+            learning={
+                "enabled": True,
+                "corridor": corridor_key,
+                "corridor_adjustment_applied": bool(corridor_sig),
+                "corridor_signal": corridor_sig.model_dump() if corridor_sig else None,
+                "observations_count": len(plan_observations) if 'plan_observations' in locals() else 0,
+                "outcomes_recorded": [obs.evidence.get("outcome_id") for obs in plan_observations if getattr(obs, "evidence", None) and obs.evidence.get("outcome_id")] if 'plan_observations' in locals() else [],
+                "status": "MONITORED",
             },
             verification_status="VERIFIED" if status_outcome in ['SUCCESS', 'CONFIRMATION_REQUIRED'] else "PENDING",
             learning_event_created=True,

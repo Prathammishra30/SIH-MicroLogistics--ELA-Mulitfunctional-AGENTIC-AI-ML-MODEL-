@@ -102,6 +102,12 @@ class CandidateModelTrainer:
             candidate = DemandPredictionModel(version=candidate_ver, status="trained")
         elif model_name == "PricePredictionModel":
             candidate = PricePredictionModel(version=candidate_ver, status="trained")
+        elif model_name in ["ElaTransformerNeuralCore", "TransformerNeuralCore"]:
+            from ai.ela.neural.transformer.inference import TransformerNeuralCore
+            from ai.ela.neural.transformer.config import TransformerConfig
+            candidate_cfg = TransformerConfig(model_version=candidate_ver)
+            candidate = TransformerNeuralCore(candidate_cfg)
+            candidate.status = "trained"
         else:
             candidate = copy.deepcopy(current_active)
             if hasattr(candidate, "_version"):

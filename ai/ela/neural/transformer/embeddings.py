@@ -18,10 +18,11 @@ class ElaNeuralInput(BaseModel):
     Standardized input contract for the ELA Transformer Neural Subsystem.
     Transfers structured conversation, role, goal, entity, and operational state.
     """
-    session_id: str
+    session_id: str = Field(default_factory=lambda: f"sess-{__import__('uuid').uuid4().hex[:8]}")
     goal_id: Optional[str] = None
     language: str = "en"
     role: str = "GUEST"
+    user_role: Optional[str] = None
     intent: str = "GENERAL_HELP"
     entities: Dict[str, Any] = Field(default_factory=dict)
     context: Dict[str, Any] = Field(default_factory=dict)
@@ -29,6 +30,10 @@ class ElaNeuralInput(BaseModel):
     memory_features: Dict[str, Any] = Field(default_factory=dict)
     operational_features: Dict[str, Any] = Field(default_factory=dict)
     raw_text: Optional[str] = None
+
+    def model_post_init(self, __context: Any) -> None:
+        if self.user_role and self.role == "GUEST":
+            self.role = self.user_role
 
 
 class ElaInputVectorizer:

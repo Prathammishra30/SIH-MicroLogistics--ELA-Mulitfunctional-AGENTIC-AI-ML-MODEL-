@@ -140,6 +140,7 @@ class AgentExecutionTrace(BaseModel):
     transformer: Optional[Dict[str, Any]] = None
     memory: Optional[Dict[str, Any]] = None
     planning: Optional[Dict[str, Any]] = None
+    learning: Optional[Dict[str, Any]] = None
     final_outcome: AgentOutcome = 'SUCCESS'
     timestamp: str = Field(default_factory=lambda: datetime.now().isoformat())
 

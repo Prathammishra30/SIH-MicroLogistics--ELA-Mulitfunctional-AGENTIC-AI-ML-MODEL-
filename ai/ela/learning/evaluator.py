@@ -96,7 +96,7 @@ class GovernedModelEvaluator:
             baseline_metrics=baseline_metrics,
             mae_improvement_pct=round(mae_improvement_pct, 2),
             rmse_improvement_pct=round(rmse_improvement_pct, 2),
-            holdout_sample_count=len(holdout_dataset),
+            holdout_sample_count=len(dataset),
             recommendation=recommendation,
             decision_reason=reason,
         )

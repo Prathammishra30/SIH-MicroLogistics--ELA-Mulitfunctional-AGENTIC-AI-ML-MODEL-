@@ -82,11 +82,35 @@ class UserMemory:
 
 class PrivacySanitizer:
     @classmethod
+    def sanitize(cls, data: Any) -> Any:
+        import re
+        if isinstance(data, dict):
+            clean = {}
+            for k, v in data.items():
+                k_lower = k.lower()
+                # Strips out credentials and sensitive keys entirely
+                if any(secret in k_lower for secret in ['api_key', 'apikey', 'password', 'secret', 'token', 'otp', 'pin']):
+                    continue
+                # Redact phone numbers
+                if 'phone' in k_lower or (isinstance(v, str) and re.match(r'^[6-9]\d{9}$', str(v).strip())):
+                    clean[k] = '[REDACTED_PHONE]'
+                elif isinstance(v, dict):
+                    clean[k] = cls.sanitize(v)
+                elif isinstance(v, str):
+                    clean[k] = cls.sanitize_text(v)
+                else:
+                    clean[k] = v
+            return clean
+        elif isinstance(data, str):
+            return cls.sanitize_text(data)
+        return data
+
+    @classmethod
     def sanitize_dict(cls, data: Dict[str, Any]) -> Dict[str, Any]:
         """Deeply removes any sensitive keys like password, otp, token, pin, secret."""
         clean = {}
         for k, v in data.items():
-            if any(secret_term in k.lower() for secret_term in ['password', 'otp', 'pin', 'secret', 'token']):
+            if any(secret_term in k.lower() for secret_term in ['password', 'otp', 'pin', 'secret', 'token', 'api_key']):
                 clean[k] = '[REDACTED_SECRET]'
             elif isinstance(v, dict):
                 clean[k] = cls.sanitize_dict(v)
@@ -105,4 +129,5 @@ class PrivacySanitizer:
         # Redact passwords and pin patterns
         sanitized = re.sub(r'password\s*[:=]\s*\S+', 'password: [REDACTED_SECRET]', sanitized, flags=re.IGNORECASE)
         sanitized = re.sub(r'pin\s*[:=]\s*\d+', 'pin: [REDACTED_SECRET]', sanitized, flags=re.IGNORECASE)
+        sanitized = re.sub(r'\b[6-9]\d{9}\b', '[REDACTED_PHONE]', sanitized)
         return sanitized

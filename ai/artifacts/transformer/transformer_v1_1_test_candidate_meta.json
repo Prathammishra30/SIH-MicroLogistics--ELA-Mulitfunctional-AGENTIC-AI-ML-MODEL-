@@ -18,22 +18,22 @@
   },
   "parameter_count": 86609,
   "weights_path": "C:\\SIH-MicroLogistics\\ai\\artifacts\\transformer\\transformer_v1_1_test_candidate_weights.pt",
-  "artifact_checksum": "6bdea6128ed5221c4d75a44f138138d22136adb3fb2443e8be4676b9678969cd",
+  "artifact_checksum": "565158ec729334999ed26bd9bbd11fe45769a7fc6d9c4408d5172557d3d66ada",
   "metrics": {
-    "loss": 2.0824386551976204,
-    "intent_loss": 2.0480422973632812,
-    "decision_loss": 0.06879271566867828,
+    "loss": 2.018099144101143,
+    "intent_loss": 1.9813483953475952,
+    "decision_loss": 0.07350149750709534,
     "intent_accuracy": 0.3333333432674408,
-    "decision_mae": 0.26172593235969543,
-    "decision_rmse": 0.26228365302085876,
-    "mean_attention_entropy": 2.950518846511841,
+    "decision_mae": 0.27050864696502686,
+    "decision_rmse": 0.2711116075515747,
+    "mean_attention_entropy": 2.9445221424102783,
     "sample_count": 26,
     "parameter_count": 86609,
     "inference_latency_ms": 1.5,
-    "evaluated_at": "2026-09-03T23:35:44.290806"
+    "evaluated_at": "2026-09-04T10:58:32.316883"
   },
   "provenance": {
-    "provenance_id": "prov-1788458744290",
+    "provenance_id": "prov-1788499712316",
     "dataset_id": "test-synthetic-benchmark",
     "dataset_provenance": "SYNTHETIC_TEST",
     "sample_count": 26,
@@ -50,21 +50,21 @@
       "d_model": 64
     },
     "evaluation_metrics": {
-      "loss": 2.0824386551976204,
-      "intent_loss": 2.0480422973632812,
-      "decision_loss": 0.06879271566867828,
+      "loss": 2.018099144101143,
+      "intent_loss": 1.9813483953475952,
+      "decision_loss": 0.07350149750709534,
       "intent_accuracy": 0.3333333432674408,
-      "decision_mae": 0.26172593235969543,
-      "decision_rmse": 0.26228365302085876,
-      "mean_attention_entropy": 2.950518846511841,
+      "decision_mae": 0.27050864696502686,
+      "decision_rmse": 0.2711116075515747,
+      "mean_attention_entropy": 2.9445221424102783,
       "sample_count": 26,
       "parameter_count": 86609,
       "inference_latency_ms": 1.5,
-      "evaluated_at": "2026-09-03T23:35:44.290806"
+      "evaluated_at": "2026-09-04T10:58:32.316883"
     },
     "audit_passed": true,
     "audit_findings": [],
-    "created_at": "2026-09-03T23:35:44.290882"
+    "created_at": "2026-09-04T10:58:32.316959"
   },
-  "saved_at": "2026-09-03T23:35:44.301463"
+  "saved_at": "2026-09-04T10:58:32.330403"
 }
