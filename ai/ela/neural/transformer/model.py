@@ -129,6 +129,18 @@ if HAS_TORCH:
             decision_score = self.decision_head(pooled_rep)
 
             return intent_logits, decision_score, pooled_rep, all_attentions
+else:
+    class TorchElaTransformerModel:  # type: ignore
+        """
+        PyTorch Implementation of the ELA Transformer Neural Core (Fallback Stub when PyTorch is not installed).
+        """
+        def __init__(self, config: Optional[TransformerConfig] = None):
+            raise ImportError(
+                "TorchElaTransformerModel requires PyTorch, but 'torch' is not installed in this Python environment. "
+                "Please run with the project virtual environment (.\\.venv\\Scripts\\python.exe) "
+                "or utilize NumpyElaTransformerModel for mathematically equivalent CPU inference."
+            )
+
 
 
 class NumpyElaTransformerModel:
@@ -210,3 +222,10 @@ class NumpyElaTransformerModel:
         decision_score = self.decision_head.forward(pooled_rep)
 
         return intent_logits, decision_score, pooled_rep, all_attentions
+ 
+ 
+__all__ = [
+    "ElaTransformerState",
+    "TorchElaTransformerModel",
+    "NumpyElaTransformerModel",
+]
