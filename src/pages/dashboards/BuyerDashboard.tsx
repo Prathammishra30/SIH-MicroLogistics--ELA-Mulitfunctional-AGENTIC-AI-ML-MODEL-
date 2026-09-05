@@ -17,6 +17,8 @@ import { useLanguage } from '../../context/LanguageContext';
 import { PortalHero } from '../../components/ui/PortalHero';
 import { StatCard } from '../../components/ui/StatCard';
 import { StatusBadge } from '../../components/ui/StatusBadge';
+import { MatchProposalCard, type MatchProposalData } from '../../components/dashboards/MatchProposalCard';
+import { Sparkles, RefreshCw } from 'lucide-react';
 
 export const BuyerDashboard: React.FC = () => {
   const navigate = useNavigate();
@@ -25,6 +27,44 @@ export const BuyerDashboard: React.FC = () => {
   const shouldReduceMotion = useReducedMotion();
 
   const userName = state.auth.user?.name || 'Commercial Buyer';
+
+  // Cross-role match proposals state
+  const [proposals, setProposals] = React.useState<MatchProposalData[]>([]);
+  const [loadingProposals, setLoadingProposals] = React.useState(false);
+
+  React.useEffect(() => {
+    let active = true;
+    fetch('/api/ela/matches')
+      .then((res) => res.json())
+      .then((data) => {
+        if (active && data.success && data.data?.proposals) {
+          setProposals(data.data.proposals);
+        }
+      })
+      .catch(() => {});
+    return () => {
+      active = false;
+    };
+  }, []);
+
+  const handleRefresh = async () => {
+    setLoadingProposals(true);
+    try {
+      const res = await fetch('/api/ela/matches');
+      const data = await res.json();
+      if (data.success && data.data?.proposals) {
+        setProposals(data.data.proposals);
+      }
+    } catch {
+      // offline/fallback
+    } finally {
+      setLoadingProposals(false);
+    }
+  };
+
+  const handleProposalUpdated = (updated: MatchProposalData) => {
+    setProposals((prev) => prev.map((p) => (p.id === updated.id ? updated : p)));
+  };
 
   const activeProcurements = state.procurementRequests.filter(
     (pr) => pr.status !== 'Completed'
@@ -107,6 +147,52 @@ export const BuyerDashboard: React.FC = () => {
           index={3}
         />
       </div>
+
+      {/* ELA Cross-Role Match Proposals Section */}
+      <motion.div
+        initial={{ opacity: 0, y: shouldReduceMotion ? 0 : 20 }}
+        whileInView={{ opacity: 1, y: 0 }}
+        viewport={{ once: true }}
+        transition={{ duration: shouldReduceMotion ? 0 : 0.45 }}
+        className="space-y-4"
+      >
+        <div className="flex flex-wrap items-center justify-between gap-3">
+          <div>
+            <div className="flex items-center gap-2">
+              <span className="p-1 rounded-lg bg-blue-100 text-blue-700">
+                <Sparkles className="w-4 h-4" />
+              </span>
+              <h2 className="text-lg font-bold text-gray-900">{t('match.sectionTitle')}</h2>
+            </div>
+            <p className="text-xs text-gray-500 mt-0.5">{t('match.sectionSubtitle')}</p>
+          </div>
+          <button
+            onClick={handleRefresh}
+            disabled={loadingProposals}
+            className="flex items-center gap-1.5 px-3 py-1.5 rounded-xl border border-gray-200 bg-white text-xs font-semibold text-gray-700 hover:bg-gray-50 transition shadow-xs cursor-pointer"
+          >
+            <RefreshCw className={`w-3.5 h-3.5 ${loadingProposals ? 'animate-spin' : ''}`} />
+            <span>{loadingProposals ? t('match.finding') : t('match.findMatchesBtn')}</span>
+          </button>
+        </div>
+
+        {proposals.length === 0 ? (
+          <div className="p-6 rounded-2xl bg-white border border-dashed border-gray-200 text-center text-xs text-gray-500">
+            {t('match.noMatches')}
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-4">
+            {proposals.map((proposal) => (
+              <MatchProposalCard
+                key={proposal.id}
+                proposal={proposal}
+                currentRole="BUYER"
+                onDecisionUpdated={handleProposalUpdated}
+              />
+            ))}
+          </div>
+        )}
+      </motion.div>
 
       {/* Main Table: Active Procurements with Scroll Reveal */}
       <motion.div

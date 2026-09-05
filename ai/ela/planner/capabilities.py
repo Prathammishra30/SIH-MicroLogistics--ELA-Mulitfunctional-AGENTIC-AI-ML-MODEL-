@@ -34,6 +34,7 @@ class AgentCapabilityRegistry:
             'create_logistics_request',
             'match_vehicles',
             'rank_transport_options',
+            'orchestrate_cross_role_match',
             'stage_booking_card',
         ],
         'PredictionAgent': [

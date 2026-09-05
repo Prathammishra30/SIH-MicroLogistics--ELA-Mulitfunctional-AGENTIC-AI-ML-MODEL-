@@ -51,6 +51,7 @@ class ElaUniversalBrain:
 
     def __init__(self):
         from ai.ela.neural.transformer.inference import TransformerNeuralCore
+        from ai.ela.orchestration.dispatcher import TaskDispatcher
         self.coordinator = AgentCoordinator()
         self.security_guard = SecurityGuard()
         self.intent_resolver = IntentResolver()
@@ -59,6 +60,7 @@ class ElaUniversalBrain:
         self.plan_executor = PlanExecutor()
         self.feedback_collector = FeedbackCollector()
         self.transformer_core = TransformerNeuralCore.get_instance()
+        self.task_dispatcher = TaskDispatcher()
 
     async def process_chat(self, request: AgentChatRequest) -> AgentChatResponse:
         """
@@ -70,6 +72,52 @@ class ElaUniversalBrain:
         trace_id = f"trace-brain-{int(start_time * 1000)}"
         session_id = request.session_id or f"session-{uuid.uuid4().hex[:8]}"
         raw_message = (request.message or "").strip()
+
+        stt_conf = request.audio_confidence if request.audio_confidence is not None else 1.0
+
+        # Branch 5: Protect against low-confidence STT transcription (< 0.65 threshold)
+        if request.is_voice and stt_conf < 0.65:
+            dispatch_res = await self.task_dispatcher.dispatch(
+                text=raw_message,
+                role=request.authenticated_role,
+                preferred_language=request.language,
+                stt_confidence=stt_conf,
+                is_voice=True,
+                user_id=request.user_id,
+                auth_token=request.auth_token,
+            )
+            return AgentChatResponse(
+                message=dispatch_res.message,
+                intent="GENERAL_HELP",
+                detected_role=request.authenticated_role,
+                language=dispatch_res.language,
+                status=dispatch_res.status,
+                suggestions=self._get_default_suggestions(request.authenticated_role, dispatch_res.language),
+                timestamp=datetime.now().isoformat(),
+            )
+
+        # Check for pending staged action confirmation (Voice or Text)
+        pending_action = request.context.get("pendingAction") if request.context else None
+        if pending_action:
+            dispatch_res = await self.task_dispatcher.dispatch(
+                text=raw_message,
+                role=request.authenticated_role,
+                preferred_language=request.language,
+                stt_confidence=stt_conf,
+                is_voice=request.is_voice,
+                pending_action=pending_action,
+                user_id=request.user_id,
+                auth_token=request.auth_token,
+            )
+            return AgentChatResponse(
+                message=dispatch_res.message,
+                intent="GENERAL_HELP",
+                detected_role=request.authenticated_role,
+                language=dispatch_res.language,
+                status=dispatch_res.status,
+                action_result=dispatch_res.action_result,
+                timestamp=datetime.now().isoformat(),
+            )
 
         if not raw_message or raw_message.lower() in ["hi", "hello", "namaste", "namaskar", "vanakkam", "help", "shuru", "start"]:
             welcome_text = "How can I help you?\nमैं आपकी कैसे मदद कर सकती हूँ?"
@@ -119,6 +167,30 @@ class ElaUniversalBrain:
             else (canonical.target_role if canonical.target_role != 'GUEST' else 'GUEST')
         )
         lang = canonical.language
+
+        # Voice-First Dispatcher: For voice requests, execute or stage actions over unified action registry
+        if request.is_voice:
+            dispatch_res = await self.task_dispatcher.dispatch(
+                text=raw_message,
+                role=effective_role,
+                preferred_language=lang,
+                stt_confidence=stt_conf,
+                is_voice=True,
+                user_id=request.user_id,
+                auth_token=request.auth_token,
+            )
+            return AgentChatResponse(
+                message=dispatch_res.message,
+                intent=canonical.intent,
+                detected_role=effective_role,
+                language=dispatch_res.language,
+                status=dispatch_res.status,
+                action_result=dispatch_res.action_result,
+                navigation_action=dispatch_res.navigation_action,
+                confirmation_action=dispatch_res.confirmation_payload,
+                suggestions=self._get_default_suggestions(effective_role, dispatch_res.language),
+                timestamp=datetime.now().isoformat(),
+            )
 
         # Shared Memory Entity Accumulation
         accumulated_entities = ConversationMemory.update_entities(session_id, canonical.entities)
@@ -607,6 +679,33 @@ class ElaUniversalBrain:
 
         total_latency = round((time.time() - start_time) * 1000, 2)
 
+        # Extract Match Proposal from specialized agents (Phase 12.5)
+        match_prop_data = None
+        cand_count = 1
+        for ag_name, ag_resp in coord_res.agent_responses.items():
+            if ag_resp and isinstance(ag_resp.data, dict) and "match_proposal" in ag_resp.data:
+                match_prop_data = ag_resp.data["match_proposal"]
+                cand_count = ag_resp.data.get("candidate_proposals_count", 1)
+                break
+
+        orchestration_trace = None
+        if match_prop_data:
+            orchestration_trace = {
+                "invoked": True,
+                "candidate_matches_count": cand_count,
+                "top_proposal_id": match_prop_data.get("id"),
+                "top_match_score": match_prop_data.get("match_score"),
+                "proposal_status": match_prop_data.get("status", "PROPOSED"),
+                "sub_scores": match_prop_data.get("sub_scores", {}),
+                "hard_gates_passed": True,
+                "explanation": match_prop_data.get("explanation", ""),
+                "matched_parties": {
+                    "farmer_id": match_prop_data.get("farmer_id"),
+                    "buyer_id": match_prop_data.get("buyer_id"),
+                    "transporter_id": match_prop_data.get("transporter_id"),
+                },
+            }
+
         # Observability Trace Record
         trace = AgentExecutionTrace(
             trace_id=trace_id,
@@ -697,6 +796,7 @@ class ElaUniversalBrain:
                 "outcomes_recorded": [obs.evidence.get("outcome_id") for obs in plan_observations if getattr(obs, "evidence", None) and obs.evidence.get("outcome_id")] if 'plan_observations' in locals() else [],
                 "status": "MONITORED",
             },
+            orchestration=orchestration_trace,
             verification_status="VERIFIED" if status_outcome in ['SUCCESS', 'CONFIRMATION_REQUIRED'] else "PENDING",
             learning_event_created=True,
             model_provider='ElaUniversalBrain-v10',
@@ -717,6 +817,39 @@ class ElaUniversalBrain:
                 user_msg = f"तुमची वाहतूक बुकिंग यशस्वीरीत्या पूर्ण झाली आहे! बुकिंग आयडी: **{booking_id}**। वाहन वेळेवर हजर राहील."
             else:
                 user_msg = f"Your transport booking has been confirmed and verified by Java Authority! Booking ID: **{booking_id}**."
+        elif match_prop_data:
+            expl = match_prop_data.get("explanation", "")
+            sc = match_prop_data.get("match_score", 0.85) * 100
+            cr = match_prop_data.get("crop", accumulated_entities.product or "Produce")
+            if effective_role == 'BUYER':
+                if lang == 'hi':
+                    user_msg = f"मैंने आपके {cr} के लिए उपयुक्त किसान और ट्रांसपोर्टर ढूंढ लिया है (मैच स्कोर: {sc:.0f}%)। {expl}"
+                elif lang == 'mr':
+                    user_msg = f"मी आपल्या {cr} खरेदीसाठी योग्य शेतकरी आणि वाहतूकदार शोधला आहे (जुळवणी गुण: {sc:.0f}%)। {expl}"
+                else:
+                    user_msg = f"I found a compatible farmer and transporter for your {cr} procurement with a {sc:.0f}% match score. {expl}"
+            elif effective_role == 'TRANSPORTER':
+                if lang == 'hi':
+                    user_msg = f"मैंने आपके वाहन के लिए उपयुक्त माल लोड और खरीदार ढूंढ लिया है (मैच स्कोर: {sc:.0f}%)। {expl}"
+                elif lang == 'mr':
+                    user_msg = f"मी आपल्या वाहनासाठी योग्य माल आणि खरेदीदार शोधला आहे (जुळवणी गुण: {sc:.0f}%)। {expl}"
+                else:
+                    user_msg = f"I found a compatible produce load and buyer for your vehicle with a {sc:.0f}% match score. {expl}"
+            else:
+                if lang == 'hi':
+                    user_msg = f"मैंने आपके {cr} के लिए उपयुक्त खरीदार और ट्रांसपोर्टर ढूंढ लिया है (मैच स्कोर: {sc:.0f}%)। {expl}"
+                elif lang == 'mr':
+                    user_msg = f"मी आपल्या {cr} साठी योग्य खरेदीदार आणि वाहतूकदार शोधला आहे (जुळवणी गुण: {sc:.0f}%)। {expl}"
+                elif lang == 'ta':
+                    user_msg = f"பொருத்தமான வாங்குபவர் மற்றும் டிரான்ஸ்போர்ட்டரை நான் கண்டறிந்துள்ளேன் ({sc:.0f}% பொருத்தம்). {expl}"
+                elif lang == 'te':
+                    user_msg = f"సరిపోయే కొనుగోలుదారు మరియు రవాణాదారుని కనుగొన్నాను ({sc:.0f}% సరిపోలిక). {expl}"
+                elif lang == 'bn':
+                    user_msg = f"আমি উপযুক্ত ক্রেতা এবং পরিবহনকারী খুঁজে পেয়েছি ({sc:.0f}% মিল)। {expl}"
+                elif lang == 'kn':
+                    user_msg = f"ಸೂಕ್ತ ಖರೀದಿದಾರ ಮತ್ತು ಸಾರಿಗೆದಾರರನ್ನು ನಾನು ಕಂಡುಕೊಂಡಿದ್ದೇನೆ ({sc:.0f}% ಹೊಂದಾಣಿಕೆ). {expl}"
+                else:
+                    user_msg = f"I found a compatible buyer and transporter for your {cr} with a {sc:.0f}% match score. {expl}"
         else:
             user_msg = self._build_brain_message(
                 canonical.intent,

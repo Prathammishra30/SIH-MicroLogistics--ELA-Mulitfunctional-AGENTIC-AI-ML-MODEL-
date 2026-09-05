@@ -38,6 +38,31 @@ class BuyerAgent(BaseSpecializedAgent):
         summary = ""
 
         if intent in ['CREATE_PROCUREMENT_WORKFLOW', 'BUY_PRODUCE']:
+            # Cross-Role Triple Match Orchestration (Phase 12.5)
+            from ai.ela.orchestration.service import MatchOrchestrationService
+            from ai.ela.orchestration.matching import BuyerProcurement
+            from datetime import date, timedelta
+
+            match_service = MatchOrchestrationService()
+            proposals = []
+            try:
+                buyer_req = BuyerProcurement(
+                    id=f"buy-{params.get('userId', 'buyer-user')}",
+                    buyer_id=params.get("userId", "buyer-user"),
+                    crop_needed=prod,
+                    quantity_needed_kg=qty,
+                    budget_per_kg=target_price,
+                    min_quality_grade=1,
+                    lat=18.5204,
+                    lon=73.8567,
+                    needed_by=date.today() + timedelta(days=3),
+                )
+                proposals = match_service.match_buyer_procurement(buyer_req)
+            except Exception:
+                pass
+
+            top_prop = proposals[0] if proposals else None
+
             recommended_action = {
                 "toolName": "create_procurement",
                 "actionType": "STAGED_MUTATION",
@@ -46,10 +71,31 @@ class BuyerAgent(BaseSpecializedAgent):
                     "quantity": qty,
                     "targetPrice": target_price,
                     "deliveryLocation": dest,
+                    "proposalId": top_prop.id if top_prop else None,
                 },
             }
             data = {"cropName": prod, "quantity": qty, "targetPrice": target_price, "destination": dest}
-            summary = f"Staged procurement order for **{prod}** ({qty:.0f} kg) at target rate ₹{target_price:.2f}/kg to {dest}."
+            if top_prop:
+                data["match_proposal"] = {
+                    "id": top_prop.id,
+                    "crop": top_prop.crop,
+                    "quantity_kg": top_prop.quantity_kg,
+                    "match_score": top_prop.match_score,
+                    "sub_scores": top_prop.sub_scores,
+                    "status": top_prop.status.value,
+                    "farmer_id": top_prop.farmer_id,
+                    "buyer_id": top_prop.buyer_id,
+                    "transporter_id": top_prop.transporter_id,
+                    "explanation": top_prop.explanation,
+                    "proposed_price": top_prop.asking_price_per_kg,
+                    "transport_cost": top_prop.transport_cost_per_kg,
+                    "total_cost": top_prop.total_cost_per_kg,
+                }
+                data["candidate_proposals_count"] = len(proposals)
+                data["orchestration_invoked"] = True
+                summary = top_prop.explanation
+            else:
+                summary = f"Staged procurement order for **{prod}** ({qty:.0f} kg) at target rate ₹{target_price:.2f}/kg to {dest}."
 
         elif intent in ['GET_BUYER_PRODUCE', 'BROWSE_PRODUCE']:
             recommended_action = {

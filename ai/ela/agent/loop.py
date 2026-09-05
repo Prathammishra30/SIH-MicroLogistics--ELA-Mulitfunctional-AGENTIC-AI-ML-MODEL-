@@ -37,6 +37,8 @@ class AgentChatRequest(BaseModel):
     language: SupportedLanguage = 'en'
     context: Dict[str, Any] = {}
     auth_token: Optional[str] = None
+    is_voice: bool = False
+    audio_confidence: Optional[float] = 1.0
 
 
 class AgentChatResponse(BaseModel):
@@ -58,18 +60,66 @@ class ElaAgentLoop:
     MAX_ITERATIONS = 5
 
     def __init__(self, node_bridge: Optional[NodeToolBridge] = None):
+        from ai.ela.orchestration.dispatcher import TaskDispatcher
         self.node_bridge = node_bridge or NodeToolBridge()
         self.demand_model = DemandPredictionModel()
         self.price_model = PricePredictionModel()
         self.eta_model = ETAPredictionModel()
         self.cost_model = TransportCostModel()
         self.decision_support = DecisionSupportEngine()
+        self.task_dispatcher = TaskDispatcher(node_bridge=self.node_bridge)
 
     async def run(self, request: AgentChatRequest) -> AgentChatResponse:
         start_time = time.time()
         trace_id = f"trace-{int(start_time * 1000)}"
         session_id = request.session_id or f"session-{int(start_time * 1000)}"
         raw_message = (request.message or "").strip()
+
+        stt_conf = request.audio_confidence if request.audio_confidence is not None else 1.0
+
+        # Voice Branch 5: Low-confidence protection (< 0.65 threshold)
+        if request.is_voice and stt_conf < 0.65:
+            dispatch_res = await self.task_dispatcher.dispatch(
+                text=raw_message,
+                role=request.authenticated_role,
+                preferred_language=request.language,
+                stt_confidence=stt_conf,
+                is_voice=True,
+                user_id=request.user_id,
+                auth_token=request.auth_token,
+            )
+            return AgentChatResponse(
+                message=dispatch_res.message,
+                intent="GENERAL_HELP",
+                detected_role=request.authenticated_role,
+                language=dispatch_res.language,
+                status=dispatch_res.status,
+                suggestions=self._get_default_suggestions(request.authenticated_role, dispatch_res.language),
+                timestamp=datetime.now().isoformat(),
+            )
+
+        # Check for pending staged action confirmation
+        pending_action = request.context.get("pendingAction") if request.context else None
+        if pending_action:
+            dispatch_res = await self.task_dispatcher.dispatch(
+                text=raw_message,
+                role=request.authenticated_role,
+                preferred_language=request.language,
+                stt_confidence=stt_conf,
+                is_voice=request.is_voice,
+                pending_action=pending_action,
+                user_id=request.user_id,
+                auth_token=request.auth_token,
+            )
+            return AgentChatResponse(
+                message=dispatch_res.message,
+                intent="GENERAL_HELP",
+                detected_role=request.authenticated_role,
+                language=dispatch_res.language,
+                status=dispatch_res.status,
+                action_result=dispatch_res.action_result,
+                timestamp=datetime.now().isoformat(),
+            )
 
         if not raw_message:
             return AgentChatResponse(
@@ -120,6 +170,30 @@ class ElaAgentLoop:
 
         # Set effective language dynamically from canonical resolver
         lang = canonical.language
+
+        # Voice-First Task Dispatch
+        if request.is_voice:
+            dispatch_res = await self.task_dispatcher.dispatch(
+                text=raw_message,
+                role=effective_role,
+                preferred_language=lang,
+                stt_confidence=stt_conf,
+                is_voice=True,
+                user_id=request.user_id,
+                auth_token=request.auth_token,
+            )
+            return AgentChatResponse(
+                message=dispatch_res.message,
+                intent=canonical.intent,
+                detected_role=effective_role,
+                language=dispatch_res.language,
+                status=dispatch_res.status,
+                action_result=dispatch_res.action_result,
+                navigation_action=dispatch_res.navigation_action,
+                confirmation_action=dispatch_res.confirmation_payload,
+                suggestions=self._get_default_suggestions(effective_role, dispatch_res.language),
+                timestamp=datetime.now().isoformat(),
+            )
 
         # Multi-turn Entity Accumulation & Goal Restoration
         accumulated_entities = ConversationMemory.update_entities(session_id, canonical.entities)

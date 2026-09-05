@@ -43,6 +43,10 @@ from ai.ela.agent.brain import ElaUniversalBrain
 from ai.ela.neural.transformer.inference import TransformerNeuralCore
 from ai.ela.neural.transformer.embeddings import ElaNeuralInput
 
+from ai.ela.orchestration.service import MatchOrchestrationService, OrchestrationFailureException
+from ai.ela.orchestration.matching import FarmerListing, BuyerProcurement, TransporterCapacity
+from ai.ela.orchestration.governance import PartyDecision, MatchProposalStatus
+
 router = APIRouter(prefix="/v1/ela", tags=["ELA Universal Intelligence"])
 intelligence_engine = ElaIntelligenceEngine()
 universal_brain = ElaUniversalBrain()
@@ -50,6 +54,7 @@ fusion_engine = IntelligenceFusionEngine()
 stt_provider = NativeMockSTTProvider()
 tts_provider = NativeMockTTSProvider()
 transformer_core = TransformerNeuralCore.get_instance()
+orchestration_service = MatchOrchestrationService()
 
 # Active Models in Registry
 demand_model = DemandPredictionModel()
@@ -154,6 +159,10 @@ async def process_chat(payload: NodeBridgeChatPayload):
     lang: SupportedLanguage = ctx.get("language", "en")
     auth = bool(user.get("id"))
 
+    is_voice = bool(ctx.get("isVoice") or ctx.get("is_voice", False))
+    raw_conf = ctx.get("audioConfidence") if ctx.get("audioConfidence") is not None else ctx.get("audio_confidence")
+    audio_confidence = float(raw_conf) if raw_conf is not None else 1.0
+
     req = AgentChatRequest(
         message=payload.message,
         session_id=payload.session_id or ctx.get("sessionId"),
@@ -162,6 +171,8 @@ async def process_chat(payload: NodeBridgeChatPayload):
         authenticated_role=auth_role,
         language=lang,
         context=ctx,
+        is_voice=is_voice,
+        audio_confidence=audio_confidence,
     )
     return await universal_brain.process_chat(req)
 
@@ -523,3 +534,82 @@ async def transformer_health():
     Returns active runtime health, backend status (PyTorch vs NumPy), and parameter accounting.
     """
     return transformer_core.health()
+
+
+# ----------------------------------------------------------------------------
+# CROSS-ROLE MATCH ORCHESTRATION ENDPOINTS
+# ----------------------------------------------------------------------------
+
+class MatchSearchPayload(BaseModel):
+    farmer: Optional[FarmerListing] = None
+    buyers: Optional[List[BuyerProcurement]] = None
+    transporters: Optional[List[TransporterCapacity]] = None
+    top_n: int = 3
+
+
+class DecisionPayload(BaseModel):
+    role: str
+    decision: str
+    reason: Optional[str] = None
+
+
+@router.post("/orchestration/matches")
+async def find_matches(payload: MatchSearchPayload):
+    if not payload.farmer:
+        raise HTTPException(status_code=400, detail="FarmerListing required to evaluate cross-role matches")
+    try:
+        proposals = orchestration_service.match_farmer_produce(
+            farmer=payload.farmer,
+            buyers=payload.buyers or [],
+            transporters=payload.transporters or [],
+            top_n=payload.top_n,
+        )
+        return [p.model_dump() for p in proposals]
+    except OrchestrationFailureException as ofe:
+        raise HTTPException(
+            status_code=422,
+            detail={
+                "code": ofe.code,
+                "message": ofe.message,
+                "localized_messages": ofe.localized_messages,
+            }
+        )
+
+
+@router.get("/orchestration/proposals")
+async def list_proposals(role: Optional[str] = None, participant_id: Optional[str] = None):
+    if role:
+        proposals = orchestration_service.get_proposals_for_role(role, participant_id)
+    else:
+        proposals = list(orchestration_service._proposals.values())
+    return [p.model_dump() for p in proposals]
+
+
+@router.get("/orchestration/proposals/{proposal_id}")
+async def get_proposal(proposal_id: str):
+    p = orchestration_service.get_proposal_by_id(proposal_id)
+    if not p:
+        raise HTTPException(status_code=404, detail=f"Proposal {proposal_id} not found")
+    return p.model_dump()
+
+
+@router.post("/orchestration/proposals/{proposal_id}/decision")
+async def submit_proposal_decision(proposal_id: str, payload: DecisionPayload):
+    try:
+        decision_enum = PartyDecision(payload.decision.upper().strip())
+    except ValueError:
+        raise HTTPException(status_code=400, detail=f"Invalid decision: {payload.decision}. Must be APPROVED or DECLINED.")
+    
+    ok, msg, prop = orchestration_service.submit_decision(
+        proposal_id=proposal_id,
+        role=payload.role,
+        decision=decision_enum,
+        reason=payload.reason,
+    )
+    if not ok and not prop:
+        raise HTTPException(status_code=404, detail=msg)
+    return {
+        "success": ok,
+        "message": msg,
+        "proposal": prop.model_dump() if prop else None,
+    }

@@ -47,6 +47,9 @@ class CorridorAdjustmentSignal(BaseModel):
     delay_offset_minutes: float
     sample_count: int
     confidence_category: Literal["PRELIMINARY", "STATISTICALLY_CONFIDENT"] = "PRELIMINARY"
+    cost_offset_inr: float = 0.0
+    confidence: float = 0.90
+    governance_approved: bool = True
     model_version: str = "v1.0"
     generated_at: str = Field(default_factory=lambda: datetime.now(timezone.utc).isoformat())
 
@@ -66,6 +69,10 @@ class AdaptationEngine:
     def reset_for_testing(cls):
         cls._proposals.clear()
         cls._corridor_signals.clear()
+
+    @classmethod
+    def register_corridor_signal(cls, corridor: str, signal: CorridorAdjustmentSignal):
+        cls._corridor_signals[corridor] = signal
 
     @classmethod
     def evaluate_corridor_evidence(

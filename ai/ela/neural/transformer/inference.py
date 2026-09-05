@@ -43,6 +43,7 @@ class TransformerNeuralCore:
             self.model = NumpyElaTransformerModel(self.config)
 
         self.parameter_count = self.model.count_parameters()
+        self.model_version = self.current_version
         self.algorithm = "MultiHeadAttentionTransformer"
         self.artifact_path = None
         self.status = "READY"

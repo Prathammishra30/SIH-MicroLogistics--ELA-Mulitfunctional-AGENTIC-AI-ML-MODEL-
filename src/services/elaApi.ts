@@ -40,6 +40,8 @@ export interface ElaClientContext {
   language?: string;
   currentPage?: string;
   userName?: string;
+  isVoice?: boolean;
+  audioConfidence?: number;
 }
 
 export interface ElaChatResponseData {

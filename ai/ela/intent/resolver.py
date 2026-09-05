@@ -2,10 +2,62 @@
 import re
 from ai.ela.agent.state import UserRole, SupportedLanguage, ElaIntent
 from ai.ela.entities.extractor import EntityExtractor
+from typing import Dict, Optional
 from ai.ela.intent.types import CanonicalIntent
+from ai.ela.tools.registry import ToolRegistry
+
+
+INTENT_TOOL_MAP: Dict[str, str] = {
+    'NAVIGATE_PAGE': 'navigate_to_page',
+    'EXPLAIN_PLATFORM': 'get_portal_info',
+    'GET_FARMER_PRODUCTS': 'get_farmer_products',
+    'CREATE_PRODUCT_WORKFLOW': 'create_product',
+    'CREATE_LOGISTICS_WORKFLOW': 'create_logistics_request',
+    'GET_FARMER_DELIVERIES': 'get_farmer_deliveries',
+    'GET_MARKET_DEMAND': 'get_market_demand',
+    'GET_BUYER_PRODUCE': 'get_buyer_produce',
+    'CREATE_PROCUREMENT_WORKFLOW': 'create_procurement',
+    'GET_BUYER_ORDERS': 'get_buyer_orders',
+    'GET_AVAILABLE_TRIPS': 'get_available_trips',
+    'GET_VEHICLES': 'get_vehicles',
+    'CREATE_VEHICLE_WORKFLOW': 'create_vehicle',
+    'ACCEPT_TRIP': 'accept_trip',
+    'GET_EARNINGS': 'get_earnings',
+    'GENERATE_MATCHES': 'generate_matches',
+    'CREATE_PROPOSAL': 'create_proposal',
+    'SUBMIT_DECISION': 'submit_decision',
+}
 
 
 class IntentResolver:
+    @classmethod
+    def is_code_switched(cls, text: str) -> bool:
+        if not text or not text.strip():
+            return False
+        norm = text.lower()
+        has_indic_script = bool(re.search(r'[ऀ-ൿ]', text))
+        has_latin_words = bool(re.search(r'[a-zA-Z]{2,}', text))
+
+        # 1. Indic script mixed with Latin characters (e.g., "पुणे साठी truck book करा")
+        if has_indic_script and has_latin_words:
+            return True
+
+        # 2. Latin script containing both English words and transliterated Indic tokens (Hinglish/Marathglish)
+        indic_latin_tokens = [
+            "chahiye", "karo", "karna", "bhejna", "bhejo", "mera", "meri", "mere", "paas", "hai",
+            "kisan", "hoon", "tamatar", "mandi", "bhav", "kya", "kitna", "kaise", "gaadi", "gadi",
+            "daam", "mujhe", "humko", "apna", "sasta", "kharidna", "fasal", "ahe", "pahije", "pathva",
+            "majhe", "mala", "shetkari", "dya", "vikayche", "vahtuk", "naaku", "kaavali", "enakku", "vendum"
+        ]
+        english_action_tokens = [
+            "book", "send", "truck", "price", "check", "find", "order", "portal", "trip", "load",
+            "market", "produce", "crops", "deliveries", "vehicles", "earnings", "matches", "proposal", "decision"
+        ]
+        has_indic_latin = any(re.search(rf"\b{t}\b", norm) for t in indic_latin_tokens)
+        has_english_token = any(re.search(rf"\b{t}\b", norm) for t in english_action_tokens)
+
+        return bool(has_indic_latin and has_english_token)
+
     @classmethod
     def resolve(
         cls,
@@ -16,6 +68,7 @@ class IntentResolver:
         norm = text.lower()
         entities = EntityExtractor.extract_entities(text)
         lang = cls.detect_language(text, preferred_language)
+        code_switched = cls.is_code_switched(text)
 
         intent: ElaIntent = 'GENERAL_HELP'
         target_role: UserRole = current_role
@@ -24,7 +77,7 @@ class IntentResolver:
         # 1. Role Declarations & Natural Language Role Switching (Highest Priority unless combined with specific action)
         has_specific_action = bool(
             re.search(
-                r'\b(bhejna|bhejo|pathvayche|send|add|जोडा|जोड़ें|भेजना|भेजने|भेजो|भेज|पाठवायचे|पाठवा|वाहतूक|kharidna|purchase|procurement|procure|deliveries|products|trips|vehicles|earnings|kamai)\b|\b(buy|purchase|procure)\s+\w+|\b(book|request|find)\s+(transport|truck|load|trips|\d+|ton|tonne|tonnes|kg|tomato|tomatoes|tamatar|produce|crop)|\btransport\s+(chahiye|request|booking|pune|mumbai|nashik)|(?:पुणे|नाशिक|मुंबई|टमाटर|कांदा|टोमॅटो|\d+\s*(?:kg|kilo|ton|टन|किलो))',
+                r'\b(bhejna|bhejo|pathvayche|send|add|जोडा|जोड़ें|भेजना|भेजने|भेजो|भेज|पाठवायचे|पाठवा|वाहतूक|kharidna|purchase|procurement|procure|deliveries|products|trips|vehicles|earnings|kamai)\b|\b(buy|purchase|procure)\s+\w+|\b(book|request|find)\s+(transport|truck|load|trips|\d+|ton|tonne|tonnes|kg|tomato|tomatoes|tamatar|produce|crop)|\btransport\s+(chahiye|request|booking|pune|mumbai|nashik)|(?:पुणे|नाशिक|मुंबई|नासिक|टमाटर|कांदा|टोमॅटो|தக்காளி|టమాటాలు|টমেটো|ಟೊಮೆಟೊ|\d+\s*(?:kg|kilo|ton|टन|किलो|கிலோ|కేజీలు|కిలోల|কেজি|ಕೆಜಿ))|(?:i have|mere paas|मेरे पास|माझ्याकडे|என்னிடம்|నా వద్ద|আমার কাছে|ನನ್ನ ಬಳಿ)|(?:கண்டறியவும்|కనుగొనండి|খুঁজুন|ಹುಡುಕಿ|find|dhoondho|शोधा|ढूंढो|arrange)',
                 norm,
                 re.IGNORECASE,
             )
@@ -51,6 +104,9 @@ class IntentResolver:
                     entities=entities,
                     raw_text=text,
                     confidence=0.95,
+                    target_tool='navigate_to_page' if is_login_req else None,
+                    target_action_type='REVERSIBLE' if is_login_req else None,
+                    is_code_switched=code_switched,
                 )
         elif re.search(
             r'(i am a buyer|i\'m a buyer|im a buyer|main buyer|vyapari|kharidar|मी खरेदीदार|मैं व्यापारी|வாங்குபவர்|வணிகர்|కొనుగోలుదారు|ক্রেতা|ಖರೀದಿದಾರ|actually.*buyer|switch to buyer)',
@@ -66,9 +122,12 @@ class IntentResolver:
                     entities=entities,
                     raw_text=text,
                     confidence=0.95,
+                    target_tool='navigate_to_page' if is_login_req else None,
+                    target_action_type='REVERSIBLE' if is_login_req else None,
+                    is_code_switched=code_switched,
                 )
         elif re.search(
-            r'(i am a transporter|i\'m a transporter|im a transporter|main transporter|transporter hoon|driver|मी वाहतूकदार|मैं ट्रांसपोर्टर|माझ्याकडे.*(?:ट्रक|गाडी|वाहन)|(?:ट्रक|गाडी|वाहन)\s*आहे|उपलब्ध फेऱ्या|போக்குவரத்து|ரவாణాదారు|రవాణా|পরিবহনকারী|ಸಾರಿಗೆದಾರ|actually.*transporter|switch to transporter|(?:i have|mere paas|मेरे पास|माझ्याकडे|my|என்னிடம்|నా దగ్గర|আমার কাছে|ನನ್ನ ಬಳಿ).*?(?:truck|pickup|lorry|mini truck|gadi|gaadi|वाहन|गाडी|गाड़ी|ट्रक|லாரி|டிரக்|ట్రక్|లారీ|ట్రక్కు|ট্রাক|গাড়ি|ಟ್ರಕ್|ಲಾರಿ|ಗಾಡಿ)|(?:truck|pickup|lorry|mini truck|gadi|gaadi|वाहन|गाडी|गाड़ी|ट्रक|லாரி|டிரக்|ట్రక్|లారీ|ట్రక్కు|ট্রাক|গাড়ি|ಟ್ರಕ್|ಲಾರಿ|ಗಾಡಿ).*?(?:available|उपलब्ध|आहे|உள்ளது|ఉంది|আছে|ಇದೆ))',
+            r'(i am a transporter|i\'m a transporter|im a transporter|main transporter|transporter hoon|driver|मी वाहतूकदार|मैं ट्रांसपोर्टर|माझ्याकडे.*(?:ट्रक|गाडी|वाहन)\s*आहे|போக்குவரத்தாளர்|ரவாణాదారు|পরিবহনকারী|ಸಾರಿಗೆದಾರ|actually.*transporter|switch to transporter|(?:i have|mere paas|मेरे पास|माझ्याकडे|my|என்னிடம்|నా దగ్గర|আমার কাছে|ನನ್ನ ಬಳಿ).*?(?:truck|pickup|lorry|mini truck|gadi|gaadi|वाहन|गाडी|गाड़ी|ट्रक|லாரி|டிரக்|ట్రక్|లారీ|ట్రక్కు|ট্রাক|গাড়ি|ಟ್ರಕ್|ಲಾರಿ|ಗಾಡಿ).*?(?:available|उपलब्ध|आहे|உள்ளது|ఉంది|আছে|ಇದೆ))',
             norm,
             re.IGNORECASE,
         ):
@@ -81,6 +140,9 @@ class IntentResolver:
                     entities=entities,
                     raw_text=text,
                     confidence=0.95,
+                    target_tool='navigate_to_page' if is_login_req else None,
+                    target_action_type='REVERSIBLE' if is_login_req else None,
+                    is_code_switched=code_switched,
                 )
 
         # 2. Explicit Role Login Queries
@@ -100,6 +162,24 @@ class IntentResolver:
             intent = 'LOGIN_GUIDANCE'
             target_role = 'GUEST'
             confidence = 0.92
+
+        # 2b. Cross-Role Matching Engine & Navigation Actions
+        elif re.search(r'\b(approve\s+proposal|accept\s+proposal|reject\s+proposal|decline\s+proposal|submit\s+decision|proposal\s+(?:manzoor|approved|rejected)|प्रस्ताव\s*(?:मंजूर|स्वीकारा|नाकारा|स्वीकारें|अस्वीकार)|తీర్ణయం|തീരുമാനം|முடிவு)\b', norm, re.IGNORECASE):
+            intent = 'SUBMIT_DECISION'
+            confidence = 0.95
+        elif re.search(r'\b(create\s+proposal|stage\s+proposal|propose\s+match|send\s+proposal|new\s+proposal|proposal\s+banao|प्रस्ताव\s*(?:तयार\s*करा|बनवा|बनाएं|बनाओ|पाठवा)|முன்மொழிவு|ప్రతిపాదన|প্রস্তাব)\b', norm, re.IGNORECASE):
+            intent = 'CREATE_PROPOSAL'
+            confidence = 0.95
+        elif re.search(r'\b(find\s+matches|generate\s+matches|cross[- ]role\s+match|match\s+proposals|show\s+matches|matches|मैच\s*(?:दिखाओ|शोधा|दिखाइए)|साम्य\s*शोधा|பொருத்தங்கள்|సరిపోలికలు|ম্যাচ|ಪಂದ್ಯಗಳು)\b', norm, re.IGNORECASE):
+            intent = 'GENERATE_MATCHES'
+            confidence = 0.95
+        elif re.search(r'\b(navigate\s+to|go\s+to|open\s+page|open\s+portal|open\s+dashboard|open\s+marketplace|खोलो|उघडा|जाएं)\b', norm, re.IGNORECASE) and re.search(r'\b(dashboard|portal|page|farmer|buyer|transporter|marketplace|profile|settings|डॅशबोर्ड|पोर्टल|पृष्ठ)\b', norm, re.IGNORECASE):
+            intent = 'NAVIGATE_PAGE'
+            confidence = 0.95
+        elif re.search(r'\b(accept\s+(?:trip|load|shipment)|take\s+(?:trip|load)|ट्रिप\s*(?:स्वीकारा|मंजूर|घ्या|स्वीकार)|ट्रिप\s*(?:स्वीकारें|मंजूर|लें))\b', norm, re.IGNORECASE):
+            intent = 'ACCEPT_TRIP'
+            target_role = 'TRANSPORTER'
+            confidence = 0.95
 
         # 3. Platform Explanation & Universal Guidance
         elif re.search(r'farmer.*(kya karta|benefit|faayda)|शेतकऱ्यांसाठी.*फायदा|किसानों के लिए.*फायदा', norm, re.IGNORECASE):
@@ -136,10 +216,24 @@ class IntentResolver:
             intent = 'GET_VEHICLES'
             target_role = 'TRANSPORTER'
             confidence = 0.95
-        elif re.search(
-            r'available trips|trips|loads|available loads|उपलब्ध भाडी|उपलब्ध फेऱ्या|फेऱ्या|भाडी|ट्रिप्स|ट्रिप|लोड|खोजें|माल शोधा|கிடைக்கும் பயணங்கள்|ట్రిప్పులు|উপলব্ধ ট্রিপ|ಲಭ್ಯವಿರುವ ಟ್ರಿಪ್ಗಳು|(?:i have|mere paas|मेरे पास|माझ्याकडे|என்னிடம்|నా దగ్గర|আমার কাছে|ನನ್ನ ಬಳಿ).*?(?:truck|pickup|lorry|mini truck|gadi|gaadi|वाहन|गाडी|गाड़ी|ट्रक|லாரி|டிரக்|ట్రక్|లారీ|ట్రక్కు|ট্রাক|গাড়ি|ಟ್ರಕ್|ಲಾರಿ|ಗಾಡಿ)|(?:truck|pickup|lorry|mini truck|gadi|gaadi|वाहन|गाडी|गाड़ी|ट्रक|லாரி|டிரக்|ట్రక్|లారీ|ట్రక్కు|ট্রাক|গাড়ি|ಟ್ರಕ್|ಲಾರಿ|ಗಾಡಿ).*?(?:available|उपलब्ध|आहे|உள்ளது|ఉంది|আছে|ಇದೆ)',
-            norm,
-            re.IGNORECASE,
+        elif (
+            re.search(
+                r'available trips|trips|loads|available loads|उपलब्ध भाडी|उपलब्ध फेऱ्या|फेऱ्या|भाडी|ट्रिप्स|ट्रिप|लोड|खोजें|माल शोधा|கிடைக்கும் பயணங்கள்|ట్రిప్పులు|উপলব্ধ ট্রিপ|ಲಭ್ಯವಿರುವ ಟ್ರಿಪ್ಗಳು|(?:truck|pickup|lorry|mini truck|gadi|gaadi|वाहन|गाडी|गाड़ी|ट्रक|லாரி|டிரக்|ట్రక్|లారీ|ట్రక్కు|ট্রাক|গাড়ি|ಟ್ರಕ್|ಲಾರಿ|ಗಾಡಿ).*?(?:available|उपलब्ध|आहे|உள்ளது|ఉంది|আছে|ಇದೆ)',
+                norm,
+                re.IGNORECASE,
+            )
+            or (
+                re.search(
+                    r'(?:मेरे पास|mere paas|माझ्याकडे|என்னிடம்|నా దగ్గర|నా వద్ద|আমার কাছে|ನನ್ನ ಬಳಿ|i have).*?(?:truck|pickup|lorry|mini truck|gadi|gaadi|वाहन|गाडी|गाड़ी|ट्रक|லாரி|டிரக்|ట్రక్|లారీ|ట్రక్కు|ট্রাক|গাড়ি|ಟ್ರಕ್|ಲಾರಿ|ಗಾಡಿ)',
+                    norm,
+                    re.IGNORECASE,
+                )
+                and not re.search(
+                    r'tomato|tomatoes|onion|onions|potato|potatoes|tamatar|कांदा|टोमॅटो|शेतमाल|फसल|टमाटर|तக்காளி|టమాటాలు|টমেটো|ಟೊಮೆಟೊ|chahiye|चाहिए|need|want|book|बुक|पाहिजे|வேண்டும்|కావాలి|চাই|ಬೇಕು',
+                    norm,
+                    re.IGNORECASE,
+                )
+            )
         ):
             intent = 'GET_AVAILABLE_TRIPS'
             target_role = 'TRANSPORTER'
@@ -158,10 +252,13 @@ class IntentResolver:
             confidence = 0.95
 
         # 5. Buyer Domain Specific Matching
-        elif re.search(
-            r'(?:kharidna|kharidne|kharid|खरीदना|खरीदने|खरीद|खरेदी|हवे आहेत|हवे|पाहिजे|வாங்க|வாங்க வேண்டும்|வாங்கணும்|కొనాలి|కొనుగోలు|కొనడానికి|কিনতে|কিনতে চাই|কেনা|ಖರೀದಿಸಬೇಕು|ಖರೀದಿ|ಕೊಳ್ಳಬೇಕು|procurement|buy|purchase|procure|want to buy).*?(?:\d+|kg|ton|tonne|tonnes|mt|tomato|tomatoes|tamatar|onion|onions|pyaz|pyaaz|kanda|wheat|potato|potatoes|aloo|vegetable|produce|crop|mal|टमाटर|टोमॅटो|कांदा|कांदे|प्याज़|प्याज|आलू|बटाटा|माल|फसल|उपज|தக்காளி|வெங்காயம்|உருளைக்கிழங்கு|காய்கறி|టమాటాలు|ఉల్లిపాయలు|ఉల్లిపాయ|బంగాళాదుంప|కూరగాయలు|টমেটো|পেঁয়াজ|আলু|সবজি|ಟೊಮೆಟೊ|ಈರುಳ್ಳಿ|ಆಲೂಗಡ್ಡೆ|ತರಕಾರಿ)|(?:\d+|kg|ton|tonne|tonnes|mt|tomato|tomatoes|tamatar|onion|onions|pyaz|pyaaz|kanda|wheat|potato|potatoes|aloo|vegetable|produce|crop|mal|टमाटर|टोमॅटो|कांदा|कांदे|प्याज़|प्याज|आलू|बटाटा|माल|फसल|उपज|தக்காளி|வெங்காயம்|உருளைக்கிழங்கு|காய்கறி|టమాటాలు|ఉల్లిపాయలు|ఉల్లిపాయ|బంగాళాదుంప|కూరగాయలు|টমেটো|পেঁয়াজ|আলু|সবজি|ಟೊಮೆಟೊ|ಈರುಳ್ಳಿ|ಆಲೂಗಡ್ಡೆ|ತರಕಾರಿ).*?(?:kharidna|kharidne|kharid|खरीदना|खरीदने|खरीद|खरेदी|हवे आहेत|हवे|पाहिजे|வாங்க|வாங்க வேண்டும்|வாங்கணும்|కొనాలి|కొనుగోలు|కొనడానికి|কিনতে|কিনতে চাই|কেনা|ಖರೀದಿಸಬೇಕು|ಖರೀದಿ|ಕೊಳ್ಳಬೇಕು|procurement|buy|purchase|procure)',
-            norm,
-            re.IGNORECASE,
+        elif (
+            re.search(
+                r'(?:kharidna|kharidne|kharid(?!दार)|खरीदना|खरीदने|खरीद(?!दार)|खरेदी(?!दार)|हवे आहेत|हवे|पाहिजे|வாங்க|வாங்க வேண்டும்|வாங்கணும்|కొనాలి|కొనుగోలు|కొనడానికి|কিনতে|কিনতে চাই|কেনা|ಖರೀದಿಸಬೇಕು|ಖರೀದಿ|ಕೊಳ್ಳಬೇಕು|\b(?:procurement|buy|purchase|procure|want to buy|need|want|require|looking for|chahiye)\b).*?(?:\d+|kg|ton|tonne|tonnes|mt|tomato|tomatoes|tamatar|onion|onions|pyaz|pyaaz|kanda|wheat|potato|potatoes|aloo|vegetable|produce|crop|mal|टमाटर|टोमॅटो|कांदा|कांदे|प्याज़|प्याज|आलू|बटाटा|माल|फसल|उपज|தக்காளி|வெங்காயம்|உருளைக்கிழங்கு|காய்கறி|టమాటాలు|ఉల్లిపాయలు|ఉల్లిపాయ|బంగాళాదుంప|కూరగాయలు|টমেটো|পেঁয়াজ|আলু|সবজি|ಟೊಮೆಟೊ|ಈರುಳ್ಳಿ|ಆಲೂಗಡ್ಡೆ|ತರಕಾರಿ)|(?:\d+|kg|ton|tonne|tonnes|mt|tomato|tomatoes|tamatar|onion|onions|pyaz|pyaaz|kanda|wheat|potato|potatoes|aloo|vegetable|produce|crop|mal|टमाटर|टोमॅटो|कांदा|कांदे|प्याज़|प्याज|आलू|बटाटा|माल|फसल|उपज|தக்காளி|வெங்காயம்|உருளைக்கிழங்கு|காய்கறி|టమాటాలు|ఉల్లిపాయలు|ఉల్లిపాయ|బంగాళాదుంప|కూరగాయలు|টমেটো|পেঁয়াজ|আলু|সবজি|ಟೊಮೆಟೊ|ಈರುಳ್ಳಿ|ಆಲೂಗಡ್ಡೆ|ತರಕಾರಿ).*?(?:kharidna|kharidne|kharid(?!दार)|खरीदना|खरीदने|खरीद(?!दार)|खरेदी(?!दार)|हवे आहेत|हवे|पाहिजे|வாங்க|வாங்க வேண்டும்|வாங்கணும்|కొనాలి|కొనుగోలు|కొనడానికి|কিনতে|কিনতে চাই|কেনা|ಖರೀದಿಸಬೇಕು|ಖರೀದಿ|ಕೊಳ್ಳಬೇಕು|\b(?:procurement|buy|purchase|procure|chahiye|चाहिए)\b)',
+                norm,
+                re.IGNORECASE,
+            )
+            and not re.search(r'(?:i have|mere paas|मेरे पास|माझ्याकडे|என்னிடம்|నా వద్ద|আমার কাছে|ನನ್ನ ಬಳಿ|we have|got|खरीदार|खरेदीदार|வாங்குபவர்|కొనుగోలుదారు|ক্রেতা|ಖರೀದಿದಾರ|\bbuyer\b)', norm, re.IGNORECASE)
         ):
             intent = 'CREATE_PROCUREMENT_WORKFLOW'
             target_role = 'BUYER'
@@ -204,14 +301,14 @@ class IntentResolver:
             confidence = 0.94
         elif (
             re.search(
-                r'\b(?:i have|mere paas|माझ्याकडे|we have|got)\b.*(?:\d+\s*(?:kg|ton|quintal|किलो|टन))?.*(?:tomato|tomatoes|tamatar|onion|onions|potato|potatoes|wheat|rice|produce|crop|mal|fasal|फसल|टमाटर|कांदा|टोमॅटो|आलू|बटाटा|गहू|गेहूं)',
+                r'(?:i have|mere paas|मेरे पास|हमारे पास|माझ्याकडे|आमच्याकडे|என்னிடம்|నా వద్ద|আমার কাছে|ನನ್ನ ಬಳಿ|we have|got).*?(?:\d+\s*(?:kg|kilo|ton|quintal|किलो|टन|கிலோ|కేజీలు|কেজি|ಕೆಜಿ))?.*?(?:tomato|tomatoes|tamatar|onion|onions|potato|potatoes|wheat|rice|produce|crop|mal|fasal|फसल|टमाटर|कांदा|टोमॅटो|आलू|बटाटा|गहू|गेहूं|தக்காளி|வெங்காயம்|உருளைக்கிழங்கு|காய்கறி|టమాటాలు|ఉల్లిపాయలు|ఉల్లిపాయ|బంగాళాదుంప|కూరగాయలు|টমেটো|পেঁয়াজ|আলু|সবজি|ಟೊಮೆಟೊ|ಈರುಳ್ಳಿ|ಆಲೂಗಡ್ಡೆ|ತರಕಾರಿ)',
                 norm,
                 re.IGNORECASE,
             )
             or (
                 entities.commodity
                 and entities.quantity
-                and not re.search(r'\b(?:buy|purchase|procure|खरीद|हवे|order|inventory|register|list|add|जोडा|जोड़ें)\b', norm, re.IGNORECASE)
+                and not re.search(r'(?:buy|purchase|procure|खरीद|हवे|order|inventory|register|list|add|जोडा|जोड़ें)', norm, re.IGNORECASE)
             )
         ):
             intent = 'CREATE_LOGISTICS_WORKFLOW'
@@ -245,6 +342,11 @@ class IntentResolver:
             intent = 'GET_MARKET_DEMAND'
             confidence = 0.92
 
+        target_tool = INTENT_TOOL_MAP.get(intent)
+        target_action_type = None
+        if target_tool and target_tool in ToolRegistry.TOOLS:
+            target_action_type = ToolRegistry.TOOLS[target_tool].action_type
+
         return CanonicalIntent(
             intent=intent,
             target_role=target_role,
@@ -252,6 +354,9 @@ class IntentResolver:
             entities=entities,
             raw_text=text,
             confidence=confidence,
+            target_tool=target_tool,
+            target_action_type=target_action_type,
+            is_code_switched=code_switched,
         )
 
     @classmethod

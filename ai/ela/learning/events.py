@@ -58,7 +58,7 @@ class LearningEventManager:
         cls,
         outcome: ElaVerifiedOutcome,
         deviation: DeviationResult,
-        model_name: str,
+        model_name: str = "ETAPredictionModel",
         model_version: str = "v1.0",
         feature_version: str = "f-v1.0",
         domain: str = "LOGISTICS",

@@ -75,6 +75,7 @@ model FarmerProfile {
   // Private business data owned by this farmer
   products          Product[]
   logisticsRequests LogisticsRequest[]
+  matchProposals    MatchProposal[]
 
   @@map("farmer_profiles")
 }
@@ -95,6 +96,7 @@ model BuyerProfile {
 
   // Private business data owned by this buyer
   procurements    ProcurementRequest[]
+  matchProposals  MatchProposal[]
 
   @@map("buyer_profiles")
 }
@@ -117,6 +119,7 @@ model TransporterProfile {
   // Private business data owned by this transporter
   vehicles        TransporterVehicle[]
   assignedTrips   LogisticsRequest[]
+  matchProposals  MatchProposal[]
 
   @@map("transporter_profiles")
 }
@@ -136,6 +139,7 @@ model Product {
   updatedAt   DateTime      @updatedAt
 
   logisticsRequests LogisticsRequest[]
+  matchProposals    MatchProposal[]
 
   @@map("products")
 }
@@ -186,6 +190,7 @@ model ProcurementRequest {
   updatedAt          DateTime           @updatedAt
 
   logisticsRequests  LogisticsRequest[]
+  matchProposals     MatchProposal[]
 
   @@map("procurement_requests")
 }
@@ -205,6 +210,7 @@ model TransporterVehicle {
   updatedAt         DateTime           @updatedAt
 
   logisticsRequests LogisticsRequest[]
+  matchProposals    MatchProposal[]
 
   @@map("transporter_vehicles")
 }
@@ -223,4 +229,43 @@ model MarketOpportunity {
   updatedAt          DateTime @updatedAt
 
   @@map("market_opportunities")
+}
+
+// Triple Match Proposal for Cross-Role Orchestration (Farmer + Buyer + Transporter)
+model MatchProposal {
+  id                   String              @id @default(uuid())
+  farmerId             String
+  farmer               FarmerProfile       @relation(fields: [farmerId], references: [id], onDelete: Cascade)
+  buyerId              String
+  buyer                BuyerProfile        @relation(fields: [buyerId], references: [id], onDelete: Cascade)
+  transporterId        String
+  transporter          TransporterProfile  @relation(fields: [transporterId], references: [id], onDelete: Cascade)
+  productId            String?
+  product              Product?            @relation(fields: [productId], references: [id], onDelete: SetNull)
+  procurementRequestId String?
+  procurementRequest   ProcurementRequest? @relation(fields: [procurementRequestId], references: [id], onDelete: SetNull)
+  vehicleId            String?
+  vehicle              TransporterVehicle? @relation(fields: [vehicleId], references: [id], onDelete: SetNull)
+  crop                 String
+  quantityKg           Float
+  askingPricePerKg     Float
+  targetPricePerKg     Float
+  transportCostPerKg   Float
+  totalCostPerKg       Float
+  matchScore           Float
+  subScores            Json                // { price, timing, route, capacity, ml_utility }
+  explanation          String
+  farmerStatus         String              @default("PENDING") // PENDING, APPROVED, DECLINED
+  buyerStatus          String              @default("PENDING") // PENDING, APPROVED, DECLINED
+  transporterStatus    String              @default("PENDING") // PENDING, APPROVED, DECLINED
+  status               String              @default("PROPOSED") // PROPOSED, ALL_APPROVED, DECLINED, EXPIRED, CONFIRMED
+  expiresAt            DateTime
+  createdAt            DateTime            @default(now())
+  updatedAt            DateTime            @updatedAt
+
+  @@index([farmerId])
+  @@index([buyerId])
+  @@index([transporterId])
+  @@index([status])
+  @@map("match_proposals")
 }

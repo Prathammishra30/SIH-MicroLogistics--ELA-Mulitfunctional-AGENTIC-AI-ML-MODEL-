@@ -95,6 +95,8 @@ export interface ElaClientContext {
   currentPage?: string;
   userName?: string;
   sessionId?: string;
+  isVoice?: boolean;
+  audioConfidence?: number;
 }
 
 export interface ElaExecutionContext {
@@ -136,6 +138,7 @@ export interface ElaChatResponse {
   } | null;
   mlPrediction?: unknown;
   trace?: unknown;
+  status?: string;
   timestamp: string;
 }
 

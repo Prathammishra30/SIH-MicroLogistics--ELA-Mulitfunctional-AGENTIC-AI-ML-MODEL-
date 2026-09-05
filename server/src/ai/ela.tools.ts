@@ -29,6 +29,11 @@ import {
   acceptTripTool,
   createVehicleTool,
 } from './tools/transporter.tools.js';
+import {
+  generateMatchesTool,
+  createProposalTool,
+  submitDecisionTool,
+} from './tools/matching.tools.js';
 
 export class ElaToolRegistry {
   private static tools: Map<string, ElaToolDefinition> = new Map();
@@ -57,6 +62,11 @@ export class ElaToolRegistry {
     this.registerTool(getEarningsTool);
     this.registerTool(acceptTripTool);
     this.registerTool(createVehicleTool);
+
+    // Cross-Role Match Orchestration Tools
+    this.registerTool(generateMatchesTool);
+    this.registerTool(createProposalTool);
+    this.registerTool(submitDecisionTool);
   }
 
   public static registerTool(tool: ElaToolDefinition): void {

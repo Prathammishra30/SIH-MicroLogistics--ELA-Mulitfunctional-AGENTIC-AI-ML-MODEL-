@@ -11,6 +11,7 @@ ElaIntent = Literal[
     'EXPLAIN_PLATFORM',
     'ROLE_DECLARATION',
     'LOGIN_GUIDANCE',
+    'NAVIGATE_PAGE',
     'GET_FARMER_PRODUCTS',
     'CREATE_PRODUCT_WORKFLOW',
     'CREATE_LOGISTICS_WORKFLOW',
@@ -23,7 +24,11 @@ ElaIntent = Literal[
     'GET_ACTIVE_TRIPS',
     'GET_VEHICLES',
     'CREATE_VEHICLE_WORKFLOW',
+    'ACCEPT_TRIP',
     'GET_EARNINGS',
+    'GENERATE_MATCHES',
+    'CREATE_PROPOSAL',
+    'SUBMIT_DECISION',
     'SECURITY_SHIELD',
     'UNKNOWN',
 ]
@@ -141,6 +146,7 @@ class AgentExecutionTrace(BaseModel):
     memory: Optional[Dict[str, Any]] = None
     planning: Optional[Dict[str, Any]] = None
     learning: Optional[Dict[str, Any]] = None
+    orchestration: Optional[Dict[str, Any]] = None
     final_outcome: AgentOutcome = 'SUCCESS'
     timestamp: str = Field(default_factory=lambda: datetime.now().isoformat())
 

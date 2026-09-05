@@ -85,12 +85,12 @@ export const ElaWidget: React.FC = () => {
     if (isListening) {
       stopVoiceInput();
     } else {
-      startVoiceInput((transcript) => {
+      startVoiceInput((transcript, confidence) => {
         setUserOrbCaption(`You: "${transcript}"`);
         // The transcript will be sent through ElaChat's handleSendMessage
         // Dispatch a custom event that ElaChat listens to
         window.dispatchEvent(
-          new CustomEvent('ela-voice-transcript', { detail: { transcript } })
+          new CustomEvent('ela-voice-transcript', { detail: { transcript, confidence } })
         );
       });
     }

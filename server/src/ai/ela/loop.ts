@@ -48,6 +48,30 @@ export class ElaAgentLoop {
     // STEP 1: UNDERSTAND & SECURITY SHIELD
     // ==========================================
     const lang = (request.context?.language || 'en') as SupportedLanguage;
+    const isVoice = Boolean(request.context?.isVoice);
+    const audioConfidence = typeof request.context?.audioConfidence === 'number' ? request.context.audioConfidence : 1.0;
+
+    if (isVoice && audioConfidence < 0.65) {
+      const repeatPrompts: Record<string, string> = {
+        en: "I couldn't hear that clearly. Could you please repeat?",
+        hi: "मुझे स्पष्ट रूप से सुनाई नहीं दिया। क्या आप कृपया दोबारा बोल सकते हैं?",
+        mr: "मला स्पष्ट ऐकू आले नाही. कृपया पुन्हा सांगू शकाल का?",
+        ta: "எனக்கு தெளிவாகக் கேட்கவில்லை. தயவுசெய்து மீண்டும் கூற முடியுமா?",
+        te: "నాకు స్పష్టంగా వినపడలేదు. దయచేసి మళ్ళీ చెప్పగలరా?",
+        bn: "আমি স্পষ্টভাবে শুনতে পাইনি। আপনি কি দয়া করে আবার বলতে পারেন?",
+        kn: "ನನಗೆ ಸ್ಪಷ್ಟವಾಗಿ ಕೇಳಿಸಲಿಲ್ಲ. ದಯವಿಟ್ಟು ಮತ್ತೊಮ್ಮೆ ಹೇಳಬಹುದೇ?",
+      };
+      const repeatMsg = repeatPrompts[lang] || repeatPrompts.en;
+      return {
+        message: repeatMsg,
+        intent: 'GENERAL_HELP',
+        language: lang,
+        detectedRole: authenticatedUser?.role || 'GUEST',
+        status: 'NEEDS_CLARIFICATION',
+        suggestions: ResponseBuilder.getDefaultSuggestions(authenticatedUser?.role || 'GUEST', lang),
+        timestamp: new Date().toISOString(),
+      };
+    }
 
     if (SecurityGuard.containsSensitiveCredentials(rawMessage)) {
       AuditLogger.logAction({

@@ -24,10 +24,20 @@ import {
   acceptTripTool,
   createVehicleTool,
 } from './transporter.tools.js';
+import {
+  generateMatchesTool,
+  createProposalTool,
+  submitDecisionTool,
+} from './matching.tools.js';
+
+export type ActionType = 'REVERSIBLE' | 'CONSEQUENTIAL';
 
 export interface EnterpriseToolMetadata extends ElaToolDefinition {
   riskLevel: 'LOW' | 'MEDIUM' | 'HIGH';
   confirmationRequired: boolean;
+  actionType: ActionType;
+  requiredParameters: string[];
+  optionalParameters: string[];
   permission: string;
 }
 
@@ -35,11 +45,14 @@ export class ToolRegistry {
   private static tools: Map<string, EnterpriseToolMetadata> = new Map();
 
   static {
-    // Navigation Tools
+    // Navigation Tools (REVERSIBLE)
     this.registerTool({
       ...navigateToPageTool,
       riskLevel: 'LOW',
       confirmationRequired: false,
+      actionType: 'REVERSIBLE',
+      requiredParameters: ['destination'],
+      optionalParameters: ['params'],
       permission: 'NAVIGATE_PAGE',
     });
 
@@ -47,97 +60,177 @@ export class ToolRegistry {
       ...getPortalInfoTool,
       riskLevel: 'LOW',
       confirmationRequired: false,
+      actionType: 'REVERSIBLE',
+      requiredParameters: [],
+      optionalParameters: ['topic'],
       permission: 'VIEW_PORTAL_INFO',
     });
 
-    // Farmer Tools
+    // Farmer Read Tools (REVERSIBLE)
     this.registerTool({
       ...getFarmerProductsTool,
       riskLevel: 'LOW',
       confirmationRequired: false,
+      actionType: 'REVERSIBLE',
+      requiredParameters: [],
+      optionalParameters: [],
       permission: 'FARMER_PRODUCTS_READ',
     });
     this.registerTool({
       ...getFarmerDeliveriesTool,
       riskLevel: 'LOW',
       confirmationRequired: false,
+      actionType: 'REVERSIBLE',
+      requiredParameters: [],
+      optionalParameters: [],
       permission: 'FARMER_DELIVERIES_READ',
     });
     this.registerTool({
       ...getMarketDemandTool,
       riskLevel: 'LOW',
       confirmationRequired: false,
+      actionType: 'REVERSIBLE',
+      requiredParameters: [],
+      optionalParameters: ['crop'],
       permission: 'MARKET_DEMAND_READ',
     });
+
+    // Farmer Mutation Tools (CONSEQUENTIAL)
     this.registerTool({
       ...createProductTool,
       riskLevel: 'MEDIUM',
       confirmationRequired: true,
+      actionType: 'CONSEQUENTIAL',
+      requiredParameters: ['name', 'quantity', 'price'],
+      optionalParameters: ['category', 'harvestDate'],
       permission: 'PRODUCT_CREATE',
     });
     this.registerTool({
       ...createLogisticsRequestTool,
       riskLevel: 'MEDIUM',
       confirmationRequired: true,
+      actionType: 'CONSEQUENTIAL',
+      requiredParameters: ['productName', 'quantity', 'pickupLocation', 'destination'],
+      optionalParameters: ['pickupDate', 'refrigerated', 'notes'],
       permission: 'LOGISTICS_CREATE',
     });
 
-    // Buyer Tools
+    // Buyer Read Tools (REVERSIBLE)
     this.registerTool({
       ...getBuyerProduceTool,
       riskLevel: 'LOW',
       confirmationRequired: false,
+      actionType: 'REVERSIBLE',
+      requiredParameters: [],
+      optionalParameters: ['crop', 'maxPrice'],
       permission: 'PRODUCE_CATALOG_READ',
     });
     this.registerTool({
       ...getBuyerOrdersTool,
       riskLevel: 'LOW',
       confirmationRequired: false,
+      actionType: 'REVERSIBLE',
+      requiredParameters: [],
+      optionalParameters: [],
       permission: 'BUYER_ORDERS_READ',
     });
+
+    // Buyer Mutation Tools (CONSEQUENTIAL)
     this.registerTool({
       ...createProcurementTool,
       riskLevel: 'MEDIUM',
       confirmationRequired: true,
+      actionType: 'CONSEQUENTIAL',
+      requiredParameters: ['product', 'quantity', 'targetPrice'],
+      optionalParameters: ['location', 'requiredByDate'],
       permission: 'PROCUREMENT_CREATE',
     });
 
-    // Transporter Tools
+    // Transporter Read Tools (REVERSIBLE)
     this.registerTool({
       ...getAvailableTripsTool,
       riskLevel: 'LOW',
       confirmationRequired: false,
+      actionType: 'REVERSIBLE',
+      requiredParameters: [],
+      optionalParameters: ['origin', 'destination'],
       permission: 'TRIPS_AVAILABLE_READ',
     });
     this.registerTool({
       ...getActiveTripsTool,
       riskLevel: 'LOW',
       confirmationRequired: false,
+      actionType: 'REVERSIBLE',
+      requiredParameters: [],
+      optionalParameters: [],
       permission: 'TRIPS_ACTIVE_READ',
     });
     this.registerTool({
       ...getVehiclesTool,
       riskLevel: 'LOW',
       confirmationRequired: false,
+      actionType: 'REVERSIBLE',
+      requiredParameters: [],
+      optionalParameters: [],
       permission: 'VEHICLES_READ',
     });
     this.registerTool({
       ...getEarningsTool,
       riskLevel: 'LOW',
       confirmationRequired: false,
+      actionType: 'REVERSIBLE',
+      requiredParameters: [],
+      optionalParameters: [],
       permission: 'EARNINGS_READ',
     });
+
+    // Transporter Mutation Tools (CONSEQUENTIAL)
     this.registerTool({
       ...acceptTripTool,
       riskLevel: 'MEDIUM',
       confirmationRequired: true,
+      actionType: 'CONSEQUENTIAL',
+      requiredParameters: ['tripId'],
+      optionalParameters: ['vehicleId'],
       permission: 'TRIP_ACCEPT',
     });
     this.registerTool({
       ...createVehicleTool,
       riskLevel: 'MEDIUM',
       confirmationRequired: true,
+      actionType: 'CONSEQUENTIAL',
+      requiredParameters: ['type', 'registration', 'capacity'],
+      optionalParameters: ['hasRefrigeration'],
       permission: 'VEHICLE_CREATE',
+    });
+
+    // Cross-Role Match Orchestration Tools
+    this.registerTool({
+      ...generateMatchesTool,
+      riskLevel: 'LOW',
+      confirmationRequired: false,
+      actionType: 'REVERSIBLE',
+      requiredParameters: [],
+      optionalParameters: ['crop'],
+      permission: 'MATCHES_GENERATE',
+    });
+    this.registerTool({
+      ...createProposalTool,
+      riskLevel: 'MEDIUM',
+      confirmationRequired: true,
+      actionType: 'CONSEQUENTIAL',
+      requiredParameters: ['farmerId', 'buyerId', 'transporterId'],
+      optionalParameters: ['crop', 'quantityKg', 'askingPricePerKg', 'targetPricePerKg', 'transportCostPerKg'],
+      permission: 'PROPOSAL_CREATE',
+    });
+    this.registerTool({
+      ...submitDecisionTool,
+      riskLevel: 'HIGH',
+      confirmationRequired: true,
+      actionType: 'CONSEQUENTIAL',
+      requiredParameters: ['proposalId', 'decision'],
+      optionalParameters: ['reason'],
+      permission: 'PROPOSAL_DECISION',
     });
   }
 
@@ -147,6 +240,20 @@ export class ToolRegistry {
 
   public static getTool(name: string): EnterpriseToolMetadata | undefined {
     return this.tools.get(name);
+  }
+
+  public static getAllTools(): EnterpriseToolMetadata[] {
+    return Array.from(this.tools.values());
+  }
+
+  public static isReversible(name: string): boolean {
+    const tool = this.tools.get(name);
+    return tool ? tool.actionType === 'REVERSIBLE' : true;
+  }
+
+  public static isConsequential(name: string): boolean {
+    const tool = this.tools.get(name);
+    return tool ? tool.actionType === 'CONSEQUENTIAL' : false;
   }
 
   public static getToolsForRole(role: UserRole): EnterpriseToolMetadata[] {

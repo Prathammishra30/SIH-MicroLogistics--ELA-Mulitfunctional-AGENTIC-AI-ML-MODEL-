@@ -6,12 +6,16 @@ import {
   handleChatMessage,
   handleConfirmAction,
   handleFeedback,
+  handleGenerateMatches,
+  handleGetMarketEntities,
+  handleGetMatchProposals,
   handleGetMLModels,
   handleGetRecommendations,
   handleGetSessionState,
   handleGetTasks,
   handleHealthCheck,
   handleInternalToolExecution,
+  handleSubmitProposalDecision,
 } from '../controllers/ela.controller.js';
 import { ROUTE_REGISTRY } from './tools/navigation.tools.js';
 import { sendSuccess } from '../utils/response.js';
@@ -21,6 +25,12 @@ export const elaRoutes = Router();
 // Primary conversation endpoints
 elaRoutes.post('/chat', handleChatMessage);
 elaRoutes.post('/message', handleChatMessage);
+
+// Cross-role triple matching & multi-party consent endpoints
+elaRoutes.get('/matches', handleGetMatchProposals);
+elaRoutes.get('/market-entities', handleGetMarketEntities);
+elaRoutes.post('/matches/generate', handleGenerateMatches);
+elaRoutes.post('/matches/:id/decision', handleSubmitProposalDecision);
 
 // Internal Node tool bridge for Python ELA
 elaRoutes.post('/internal/tool', handleInternalToolExecution);

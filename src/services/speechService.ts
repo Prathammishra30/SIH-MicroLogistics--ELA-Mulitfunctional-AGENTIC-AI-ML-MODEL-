@@ -124,6 +124,7 @@ const MALE_VOICE_BLACKLIST = [
 
 interface SpeechResultItem {
   transcript: string;
+  confidence?: number;
 }
 
 interface SpeechResultList {
@@ -367,7 +368,7 @@ export class SpeechService {
     lang?: SupportedSpeechLang;
     onStateChange: (state: MicrophoneState, errorMsg?: string) => void;
     onPartialTranscript?: (partial: string) => void;
-    onFinalTranscript: (final: string) => void;
+    onFinalTranscript: (final: string, confidence?: number) => void;
     onAudioVolume?: (volume: number) => void;
   }): Promise<boolean> {
     const { lang = 'en', onStateChange, onPartialTranscript, onFinalTranscript, onAudioVolume } = params;
@@ -458,11 +459,15 @@ export class SpeechService {
       this.recognition.onresult = (event: SpeechEvent) => {
         let interim = '';
         let final = '';
+        let confidence = 1.0;
 
         for (let i = event.resultIndex; i < event.results.length; ++i) {
           const item = event.results[i];
           if (item.isFinal) {
             final += item[0].transcript;
+            if (typeof item[0].confidence === 'number' && item[0].confidence > 0) {
+              confidence = item[0].confidence;
+            }
           } else {
             interim += item[0].transcript;
           }
@@ -477,7 +482,7 @@ export class SpeechService {
         if (final) {
           this.currentState = 'MIC_LISTENING';
           onStateChange('MIC_LISTENING');
-          onFinalTranscript(final.trim());
+          onFinalTranscript(final.trim(), confidence);
         }
       };
 

@@ -37,10 +37,12 @@ VerificationSource = Literal[
     "MANUAL_UNVERIFIED",
 ]
 
-ProvenanceType = Literal[
-    "REAL_OPERATIONAL",
-    "SYNTHETIC_TEST",
-]
+from enum import Enum
+
+class ProvenanceType(str, Enum):
+    REAL_OPERATIONAL = "REAL_OPERATIONAL"
+    SYNTHETIC_TEST = "SYNTHETIC_TEST"
+    JAVA_AUTHORITY = "JAVA_AUTHORITY"
 
 
 class ElaVerifiedOutcome(BaseModel):
@@ -88,6 +90,7 @@ class OutcomeLinkageChain(BaseModel):
     model_name: Optional[str] = None
     model_version: Optional[str] = None
     plan_id: Optional[str] = None
+    proposal_id: Optional[str] = None
     step_id: Optional[str] = None
     goal_id: Optional[str] = None
     session_id: Optional[str] = None
@@ -230,3 +233,47 @@ class OutcomeManager:
         if provenance:
             return [o for o in cls._outcomes.values() if o.provenance == provenance]
         return list(cls._outcomes.values())
+
+    @classmethod
+    def record_verified_outcome(
+        cls,
+        prediction_id: Optional[str] = None,
+        plan_id: Optional[str] = None,
+        proposal_id: Optional[str] = None,
+        operation_id: Optional[str] = None,
+        booking_id: Optional[str] = None,
+        actual_transit_time_minutes: float = 0.0,
+        expected_transit_time_minutes: float = 0.0,
+        actual_cost: float = 0.0,
+        expected_cost: float = 0.0,
+        actual_delay_minutes: float = 0.0,
+        outcome_status: str = "DELIVERED",
+        provenance: Any = "REAL_OPERATIONAL",
+    ) -> ElaVerifiedOutcome:
+        expected = {
+            "duration_minutes": expected_transit_time_minutes,
+            "cost": expected_cost,
+        }
+        actual = {
+            "duration_minutes": actual_transit_time_minutes,
+            "cost": actual_cost,
+            "delay_minutes": actual_delay_minutes,
+            "status": outcome_status,
+            "booking_id": booking_id,
+        }
+        prov = "REAL_OPERATIONAL" if str(provenance).upper() in ["REAL_OPERATIONAL", "JAVA_AUTHORITY"] else "SYNTHETIC_TEST"
+        outcome = cls.record_outcome(
+            expected_result=expected,
+            actual_result=actual,
+            outcome_type="DELIVERY",
+            verification_source="JAVA_AUTHORITY",
+            plan_id=plan_id,
+            operation_id=operation_id,
+            booking_id=booking_id,
+            provenance=prov,
+        )
+        linkage = cls.get_linkage(outcome.outcome_id)
+        if linkage:
+            linkage.prediction_id = prediction_id
+            linkage.proposal_id = proposal_id
+        return outcome

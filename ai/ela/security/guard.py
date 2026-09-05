@@ -11,6 +11,7 @@ class SecurityGuard:
         r'(?:otp|one\s*time\s*password|ओटीपी|पडताळणी\s*कोड|ஒடிபி|ఓటీపీ|ওটিপি|ಒಟಿಪಿ)\s*(?:is|=|:)?\s*(\d{4,8})',
         r'(?:pin|mpin|पिन|ரகசிய\s*எண்|పిన్|পিন|ಪಿನ್)\s*(?:is|=|:)?\s*(\d{4,6})',
         r'\b(?:mypassword|secret123|kisan@123|admin123)\b',
+        r'\bBearer\s+[a-zA-Z0-9_\-\.]+',
     ]
 
     INJECTION_PATTERNS = [

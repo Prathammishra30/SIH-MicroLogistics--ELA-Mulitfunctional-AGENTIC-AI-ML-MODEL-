@@ -24,7 +24,7 @@ export interface ElaContextType {
   isSTTSupported: boolean;
   isTTSSupported: boolean;
   activeVoiceInfo: ActiveVoiceInfo;
-  startVoiceInput: (onFinalTranscript: (text: string) => void) => Promise<boolean>;
+  startVoiceInput: (onFinalTranscript: (text: string, confidence?: number) => void) => Promise<boolean>;
   stopVoiceInput: () => void;
   speakResponse: (text: string) => void;
   stopSpeaking: () => void;
@@ -55,7 +55,7 @@ export const ElaProvider: React.FC<{ children: React.ReactNode }> = ({ children 
     micState === 'MIC_TRANSCRIBING';
 
   const startVoiceInput = useCallback(
-    async (onFinalTranscript: (text: string) => void): Promise<boolean> => {
+    async (onFinalTranscript: (text: string, confidence?: number) => void): Promise<boolean> => {
       const validLang = (language || 'en') as SupportedSpeechLang;
       setErrorMessage(null);
       setPartialTranscript('');
@@ -75,10 +75,10 @@ export const ElaProvider: React.FC<{ children: React.ReactNode }> = ({ children 
         onPartialTranscript: (partial) => {
           setPartialTranscript(partial);
         },
-        onFinalTranscript: (final) => {
+        onFinalTranscript: (final, confidence) => {
           setPartialTranscript('');
           if (final) {
-            onFinalTranscript(final);
+            onFinalTranscript(final, confidence);
           }
         },
         onAudioVolume: (volume) => {

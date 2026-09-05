@@ -11,3 +11,6 @@ class CanonicalIntent(BaseModel):
     entities: CanonicalEntities
     raw_text: str
     confidence: float = 0.85
+    target_tool: Optional[str] = None
+    target_action_type: Optional[str] = None  # 'REVERSIBLE' | 'CONSEQUENTIAL'
+    is_code_switched: bool = False

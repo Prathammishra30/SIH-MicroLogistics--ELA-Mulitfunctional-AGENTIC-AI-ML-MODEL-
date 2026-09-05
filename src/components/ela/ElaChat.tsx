@@ -124,7 +124,7 @@ export const ElaChat: React.FC<ElaChatProps> = ({ onClose, transcriptMode = fals
   }, [messages, storageKey]);
 
   const handleSendMessage = useCallback(
-    async (text: string, isVoiceSource = false) => {
+    async (text: string, isVoiceSource = false, audioConfidence?: number) => {
       const trimmed = text.trim();
       if (!trimmed) return;
 
@@ -184,6 +184,8 @@ export const ElaChat: React.FC<ElaChatProps> = ({ onClose, transcriptMode = fals
           language,
           currentPage: location.pathname,
           userName: currentUserName,
+          isVoice: isVoiceSource,
+          audioConfidence,
         });
 
         // Dynamically update conversational role if detected from natural language
@@ -282,7 +284,7 @@ export const ElaChat: React.FC<ElaChatProps> = ({ onClose, transcriptMode = fals
     const handleVoiceTranscript = (e: Event) => {
       const detail = (e as CustomEvent).detail;
       if (detail?.transcript) {
-        handleSendMessage(detail.transcript, true);
+        handleSendMessage(detail.transcript, true, detail.confidence);
       }
     };
     window.addEventListener('ela-voice-transcript', handleVoiceTranscript);
@@ -296,10 +298,10 @@ export const ElaChat: React.FC<ElaChatProps> = ({ onClose, transcriptMode = fals
     } else {
       setAgentStage('LISTENING');
       setAgentStatusMsg('Listening to your voice...');
-      startVoiceInput((transcript) => {
+      startVoiceInput((transcript, confidence) => {
         setAgentStage('TRANSCRIBING');
         setAgentStatusMsg('Transcribing voice input...');
-        handleSendMessage(transcript, true);
+        handleSendMessage(transcript, true, confidence);
       });
     }
   };
